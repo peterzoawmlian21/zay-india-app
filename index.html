@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="my" translate="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Disable Google Translate Popup completely -->
+    <meta name="google" content="notranslate">
+    
+    <title>Zay India - Myanmar Food</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDK (Version 8 Compat for easy drop-in) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; margin: 0; padding: 0; }
+        .hide { display: none !important; }
+        
+        /* Mobile App Container Layout */
+        .mobile-container { max-width: 480px; margin: 0 auto; background: #ffffff; min-height: 100vh; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
+        
+        /* Toast Animation */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { min-width: 250px; padding: 15px 20px; border-radius: 12px; color: #fff; opacity: 0; transform: translateY(-20px); transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); font-weight: bold; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast-success { background-color: #10b981; }
+        .toast-error { background-color: #ef4444; }
+        .toast-info { background-color: #3b82f6; }
+        
+        /* Scrollbar Hide for horizontal scroll */
+        ::-webkit-scrollbar { width: 0px; height: 0px; background: transparent; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Safe area padding for mobile bottoms */
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
+
+        /* Loading Overlay */
+        #app-loading { position: fixed; inset: 0; background: #ffffff; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #ea580c; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <!-- App Loading -->
+    <div id="app-loading">
+        <div class="spinner mb-4"></div>
+        <p class="font-bold text-slate-500">Connecting to Database...</p>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container"></div>
+
+    <!-- ========================================== -->
+    <!-- 1. LOGIN & REGISTRATION VIEW -->
+    <!-- ========================================== -->
+    <div id="auth-view" class="mobile-container justify-center p-6 bg-slate-50 hide">
+        <div class="text-center mb-8">
+            <div class="w-20 h-20 bg-orange-600 rounded-3xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-orange-600/30 text-white text-4xl">
+                <i class="fas fa-store"></i>
+            </div>
+            <h1 class="text-3xl font-black text-slate-800 tracking-tight">Zay India</h1>
+            <p class="text-sm font-bold text-orange-600 mt-2 bg-orange-100 inline-block px-3 py-1 rounded-full">အိန္ဒိယရောက် မြန်မာများအတွက်</p>
+        </div>
+        
+        <!-- Login Form -->
+        <form id="login-form" class="w-full space-y-4" onsubmit="window.handleLogin(event)">
+            <div class="text-center mb-4">
+                <h2 class="text-xl font-black text-slate-800">အကောင့် ဝင်မည်</h2>
+                <p class="text-xs font-bold text-slate-500">အကောင့်ရှိပြီးသား ဝယ်သူများအတွက် (Login)</p>
+            </div>
+            <div>
+                <label class="text-xs font-bold text-slate-500 ml-1">ဖုန်းနံပါတ် <span class="font-normal">(Phone Number)</span></label>
+                <input type="text" id="login-phone" placeholder="+91 xxxxxxxxxx" class="w-full bg-white p-4 border border-slate-200 rounded-2xl focus:outline-none focus:border-orange-500 font-medium" required>
+            </div>
+            <div>
+                <label class="text-xs font-bold text-slate-500 ml-1">စကားဝှက် <span class="font-normal">(Password)</span></label>
+                <input type="password" id="login-pass" placeholder="••••••••" class="w-full bg-white p-4 border border-slate-200 rounded-2xl focus:outline-none focus:border-orange-500 font-medium" required>
+            </div>
+            <button type="submit" class="w-full bg-orange-600 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-orange-700 active:scale-95 transition-all flex flex-col items-center mt-2">
+                <span>အကောင့်ထဲသို့ ဝင်မည်</span>
+            </button>
+            
+            <div class="relative flex py-5 items-center">
+                <div class="flex-grow border-t border-slate-200"></div>
+                <span class="flex-shrink-0 mx-4 text-slate-400 text-xs font-bold">OR</span>
+                <div class="flex-grow border-t border-slate-200"></div>
+            </div>
+
+            <p class="text-center text-sm font-semibold text-slate-600">အကောင့်သစ် ဖွင့်လိုပါသလား? <br>
+                <button type="button" class="mt-3 w-full bg-slate-800 text-white font-bold py-3.5 rounded-2xl shadow-md hover:bg-slate-900 active:scale-95 transition-all" onclick="window.toggleAuth('register')">
+                    အကောင့်သစ်ဖွင့်မည် (Register)
+                </button>
+            </p>
+        </form>
+
+        <!-- Register Form -->
+        <form id="register-form" class="w-full space-y-4 hide" onsubmit="window.handleRegister(event)">
+            <div class="text-center mb-2">
+                <h2 class="text-xl font-black text-slate-800">အကောင့်သစ်ဖွင့်ရန်</h2>
+                <p class="text-xs font-bold text-slate-500">Create New Account</p>
+            </div>
+            <div class="h-80 overflow-y-auto pr-1 space-y-3 pb-4 no-scrollbar">
+                <input type="text" id="reg-name" placeholder="အမည် (Name)" class="w-full bg-white p-3 border border-slate-200 rounded-xl focus:border-orange-500 font-medium text-sm" required>
+                <input type="text" id="reg-phone" placeholder="ဖုန်း (+91...)" class="w-full bg-white p-3 border border-slate-200 rounded-xl focus:border-orange-500 font-medium text-sm" required>
+                <input type="password" id="reg-pass" placeholder="စကားဝှက် (Password)" class="w-full bg-white p-3 border border-slate-200 rounded-xl focus:border-orange-500 font-medium text-sm" required>
+                <textarea id="reg-address" placeholder="အိမ်လိပ်စာ အပြည့်အစုံ (Full Address)" class="w-full bg-white p-3 border border-slate-200 rounded-xl focus:border-orange-500 font-medium text-sm" rows="3" required></textarea>
+                <p class="text-[10px] text-slate-400">လိပ်စာအတိအကျ ရေးပေးပါရန် (Please provide complete address)</p>
+            </div>
+            <button type="submit" class="w-full bg-slate-800 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-slate-900 active:scale-95 transition-all flex flex-col items-center">
+                <span>စာရင်းသွင်းမည် (Register)</span>
+            </button>
+            <p class="text-center mt-3 text-sm font-semibold text-slate-600 cursor-pointer hover:underline" onclick="window.toggleAuth('login')">
+                <i class="fas fa-arrow-left mr-1"></i> နောက်သို့ပြန်သွားမည် (Back to Login)
+            </p>
+        </form>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 2. CUSTOMER APP VIEW -->
+    <!-- ========================================== -->
+    <div id="customer-view" class="mobile-container hide pb-24">
+        <!-- Header -->
+        <div class="bg-orange-600 text-white pt-6 pb-4 px-5 rounded-b-3xl shadow-md z-10 sticky top-0">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="font-black text-xl tracking-tight">Zay India 🇲🇲</h2>
+                <!-- LOGOUT BUTTON -->
+                <button onclick="window.logout()" title="Logout" class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition text-sm">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+            <div class="bg-white/10 rounded-2xl p-3 flex items-center">
+                <div class="w-8 h-8 bg-white text-orange-600 rounded-full flex items-center justify-center mr-3"><i class="fas fa-map-marker-alt"></i></div>
+                <div class="flex-1 overflow-hidden">
+                    <p class="text-[10px] text-orange-200 font-bold uppercase mb-0.5">ပို့ဆောင်မည့် နေရာ (Delivery To)</p>
+                    <p class="font-bold text-sm truncate" id="customer-header-address">Loading Address...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Home -->
+        <div id="tab-home" class="flex-1 p-5 overflow-y-auto">
+            <h3 class="font-black text-lg text-slate-800 mb-1">ရရှိနိုင်သော ပစ္စည်းများ</h3>
+            <p class="text-xs font-semibold text-slate-500 mb-4">Available Products</p>
+            <div id="product-list" class="grid grid-cols-2 gap-4">
+                <!-- Products injected via JS -->
+            </div>
+        </div>
+
+        <!-- Tab: Orders -->
+        <div id="tab-orders" class="flex-1 p-5 overflow-y-auto hide bg-slate-50">
+            <h3 class="font-black text-lg text-slate-800 mb-1">မှာယူထားသော မှတ်တမ်း</h3>
+            <p class="text-xs font-semibold text-slate-500 mb-4">Order History</p>
+            <div id="customer-orders-list" class="space-y-4"></div>
+        </div>
+
+        <!-- Product Detail Modal -->
+        <div id="product-detail-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex flex-col justify-end hide opacity-0 transition-opacity duration-300">
+            <div class="bg-white w-full max-w-[480px] mx-auto rounded-t-3xl h-[85vh] flex flex-col transform translate-y-full transition-transform duration-300 relative" id="product-detail-sheet">
+                <button onclick="window.closeProductDetail()" class="absolute top-4 right-4 w-8 h-8 bg-slate-900/20 backdrop-blur-md rounded-full text-white hover:bg-slate-900/40 z-10 flex items-center justify-center shadow-lg"><i class="fas fa-times"></i></button>
+                
+                <div class="overflow-y-auto flex-1 pb-4 no-scrollbar">
+                    <div id="detail-main-content">
+                        <!-- Injected: Image, Title, Price, Stock -->
+                    </div>
+
+                    <!-- Scrollable Other Products -->
+                    <div class="px-5 mt-6 mb-2 border-t border-slate-100 pt-6">
+                        <h3 class="font-black text-lg text-slate-800 mb-4">အခြားပစ္စည်းများ <br><span class="text-sm font-semibold text-slate-400 font-normal">More Items</span></h3>
+                        <div id="detail-other-products" class="flex overflow-x-auto gap-4 pb-4 no-scrollbar">
+                            <!-- Injected: Related Products -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sticky Bottom Add to Cart -->
+                <div id="detail-sticky-cart" class="p-4 bg-white border-t border-slate-100 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] pb-safe">
+                    <!-- Injected: Cart Buttons -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Checkout Modal -->
+        <div id="checkout-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex flex-col justify-end hide opacity-0 transition-opacity duration-300">
+            <div class="bg-white w-full max-w-[480px] mx-auto rounded-t-3xl p-6 pb-8 transform translate-y-full transition-transform duration-300" id="checkout-sheet">
+                <div class="flex justify-between items-center mb-5">
+                    <div>
+                        <h2 class="text-xl font-black text-slate-800">ငွေပေးချေရန်</h2>
+                        <p class="text-xs font-semibold text-slate-500">Checkout</p>
+                    </div>
+                    <button onclick="window.closeCheckout()" class="w-8 h-8 bg-slate-100 rounded-full text-slate-500"><i class="fas fa-times"></i></button>
+                </div>
+                
+                <div class="bg-slate-50 rounded-2xl p-4 mb-5 border border-slate-100">
+                    <div id="checkout-items-list" class="space-y-2 mb-3 text-sm font-semibold text-slate-700 border-b border-slate-200 pb-3"></div>
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-slate-600">Total</span>
+                        <span class="font-black text-xl text-orange-600">₹<span id="checkout-total">0</span></span>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                    <button id="btn-pay-upi" onclick="window.selectPayment('UPI')" class="border-2 border-blue-500 bg-blue-50 text-blue-700 font-bold py-3 rounded-2xl transition"><i class="fab fa-google-pay mr-1 text-lg"></i> GPay / UPI</button>
+                    <button id="btn-pay-cod" onclick="window.selectPayment('COD')" class="border border-slate-200 text-slate-500 font-bold py-3 rounded-2xl transition flex flex-col items-center leading-tight">
+                        <span><i class="fas fa-hand-holding-usd mr-1"></i> COD</span>
+                        <span class="text-[9px] font-normal mt-0.5">ပစ္စည်းရောက်ငွေချေ</span>
+                    </button>
+                </div>
+
+                <button onclick="window.placeOrder()" class="w-full bg-slate-900 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all flex flex-col items-center">
+                    <span>အတည်ပြုမည်</span>
+                    <span class="text-[10px] font-normal">Confirm Order</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- UPI Deep Link Modal -->
+        <div id="upi-modal" class="fixed inset-0 bg-white z-[70] flex flex-col items-center justify-center p-6 text-center hide mobile-container">
+            <i class="fab fa-google-pay text-5xl text-blue-600 mb-6"></i>
+            <h3 class="font-black text-xl mb-1 text-slate-800">GPay ဖြင့် ငွေချေရန်</h3>
+            <p class="text-sm font-semibold text-slate-500 mb-6">ဘဏ်မှပေးသော ၁၂-လုံးပါ Transaction ID (UTR) ကို အောက်တွင် ရိုက်ထည့်ပါ။<br><span class="text-xs">(Enter 12-digit UTR below)</span></p>
+            <input type="text" id="upi-txn-input" placeholder="e.g. 312345678901" class="w-full max-w-xs bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 px-4 text-center font-mono font-bold tracking-widest mb-6" maxlength="12">
+            <div class="flex gap-3 w-full max-w-xs">
+                <button onclick="document.getElementById('upi-modal').classList.add('hide')" class="w-1/2 bg-slate-100 text-slate-600 font-bold py-3.5 rounded-2xl">Cancel</button>
+                <button onclick="window.confirmUPI()" class="w-1/2 bg-blue-600 text-white font-bold py-3.5 rounded-2xl">Confirm</button>
+            </div>
+        </div>
+
+        <!-- Bottom Nav -->
+        <div class="fixed bottom-0 w-full max-w-[480px] bg-white border-t border-slate-100 flex justify-around p-2 pb-safe shadow-[0_-10px_40px_rgba(0,0,0,0.03)] z-40 rounded-t-3xl">
+            <button onclick="window.switchCustomerTab('home')" id="nav-home" class="flex flex-col items-center p-2 text-orange-600 w-1/3"><i class="fas fa-store text-xl mb-1"></i><span class="text-[10px] font-bold">ဆိုင်ခန်း (Shop)</span></button>
+            <button onclick="window.openCheckout()" class="flex flex-col items-center w-1/3 relative -mt-6">
+                <div class="w-14 h-14 bg-slate-900 text-white rounded-full flex items-center justify-center shadow-lg border-4 border-white"><i class="fas fa-shopping-bag text-xl"></i>
+                    <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white hide">0</span>
+                </div>
+            </button>
+            <button onclick="window.switchCustomerTab('orders')" id="nav-orders" class="flex flex-col items-center p-2 text-slate-400 w-1/3"><i class="fas fa-receipt text-xl mb-1"></i><span class="text-[10px] font-bold">မှတ်တမ်း (Orders)</span></button>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 3. ADMIN VIEW -->
+    <!-- ========================================== -->
+    <div id="admin-view" class="hide min-h-screen bg-slate-50 flex flex-col md:flex-row">
+        <div class="w-full md:w-64 bg-slate-900 text-slate-300 flex flex-col shrink-0">
+            <div class="p-6 border-b border-slate-800"><h2 class="text-2xl font-black text-white flex items-center"><i class="fas fa-shield-alt text-orange-500 mr-3"></i> Admin</h2></div>
+            <ul class="space-y-1 p-4 flex-1">
+                <li><button onclick="window.switchAdminTab('orders')" id="admin-nav-orders" class="w-full flex items-center px-4 py-3 rounded-xl bg-orange-600/10 text-orange-500 font-bold"><i class="fas fa-shopping-bag w-6"></i> အော်ဒါစာရင်း</button></li>
+                <li><button onclick="window.switchAdminTab('products')" id="admin-nav-products" class="w-full flex items-center px-4 py-3 rounded-xl hover:bg-slate-800 font-semibold"><i class="fas fa-box w-6"></i> ကုန်ပစ္စည်းများ</button></li>
+            </ul>
+            <div class="p-4 border-t border-slate-800"><button onclick="window.logout()" class="w-full flex items-center px-4 py-3 rounded-xl text-red-400 font-bold"><i class="fas fa-sign-out-alt w-6"></i> ထွက်မည် (Logout)</button></div>
+        </div>
+        
+        <div class="flex-1 p-6 overflow-y-auto h-screen">
+            <!-- Admin Orders Tab -->
+            <div id="admin-tab-orders" class="block">
+                <div class="flex justify-between items-center mb-6"><h1 class="text-2xl font-black text-slate-900">အော်ဒါစီမံခန့်ခွဲမှု</h1></div>
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden overflow-x-auto">
+                    <table class="min-w-full text-left text-sm whitespace-nowrap">
+                        <thead class="bg-slate-50 border-b border-slate-200">
+                            <tr><th class="px-6 py-4 font-bold text-slate-500">ID</th><th class="px-6 py-4 font-bold text-slate-500">Customer</th><th class="px-6 py-4 font-bold text-slate-500">Items</th><th class="px-6 py-4 font-bold text-slate-500">Total</th><th class="px-6 py-4 font-bold text-slate-500">Payment</th><th class="px-6 py-4 font-bold text-slate-500">Address</th><th class="px-6 py-4 font-bold text-slate-500">Status</th></tr>
+                        </thead>
+                        <tbody id="admin-orders-table" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Admin Products Tab -->
+            <div id="admin-tab-products" class="hide">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-2xl font-black text-slate-900">ကုန်ပစ္စည်းများ (Products)</h1>
+                    <button onclick="window.openProductModal()" class="bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg"><i class="fas fa-plus mr-1"></i> အသစ်ထည့်မည်</button>
+                </div>
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden overflow-x-auto">
+                    <table class="min-w-full text-left text-sm">
+                        <thead class="bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th class="px-6 py-4 font-bold text-slate-500 w-16">Image</th>
+                                <th class="px-6 py-4 font-bold text-slate-500">Name</th>
+                                <th class="px-6 py-4 font-bold text-slate-500">Price</th>
+                                <th class="px-6 py-4 font-bold text-slate-500 text-center">Stock Qty</th>
+                                <th class="px-6 py-4 font-bold text-slate-500 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-products-table" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Editor Modal -->
+    <div id="product-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4 hide">
+        <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl">
+            <h2 class="text-xl font-black text-slate-800 mb-4" id="product-modal-title">ပစ္စည်းအသစ် ထည့်မည်</h2>
+            <form onsubmit="window.saveProduct(event)" class="space-y-4">
+                <input type="hidden" id="prod-id">
+                <input type="text" id="prod-name" placeholder="ပစ္စည်းအမည် (Product Name)" class="w-full bg-slate-50 p-3 border rounded-xl font-bold" required>
+                <div class="flex gap-4">
+                    <input type="number" id="prod-price" placeholder="ဈေးနှုန်း (Price in ₹)" class="w-full bg-slate-50 p-3 border rounded-xl font-bold" required>
+                    <input type="number" id="prod-stock" placeholder="လက်ကျန် (Stock Qty)" class="w-full bg-slate-50 p-3 border rounded-xl font-bold" required min="0">
+                </div>
+                
+                <!-- Gallery Image Upload -->
+                <div>
+                    <label class="text-xs font-bold text-slate-500 ml-1 mb-1 block">ပုံထည့်ရန် (Choose Image)</label>
+                    <input type="file" id="prod-img-file" accept="image/*" class="w-full bg-slate-50 p-3 border border-slate-200 rounded-xl text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-slate-800 file:text-white cursor-pointer" onchange="window.previewImage(event)">
+                    <input type="hidden" id="prod-img-base64">
+                    <div id="img-preview-container" class="mt-3 hide flex justify-center bg-slate-100 rounded-xl p-2 border border-slate-200">
+                        <img id="img-preview" src="" class="h-32 object-contain rounded-lg">
+                    </div>
+                </div>
+
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="document.getElementById('product-modal').classList.add('hide')" class="w-1/3 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl">Cancel</button>
+                    <button type="submit" class="flex-1 bg-slate-900 text-white font-bold py-3 rounded-xl">Save Product</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Quick Restock Modal -->
+    <div id="restock-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4 hide">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl">
+            <h2 class="text-xl font-black text-slate-800 mb-2">ပစ္စည်း ထပ်ဖြည့်မည်</h2>
+            <p class="text-sm font-bold text-slate-500 mb-4" id="restock-prod-name">Product Name</p>
+            <form onsubmit="window.confirmRestock(event)" class="space-y-4">
+                <input type="hidden" id="restock-prod-id">
+                <div>
+                    <label class="text-xs font-bold text-slate-500 ml-1">အသစ်ရောက်လာသော အရေအတွက် (+)</label>
+                    <input type="number" id="restock-qty" placeholder="ဥပမာ - 10" class="w-full bg-slate-50 p-3 border rounded-xl font-bold mt-1" required min="1">
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="document.getElementById('restock-modal').classList.add('hide')" class="w-1/2 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl">Cancel</button>
+                    <button type="submit" class="w-1/2 bg-green-600 text-white font-bold py-3 rounded-xl">ပေါင်းထည့်မည်</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CORE JAVASCRIPT LOGIC -->
+    <script>
+        
+        const firebaseConfig = {
+  apiKey: "AIzaSyA_YboGOSTRfB7U9ZXmbTf-RC9Uwz67RZI",
+  authDomain: "zayindia.firebaseapp.com",
+  databaseURL: "https://zayindia-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "zayindia",
+  storageBucket: "zayindia.firebasestorage.app",
+  messagingSenderId: "368042222537",
+  appId: "1:368042222537:web:167d46deb373efc16abe18"
+};
+        
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
+
+        // Application State
+        window.users = [];
+        window.products = [];
+        window.orders = [];
+        window.currentUser = null;
+        window.cart = {};
+        window.selectedPayment = 'UPI';
+
+        // UI Toast Notification System
+        window.showToast = function(msg, type='info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `<div class="flex items-start"><i class="fas ${type==='success'?'fa-check-circle':type==='error'?'fa-exclamation-triangle':'fa-info-circle'} mt-1 mr-2"></i> <div class="font-bold text-sm">${msg}</div></div>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3000);
+        };
+
+        // Real-time Database Listeners
+        const initDatabase = () => {
+            let loadedFlags = { users: false, products: false, orders: false };
+            
+            const checkInitialLoad = () => {
+                if(loadedFlags.users && loadedFlags.products && loadedFlags.orders) {
+                    document.getElementById('app-loading').classList.add('hide');
+                    const saved = localStorage.getItem('zay_currentUser');
+                    if (saved) { window.currentUser = JSON.parse(saved); window.routeApp(); }
+                    else { document.getElementById('auth-view').classList.remove('hide'); }
+                }
+            };
+
+            db.ref('users').on('value', (snapshot) => {
+                window.users = snapshot.val() || [];
+                if(!loadedFlags.users) { loadedFlags.users = true; checkInitialLoad(); }
+            });
+
+            db.ref('products').on('value', (snapshot) => {
+                window.products = snapshot.val() || [];
+                if(!loadedFlags.products) { loadedFlags.products = true; checkInitialLoad(); }
+                
+                if (window.currentUser?.role === 'admin') window.renderAdminProducts();
+                if (window.currentUser?.role === 'customer') window.renderProducts();
+            });
+
+            let previousOrdersLength = -1;
+            db.ref('orders').on('value', (snapshot) => {
+                const oldOrders = window.orders;
+                window.orders = snapshot.val() || [];
+                if(!loadedFlags.orders) { loadedFlags.orders = true; checkInitialLoad(); }
+                
+                // Trigger sound for Admin if new order arrives (after initial load)
+                if (window.currentUser?.role === 'admin' && previousOrdersLength !== -1 && window.orders.length > previousOrdersLength) {
+                    try{ const ctx=new(window.AudioContext||window.webkitAudioContext)();const osc=ctx.createOscillator();osc.type='sine';osc.frequency.setValueAtTime(800,ctx.currentTime);osc.connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+0.3); }catch(er){} 
+                    window.showToast("အော်ဒါသစ် ဝင်လာပါပြီ", "info");
+                }
+                previousOrdersLength = window.orders.length;
+
+                if (window.currentUser?.role === 'admin') window.renderAdminOrders();
+                if (window.currentUser?.role === 'customer') window.renderCustomerOrders();
+            });
+        };
+
+        window.onload = () => {
+            initDatabase(); 
+        };
+
+        // Database API wrappers
+        const dbAPI = {
+            saveUsers: (u) => db.ref('users').set(u),
+            saveProducts: (p) => db.ref('products').set(p),
+            saveOrders: (o) => db.ref('orders').set(o)
+        };
+
+        // Toggle Login / Register View
+        window.toggleAuth = (v) => {
+            document.getElementById('login-form').classList.toggle('hide', v!=='login');
+            document.getElementById('register-form').classList.toggle('hide', v!=='register');
+        };
+
+        // ==========================================
+        // AUTHENTICATION LOGIC
+        // ==========================================
+        
+        window.handleRegister = (e) => {
+            e.preventDefault();
+            const phone = document.getElementById('reg-phone').value.trim();
+            if(phone === 'admin') return window.showToast("ဤအမည်ဖြင့် အကောင့်ဖွင့်၍မရပါ", "error");
+            if(window.users.find(u => u.phone === phone)) return window.showToast("ဤဖုန်းနံပါတ်ဖြင့် အကောင့်ရှိပြီးသားဖြစ်ပါသည်", "error");
+            
+            const user = { 
+                phone, 
+                pass: document.getElementById('reg-pass').value.trim(), 
+                name: document.getElementById('reg-name').value.trim(), 
+                address: document.getElementById('reg-address').value.trim(), 
+                role: 'customer' 
+            };
+            
+            window.users.push(user); 
+            dbAPI.saveUsers(window.users); 
+            
+            window.showToast("အကောင့်အသစ် ဖွင့်ပြီးပါပြီ။ Login ဝင်နိုင်ပါပြီ။", "success");
+            window.toggleAuth('login');
+            e.target.reset();
+        };
+
+        window.handleLogin = (e) => {
+            e.preventDefault();
+            const phone = document.getElementById('login-phone').value.trim();
+            const pass = document.getElementById('login-pass').value.trim();
+
+            if (phone === 'admin' && pass === '123') {
+                window.currentUser = { role: 'admin', phone: 'admin', name: 'Admin' };
+                localStorage.setItem('zay_currentUser', JSON.stringify(window.currentUser));
+                window.showToast("Admin အကောင့်သို့ ဝင်ရောက်ပြီးပါပြီ", "success");
+                window.routeApp(); 
+                return;
+            }
+
+            const user = window.users.find(u => u.phone === phone && u.pass === pass);
+            if (user) {
+                window.currentUser = user;
+                localStorage.setItem('zay_currentUser', JSON.stringify(window.currentUser)); 
+                window.showToast("Login အောင်မြင်ပါသည်", "success");
+                window.routeApp();
+            } else {
+                window.showToast("ဖုန်းနံပါတ် (သို့) စကားဝှက် မှားယွင်းနေပါသည်", "error");
+            }
+        };
+
+        window.logout = () => {
+            localStorage.removeItem('zay_currentUser'); 
+            window.currentUser = null; 
+            window.cart = {};
+            
+            document.getElementById('auth-view').classList.remove('hide');
+            document.getElementById('customer-view').classList.add('hide');
+            document.getElementById('admin-view').classList.add('hide');
+            document.getElementById('login-form').reset();
+            
+            window.showToast("အကောင့်မှ ထွက်ပြီးပါပြီ", "success");
+        };
+
+        window.routeApp = () => {
+            document.getElementById('auth-view').classList.add('hide');
+            if (window.currentUser.role === 'admin') {
+                document.getElementById('admin-view').classList.remove('hide');
+                window.switchAdminTab('orders');
+            } else {
+                document.getElementById('customer-view').classList.remove('hide');
+                document.getElementById('customer-header-address').innerText = window.currentUser.address;
+                window.switchCustomerTab('home');
+            }
+        };
+
+        // ==========================================
+        // CUSTOMER UI & CART LOGIC
+        // ==========================================
+        window.renderProducts = () => {
+            const list = document.getElementById('product-list');
+            if(window.products.length === 0) return list.innerHTML = `<div class="col-span-2 py-10 text-center text-slate-400 font-bold bg-white rounded-2xl border border-slate-100"><p>လောလောဆယ် ပစ္စည်းများ မရှိသေးပါ။<br><span class="text-xs">No items available yet.</span></p></div>`;
+
+            list.innerHTML = window.products.map(p => {
+                const qty = window.cart[p.dbId] || 0;
+                const isOut = p.stockQty <= 0;
+                
+                let btn = isOut ? 
+                    `<button disabled class="w-full bg-slate-100 text-slate-400 font-bold py-2 rounded-xl text-xs cursor-not-allowed">ကုန်နေပါသည်</button>` :
+                    (qty === 0 ? 
+                        `<button onclick="event.stopPropagation(); window.updateCart('${p.dbId}', 1)" class="w-full border-2 border-orange-100 text-orange-600 bg-orange-50 font-bold py-2 rounded-xl text-xs hover:bg-orange-100 transition">Add to Cart</button>` :
+                        `<div class="flex justify-between items-center bg-orange-600 text-white rounded-xl" onclick="event.stopPropagation()">
+                            <button onclick="window.updateCart('${p.dbId}', -1)" class="px-4 py-2 font-black">-</button>
+                            <span class="font-bold text-sm">${qty}</span>
+                            <button onclick="window.updateCart('${p.dbId}', 1)" class="px-4 py-2 font-black">+</button>
+                        </div>`);
+
+                return `
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col ${isOut ? 'opacity-60 grayscale' : ''}">
+                    <div class="cursor-pointer" onclick="window.openProductDetail('${p.dbId}')">
+                        <div class="h-32 bg-slate-100 relative">
+                            <img src="${p.img}" class="w-full h-full object-cover">
+                        </div>
+                        <div class="p-3 flex-1 flex flex-col">
+                            <h4 class="font-bold text-sm text-slate-800 mb-1 leading-tight line-clamp-1">${p.name}</h4>
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="font-black text-orange-600 text-sm">₹${p.price}</span>
+                                ${!isOut ? `<span class="text-[10px] font-bold text-slate-400">လက်ကျန်: ${p.stockQty}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-3 pb-3 mt-auto">${btn}</div>
+                </div>`;
+            }).join('');
+        };
+
+        window.updateCart = (id, change) => {
+            const product = window.products.find(x => x.dbId === id);
+            const currentQty = window.cart[id] || 0;
+            
+            if (change > 0 && currentQty >= product.stockQty) {
+                return window.showToast(`လက်ကျန်အရေအတွက် (${product.stockQty}) ထက် ပိုမှာ၍မရပါ`, "error");
+            }
+
+            window.cart[id] = currentQty + change;
+            if(window.cart[id] <= 0) delete window.cart[id];
+            
+            window.renderProducts();
+            
+            let totalQty = Object.values(window.cart).reduce((a, b) => a + b, 0);
+            let badge = document.getElementById('cart-count');
+            badge.innerText = totalQty;
+            badge.classList.toggle('hide', totalQty === 0);
+            if(totalQty === 0) window.closeCheckout();
+        };
+
+        window.openProductDetail = function(dbId) {
+            const p = window.products.find(x => x.dbId === dbId);
+            if(!p) return;
+            
+            document.getElementById('detail-main-content').innerHTML = `
+                <div class="w-full h-[40vh] bg-slate-100 relative">
+                    <img src="${p.img}" class="w-full h-full object-cover">
+                </div>
+                <div class="p-5 pb-2">
+                    <h2 class="text-2xl font-black text-slate-800 mb-1 leading-tight">${p.name}</h2>
+                    <p class="text-xl font-black text-orange-600 mb-4">₹${p.price}</p>
+                    <div class="text-xs font-semibold text-slate-500 mb-2">
+                        ${p.stockQty > 0 ? `<span class="text-green-600 bg-green-50 px-2 py-1 rounded border border-green-100"><i class="fas fa-check-circle mr-1"></i>ပစ္စည်းရနိုင်ပါသည် (လက်ကျန်: ${p.stockQty})</span>` : '<span class="text-red-500 bg-red-50 px-2 py-1 rounded border border-red-100"><i class="fas fa-times-circle mr-1"></i>ကုန်နေပါသည် (Out of Stock)</span>'}
+                    </div>
+                </div>
+            `;
+
+            const qty = window.cart[dbId] || 0;
+            const isOut = p.stockQty <= 0;
+            let cartBtn = isOut ? 
+                `<button disabled class="w-full bg-slate-100 text-slate-400 font-bold py-3.5 rounded-2xl cursor-not-allowed">ကုန်နေပါသည် (Out of Stock)</button>` :
+                (qty === 0 ? 
+                    `<button onclick="window.updateCart('${dbId}', 1); window.openProductDetail('${dbId}')" class="w-full bg-orange-600 text-white font-black py-3.5 rounded-2xl shadow-lg hover:bg-orange-700 active:scale-95 transition-all text-base"><i class="fas fa-shopping-cart mr-2"></i> Add to Cart</button>` :
+                    `<div class="flex justify-between items-center bg-orange-600 text-white rounded-2xl p-1.5 shadow-lg">
+                        <button onclick="window.updateCart('${dbId}', -1); window.openProductDetail('${dbId}')" class="w-14 h-12 flex justify-center items-center font-black text-2xl hover:bg-white/20 rounded-xl transition">-</button>
+                        <span class="font-black text-xl">${qty}</span>
+                        <button onclick="window.updateCart('${dbId}', 1); window.openProductDetail('${dbId}')" class="w-14 h-12 flex justify-center items-center font-black text-2xl hover:bg-white/20 rounded-xl transition">+</button>
+                    </div>`);
+            
+            document.getElementById('detail-sticky-cart').innerHTML = cartBtn;
+
+            const otherProducts = window.products.filter(x => x.dbId !== dbId);
+            const otherContainer = document.getElementById('detail-other-products');
+            
+            if (otherProducts.length === 0) {
+                otherContainer.innerHTML = `<p class="text-slate-400 text-sm font-semibold">No other items yet</p>`;
+            } else {
+                otherContainer.innerHTML = otherProducts.map(op => `
+                    <div onclick="window.openProductDetail('${op.dbId}')" class="min-w-[130px] max-w-[130px] bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col cursor-pointer active:scale-95 transition-transform ${op.stockQty <= 0 ? 'opacity-60 grayscale' : ''}">
+                        <div class="h-28 bg-slate-100"><img src="${op.img}" class="w-full h-full object-cover"></div>
+                        <div class="p-3">
+                            <h4 class="font-bold text-[11px] text-slate-800 mb-1 leading-tight line-clamp-2">${op.name}</h4>
+                            <p class="font-black text-orange-600 text-xs">₹${op.price}</p>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            const modal = document.getElementById('product-detail-modal');
+            const sheet = document.getElementById('product-detail-sheet');
+            modal.classList.remove('hide');
+            setTimeout(() => { modal.classList.remove('opacity-0'); sheet.classList.remove('translate-y-full'); }, 10);
+        };
+
+        window.closeProductDetail = function() {
+            const modal = document.getElementById('product-detail-modal');
+            const sheet = document.getElementById('product-detail-sheet');
+            modal.classList.add('opacity-0');
+            sheet.classList.add('translate-y-full');
+            setTimeout(() => modal.classList.add('hide'), 300);
+        };
+
+        window.openCheckout = () => {
+            if(Object.keys(window.cart).length === 0) return window.showToast("ခြင်းတောင်းထဲတွင် ဘာမှမရှိပါ", "error");
+            let total = 0, itemsHtml = Object.keys(window.cart).map(dbId => {
+                let p = window.products.find(x => x.dbId === dbId); total += p.price * window.cart[dbId];
+                return `<div class="flex justify-between"><span><span class="text-orange-600 mr-1">${window.cart[dbId]}x</span> ${p.name}</span><span>₹${p.price * window.cart[dbId]}</span></div>`;
+            }).join('');
+            
+            document.getElementById('checkout-items-list').innerHTML = itemsHtml;
+            document.getElementById('checkout-total').innerText = total;
+            
+            const m = document.getElementById('checkout-modal'), s = document.getElementById('checkout-sheet');
+            m.classList.remove('hide'); setTimeout(() => { m.classList.remove('opacity-0'); s.classList.remove('translate-y-full'); }, 10);
+        };
+
+        window.closeCheckout = () => {
+            const m = document.getElementById('checkout-modal'), s = document.getElementById('checkout-sheet');
+            m.classList.add('opacity-0'); s.classList.add('translate-y-full');
+            setTimeout(() => m.classList.add('hide'), 300);
+        };
+
+        window.selectPayment = (m) => {
+            window.selectedPayment = m;
+            document.getElementById('btn-pay-upi').className = m==='UPI' ? "border-2 border-blue-500 bg-blue-50 text-blue-700 font-bold py-3 rounded-2xl transition" : "border border-slate-200 text-slate-500 font-bold py-3 rounded-2xl transition bg-white";
+            document.getElementById('btn-pay-cod').className = m==='COD' ? "border-2 border-orange-500 bg-orange-50 text-orange-700 font-bold py-3 rounded-2xl transition flex flex-col items-center leading-tight" : "border border-slate-200 text-slate-500 font-bold py-3 rounded-2xl transition bg-white flex flex-col items-center leading-tight";
+        };
+
+        window.placeOrder = () => {
+            if(window.selectedPayment === 'UPI') {
+                let amt = Object.keys(window.cart).reduce((sum, id) => sum + (window.products.find(p=>p.dbId===id).price * window.cart[id]), 0);
+                window.location.href = `upi://pay?pa=YOUR_UPI_ID@bank&pn=ZayIndia&am=${amt}&cu=INR`;
+                document.getElementById('upi-modal').classList.remove('hide');
+            } else window.finalizeOrder('COD');
+        };
+
+        window.confirmUPI = () => {
+            let txn = document.getElementById('upi-txn-input').value.trim();
+            if(txn.length < 12) return window.showToast("Enter 12 digit UTR", "error");
+            document.getElementById('upi-modal').classList.add('hide'); document.getElementById('upi-txn-input').value = '';
+            window.finalizeOrder(txn);
+        };
+
+        window.finalizeOrder = (txnId) => {
+            let total = 0, itemsStr = Object.keys(window.cart).map(id => {
+                let p = window.products.find(x => x.dbId === id); total += p.price * window.cart[id];
+                return `${window.cart[id]}x ${p.name}`;
+            }).join(', ');
+
+            Object.keys(window.cart).forEach(id => {
+                let pIndex = window.products.findIndex(x => x.dbId === id);
+                if (pIndex > -1) {
+                    window.products[pIndex].stockQty -= window.cart[id];
+                    if(window.products[pIndex].stockQty < 0) window.products[pIndex].stockQty = 0;
+                }
+            });
+
+            window.orders.unshift({ 
+                dbId: 'ORD-' + Date.now(), 
+                user: window.currentUser.name, 
+                phone: window.currentUser.phone, 
+                address: window.currentUser.address, 
+                items: itemsStr, 
+                total: total, 
+                payment: window.selectedPayment, 
+                txn: txnId, 
+                status: 'pending', 
+                time: new Date().toLocaleTimeString() 
+            });
+            
+            dbAPI.saveProducts(window.products); 
+            dbAPI.saveOrders(window.orders);
+            
+            window.cart = {}; 
+            window.closeCheckout(); 
+            window.updateCart('',0); 
+            window.switchCustomerTab('orders'); 
+            window.showToast("အော်ဒါတင်ခြင်း အောင်မြင်ပါသည်!", "success");
+        };
+
+        window.switchCustomerTab = (t) => {
+            document.getElementById('tab-home').classList.toggle('hide', t!=='home');
+            document.getElementById('tab-orders').classList.toggle('hide', t!=='orders');
+            document.getElementById('nav-home').className = `flex flex-col items-center p-2 w-1/3 ${t==='home'?'text-orange-600':'text-slate-400'}`;
+            document.getElementById('nav-orders').className = `flex flex-col items-center p-2 w-1/3 ${t==='orders'?'text-orange-600':'text-slate-400'}`;
+            if(t==='home') window.renderProducts(); else window.renderCustomerOrders();
+        };
+
+        window.renderCustomerOrders = () => {
+            const list = document.getElementById('customer-orders-list');
+            let myOrders = window.orders.filter(o => o.phone === window.currentUser.phone);
+            if(myOrders.length === 0) return list.innerHTML = `<p class="text-slate-500 font-semibold text-center mt-5">မှာယူထားသော မှတ်တမ်းမရှိသေးပါ။</p>`;
+            
+            list.innerHTML = myOrders.map(o => {
+                let badge = o.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : (o.status === 'ontheway' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700');
+                let stTxt = o.status === 'pending' ? 'Pending' : (o.status === 'ontheway' ? 'On the way' : 'Delivered');
+                return `
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="flex justify-between items-center mb-3 border-b border-slate-100 pb-3"><span class="font-black text-slate-800">${o.dbId}</span><span class="px-2 py-1 rounded text-[10px] font-bold ${badge}">${stTxt}</span></div>
+                    <p class="text-sm font-semibold text-slate-600 mb-3">${o.items}</p>
+                    <div class="flex justify-between items-end">
+                        <div><p class="text-[10px] font-bold text-slate-400">${o.time}</p><p class="text-xs font-bold ${o.payment==='UPI'?'text-blue-600':'text-orange-600'}">${o.payment} ${o.txn && o.payment!=='COD' ? `(${o.txn})`:''}</p></div>
+                        <span class="font-black text-orange-600">₹${o.total}</span>
+                    </div>
+                </div>`;
+            }).join('');
+        };
+
+        // ==========================================
+        // ADMIN LOGIC
+        // ==========================================
+        window.switchAdminTab = (t) => {
+            document.getElementById('admin-tab-orders').classList.toggle('hide', t!=='orders');
+            document.getElementById('admin-tab-products').classList.toggle('hide', t!=='products');
+            if(t==='orders') window.renderAdminOrders(); else window.renderAdminProducts();
+        };
+
+        window.renderAdminOrders = () => {
+            document.getElementById('admin-orders-table').innerHTML = window.orders.map((o) => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="px-6 py-4 font-black text-slate-800">${o.dbId}</td>
+                    <td class="px-6 py-4"><p class="font-bold text-slate-700">${o.user}</p><p class="text-xs text-slate-500">${o.phone}</p></td>
+                    <td class="px-6 py-4 text-xs font-semibold text-slate-600 whitespace-normal min-w-[200px]">${o.items}</td>
+                    <td class="px-6 py-4 text-right font-black text-orange-600">₹${o.total}</td>
+                    <td class="px-6 py-4 text-xs font-bold ${o.payment==='UPI'?'text-blue-600':'text-slate-500'}">${o.payment}<br>${o.txn?o.txn:''}</td>
+                    <td class="px-6 py-4 text-xs font-medium text-slate-600 max-w-[250px] whitespace-normal">${o.address}</td>
+                    <td class="px-6 py-4">
+                        <select onchange="window.updateStatus('${o.dbId}', this.value)" class="text-xs font-bold p-2 rounded-lg border outline-none">
+                            <option value="pending" ${o.status === 'pending' ? 'selected' : ''}>Pending</option>
+                            <option value="ontheway" ${o.status === 'ontheway' ? 'selected' : ''}>On the way</option>
+                            <option value="delivered" ${o.status === 'delivered' ? 'selected' : ''}>Delivered</option>
+                        </select>
+                    </td>
+                </tr>
+            `).join('');
+        };
+
+        window.updateStatus = (id, val) => {
+            let idx = window.orders.findIndex(x => x.dbId === id);
+            if(idx > -1) { 
+                window.orders[idx].status = val; 
+                dbAPI.saveOrders(window.orders);
+                window.showToast("Status updated", "success"); 
+            }
+        };
+
+        window.previewImage = (e) => {
+            const file = e.target.files[0]; if (!file) return;
+            const r = new FileReader();
+            r.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                    let w = img.width, h = img.height, MAX = 500;
+                    if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } } else { if (h > MAX) { w *= MAX / h; h = MAX; } }
+                    canvas.width = w; canvas.height = h; ctx.drawImage(img, 0, 0, w, h);
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                    document.getElementById('prod-img-base64').value = dataUrl; 
+                    document.getElementById('img-preview').src = dataUrl; 
+                    document.getElementById('img-preview-container').classList.remove('hide');
+                }; img.src = e.target.result;
+            }; r.readAsDataURL(file);
+        };
+
+        window.renderAdminProducts = () => {
+            document.getElementById('admin-products-table').innerHTML = window.products.map((p) => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="px-6 py-4"><img src="${p.img}" class="w-10 h-10 rounded-lg object-cover ${p.stockQty <= 0 ? 'grayscale opacity-50' : ''}"></td>
+                    <td class="px-6 py-4 font-bold text-slate-800">${p.name}</td>
+                    <td class="px-6 py-4 font-black text-orange-600">₹${p.price}</td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="flex items-center justify-center">
+                            <span class="px-3 py-1 text-[11px] font-bold rounded-full ${p.stockQty > 0 ? 'bg-slate-100 text-slate-700' : 'bg-red-100 text-red-600 border border-red-200'}">
+                                ${p.stockQty > 0 ? p.stockQty + ' ခု' : 'ကုန်ပြီ'}
+                            </span>
+                            <button onclick="window.openRestockModal('${p.dbId}')" class="ml-2 bg-green-100 text-green-700 px-2.5 py-1 rounded text-xs font-bold hover:bg-green-200 transition" title="အသစ်ရောက်သော အရေအတွက် ပေါင်းထည့်မည်">
+                                + အသစ်ရောက်
+                            </button>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <button onclick="window.openProductModal('${p.dbId}')" class="text-blue-500 hover:scale-110 mx-2" title="Edit"><i class="fas fa-edit"></i></button>
+                        <button onclick="window.deleteProduct('${p.dbId}')" class="text-red-500 hover:scale-110" title="Delete"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        };
+
+        window.openRestockModal = (id) => {
+            let p = window.products.find(x => x.dbId === id);
+            if(!p) return;
+            document.getElementById('restock-prod-id').value = id;
+            document.getElementById('restock-prod-name').innerText = p.name + ` (လက်ရှိ: ${p.stockQty} ခု)`;
+            document.getElementById('restock-qty').value = '';
+            document.getElementById('restock-modal').classList.remove('hide');
+        };
+
+        window.confirmRestock = (e) => {
+            e.preventDefault();
+            let id = document.getElementById('restock-prod-id').value;
+            let addQty = parseInt(document.getElementById('restock-qty').value);
+            
+            let idx = window.products.findIndex(x => x.dbId === id);
+            if(idx > -1 && addQty > 0) {
+                window.products[idx].stockQty += addQty;
+                dbAPI.saveProducts(window.products); 
+                window.showToast(`${addQty} ခု ထပ်ပေါင်းထည့်ပြီးပါပြီ`, "success");
+                document.getElementById('restock-modal').classList.add('hide');
+            }
+        };
+
+        window.openProductModal = (id = null) => {
+            document.getElementById('prod-img-file').value = ''; 
+            if(id !== null) {
+                let p = window.products.find(x => x.dbId === id);
+                document.getElementById('product-modal-title').innerText = "Edit Product"; document.getElementById('prod-id').value = id;
+                document.getElementById('prod-name').value = p.name; document.getElementById('prod-price').value = p.price;
+                document.getElementById('prod-stock').value = p.stockQty; 
+                document.getElementById('prod-img-base64').value = p.img; document.getElementById('img-preview').src = p.img; document.getElementById('img-preview-container').classList.remove('hide');
+            } else {
+                document.getElementById('product-modal-title').innerText = "Add New Product"; document.getElementById('prod-id').value = '';
+                document.getElementById('prod-name').value = ''; document.getElementById('prod-price').value = '';
+                document.getElementById('prod-stock').value = ''; 
+                document.getElementById('prod-img-base64').value = ''; document.getElementById('img-preview').src = ''; document.getElementById('img-preview-container').classList.add('hide');
+            }
+            document.getElementById('product-modal').classList.remove('hide');
+        };
+
+        window.saveProduct = (e) => {
+            e.preventDefault();
+            let id = document.getElementById('prod-id').value;
+            let img = document.getElementById('prod-img-base64').value;
+            let newName = document.getElementById('prod-name').value.trim();
+            if(!img) return window.showToast("Please choose an image", "error");
+            
+            if(!id) {
+                let exists = window.products.some(p => p.name.toLowerCase() === newName.toLowerCase());
+                if(exists) return window.showToast("ဒီပစ္စည်း ရှိပြီးသားပါ။ အဟောင်းမှာပဲ Stock သွားပေါင်းထည့်ပါ။", "error");
+            }
+
+            let p = { 
+                name: newName, 
+                price: parseInt(document.getElementById('prod-price').value), 
+                stockQty: parseInt(document.getElementById('prod-stock').value),
+                img: img 
+            };
+
+            if(id) { 
+                let idx = window.products.findIndex(x => x.dbId === id); 
+                if(idx > -1) window.products[idx] = { ...window.products[idx], ...p }; 
+            } else { 
+                p.dbId = 'PROD-' + Date.now(); 
+                window.products.unshift(p); 
+            }
+            
+            dbAPI.saveProducts(window.products);
+            
+            document.getElementById('product-modal').classList.add('hide'); 
+            window.showToast("Saved!", "success"); 
+        };
+
+        window.deleteProduct = (id) => { 
+            if(confirm("Are you sure you want to delete this?")) { 
+                window.products = window.products.filter(p => p.dbId !== id); 
+                dbAPI.saveProducts(window.products);
+                window.showToast("Deleted!", "success"); 
+            } 
+        };
+    </script>
+</body>
+</html>
