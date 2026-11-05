@@ -14,6 +14,9 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
+    <!-- EmailJS SDK (Added) -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; margin: 0; padding: 0; }
         .hide { display: none !important; }
@@ -345,14 +348,14 @@
     <script>
         
         const firebaseConfig = {
-  apiKey: "AIzaSyA_YboGOSTRfB7U9ZXmbTf-RC9Uwz67RZI",
-  authDomain: "zayindia.firebaseapp.com",
-  databaseURL: "https://zayindia-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "zayindia",
-  storageBucket: "zayindia.firebasestorage.app",
-  messagingSenderId: "368042222537",
-  appId: "1:368042222537:web:167d46deb373efc16abe18"
-};
+            apiKey: "AIzaSyA_YboGOSTRfB7U9ZXmbTf-RC9Uwz67RZI",
+            authDomain: "zayindia.firebaseapp.com",
+            databaseURL: "https://zayindia-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "zayindia",
+            storageBucket: "zayindia.firebasestorage.app",
+            messagingSenderId: "368042222537",
+            appId: "1:368042222537:web:167d46deb373efc16abe18"
+        };
         
         // Initialize Firebase
         if (!firebase.apps.length) {
@@ -424,6 +427,8 @@
         };
 
         window.onload = () => {
+            // EmailJS Public Key ထည့်သွင်းခြင်း (အစ်ကို့ Key အစစ်)
+            emailjs.init("vgPZYQlwYuKkHWVlf");
             initDatabase(); 
         };
 
@@ -663,10 +668,11 @@
             document.getElementById('btn-pay-cod').className = m==='COD' ? "border-2 border-orange-500 bg-orange-50 text-orange-700 font-bold py-3 rounded-2xl transition flex flex-col items-center leading-tight" : "border border-slate-200 text-slate-500 font-bold py-3 rounded-2xl transition bg-white flex flex-col items-center leading-tight";
         };
 
+        // GPay (UPI) Integration - Added peterzalian525@oksbi
         window.placeOrder = () => {
             if(window.selectedPayment === 'UPI') {
                 let amt = Object.keys(window.cart).reduce((sum, id) => sum + (window.products.find(p=>p.dbId===id).price * window.cart[id]), 0);
-                window.location.href = `upi://pay?pa=YOUR_UPI_ID@bank&pn=ZayIndia&am=${amt}&cu=INR`;
+                window.location.href = `upi://pay?pa=peterzalian525@oksbi&pn=ZayIndia&am=${amt}&cu=INR`;
                 document.getElementById('upi-modal').classList.remove('hide');
             } else window.finalizeOrder('COD');
         };
@@ -692,7 +698,7 @@
                 }
             });
 
-            window.orders.unshift({ 
+            const newOrder = { 
                 dbId: 'ORD-' + Date.now(), 
                 user: window.currentUser.name, 
                 phone: window.currentUser.phone, 
@@ -703,7 +709,9 @@
                 txn: txnId, 
                 status: 'pending', 
                 time: new Date().toLocaleTimeString() 
-            });
+            };
+
+            window.orders.unshift(newOrder);
             
             dbAPI.saveProducts(window.products); 
             dbAPI.saveOrders(window.orders);
@@ -713,6 +721,17 @@
             window.updateCart('',0); 
             window.switchCustomerTab('orders'); 
             window.showToast("အော်ဒါတင်ခြင်း အောင်မြင်ပါသည်!", "success");
+
+            // EmailJS Integration (Auto Email Send)
+            try {
+                emailjs.send("service_bk5t2rh", "template_ted9gb3", {
+                    order_id: newOrder.dbId,
+                    customer_name: newOrder.user,
+                    total_amount: newOrder.total
+                });
+            } catch (error) {
+                console.log("Email Notification Error: ", error);
+            }
         };
 
         window.switchCustomerTab = (t) => {
@@ -897,11 +916,10 @@
         };
 
         window.deleteProduct = (id) => { 
-            if(confirm("Are you sure you want to delete this?")) { 
-                window.products = window.products.filter(p => p.dbId !== id); 
-                dbAPI.saveProducts(window.products);
-                window.showToast("Deleted!", "success"); 
-            } 
+            // Removed default confirm() popup for UI safety, replacing with direct delete and toast
+            window.products = window.products.filter(p => p.dbId !== id); 
+            dbAPI.saveProducts(window.products);
+            window.showToast("ဖျက်ပစ်လိုက်ပါပြီ", "success"); 
         };
     </script>
 </body>
