@@ -177,26 +177,6 @@
             </div>
         </div>
 
-        <!-- UPI Deep Link Modal (For iPhone & Android) -->
-        <div id="upi-modal" class="fixed inset-0 bg-white z-[70] flex flex-col items-center justify-center p-6 text-center hide mobile-container">
-            <i class="fab fa-google-pay text-5xl text-blue-600 mb-4"></i>
-            <h3 class="font-black text-xl mb-1 text-slate-800">GPay ဖြင့် ငွေချေရန်</h3>
-            <p class="text-sm text-slate-500 mb-4">အောက်ပါလင့်ခ်ကိုနှိပ်၍ ငွေချေပါ (သို့) <br><b class="text-slate-800">peterzalian525@oksbi</b> သို့ လွှဲပါ။</p>
-            
-            <!-- Manual Link For iPhone Safari -->
-            <a id="manual-upi-link" href="#" class="w-full max-w-xs bg-blue-50 text-blue-700 border border-blue-200 font-bold py-3 rounded-2xl mb-6 flex justify-center items-center shadow-sm">
-                <i class="fas fa-external-link-alt mr-2"></i> GPay App ဖွင့်ရန် နှိပ်ပါ
-            </a>
-
-            <p class="text-xs font-semibold text-slate-600 mb-2">ငွေချေပြီးပါက ၁၂-လုံးပါ UTR ကို အောက်တွင် ရိုက်ထည့်ပါ။</p>
-            <input type="text" id="upi-txn-input" placeholder="e.g. 312345678901" class="w-full max-w-xs bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 px-4 text-center font-mono font-bold tracking-widest mb-6" maxlength="12">
-            
-            <div class="flex gap-3 w-full max-w-xs">
-                <button onclick="document.getElementById('upi-modal').classList.add('hide')" class="w-1/2 bg-slate-100 text-slate-600 font-bold py-3.5 rounded-2xl">Cancel</button>
-                <button onclick="window.confirmUPI()" class="w-1/2 bg-blue-600 text-white font-bold py-3.5 rounded-2xl">Confirm</button>
-            </div>
-        </div>
-
         <!-- Bottom Nav -->
         <div class="fixed bottom-0 w-full max-w-[480px] bg-white border-t border-slate-100 flex justify-around p-2 pb-safe shadow-[0_-10px_40px_rgba(0,0,0,0.03)] z-40 rounded-t-3xl">
             <button onclick="window.switchCustomerTab('home')" id="nav-home" class="flex flex-col items-center p-2 text-orange-600 w-1/3"><i class="fas fa-store text-xl mb-1"></i><span class="text-[10px] font-bold">ဆိုင်ခန်း (Shop)</span></button>
@@ -302,7 +282,7 @@
 
     <!-- CORE LOGIC -->
     <script>
-        // 1. Firebase Config (အစ်ကို့အစစ်များ)
+        // 1. Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyA_YboGOSTRfB7U9ZXmbTf-RC9Uwz67RZI",
             authDomain: "zayindia.firebaseapp.com",
@@ -356,7 +336,7 @@
             });
         };
 
-        // 2. EmailJS Initialization (အစ်ကို့ Public Key)
+        // 2. EmailJS Initialization
         window.onload = () => { 
             emailjs.init("vgPZYQlwYuKkHWVlf"); 
             initDatabase(); 
@@ -419,27 +399,21 @@
         window.closeCheckout = () => { const m = document.getElementById('checkout-modal'), s = document.getElementById('checkout-sheet'); m.classList.add('opacity-0'); s.classList.add('translate-y-full'); setTimeout(() => m.classList.add('hide'), 300); };
         window.selectPayment = (m) => { window.selectedPayment = m; document.getElementById('btn-pay-upi').className = m==='UPI' ? "border-2 border-blue-500 bg-blue-50 text-blue-700 font-bold py-3 rounded-2xl transition" : "border border-slate-200 text-slate-500 font-bold py-3 rounded-2xl transition bg-white"; document.getElementById('btn-pay-cod').className = m==='COD' ? "border-2 border-orange-500 bg-orange-50 text-orange-700 font-bold py-3 rounded-2xl transition flex flex-col items-center leading-tight" : "border border-slate-200 text-slate-500 font-bold py-3 rounded-2xl transition bg-white flex flex-col items-center leading-tight"; };
 
-        // 3. GPay/UPI Logic (အစ်ကို့ ID) & iPhone Safari Support
+        // 3. GPay/UPI Logic 
         window.placeOrder = () => {
             if(window.selectedPayment === 'UPI') {
                 let amt = Object.keys(window.cart).reduce((sum, id) => sum + (window.products.find(p=>p.dbId===id).price * window.cart[id]), 0);
                 
-                // အစ်ကို့ရဲ့ UPI ID "peterzalian525@oksbi" ဖြင့် အတိအကျချိတ်ဆက်ခြင်း
+                // အစ်ကို့ရဲ့ UPI ID သို့ ချိတ်ဆက်ခြင်း
                 const upiUrl = `upi://pay?pa=peterzalian525@oksbi&pn=ZayIndia&am=${amt}&cu=INR`;
                 
-                document.getElementById('manual-upi-link').href = upiUrl;
-                document.getElementById('upi-modal').classList.remove('hide');
-
-                setTimeout(() => { window.location.href = upiUrl; }, 300);
+                // ခလုတ်နှိပ်နှိပ်ချင်း GPay သို့ ချက်ချင်း တန်းသွားစေရန်
+                window.location.href = upiUrl;
+                
+                // UTR တောင်းမနေတော့ဘဲ အော်ဒါကို ချက်ချင်း အတည်ပြုလိုက်မည်
+                window.finalizeOrder('Paid via GPay');
 
             } else window.finalizeOrder('COD');
-        };
-
-        window.confirmUPI = () => {
-            let txn = document.getElementById('upi-txn-input').value.trim();
-            if(txn.length < 12) return window.showToast("Enter 12 digit UTR", "error");
-            document.getElementById('upi-modal').classList.add('hide'); document.getElementById('upi-txn-input').value = '';
-            window.finalizeOrder(txn);
         };
 
         window.finalizeOrder = (txnId) => {
@@ -450,7 +424,7 @@
             window.orders.unshift(newOrder); dbAPI.saveProducts(window.products); dbAPI.saveOrders(window.orders);
             window.cart = {}; window.closeCheckout(); window.updateCart('',0); window.switchCustomerTab('orders'); window.showToast("အော်ဒါတင်ခြင်း အောင်မြင်ပါသည်!", "success");
 
-            // 4. EmailJS Notification (အစ်ကို့ (Admin) ဆီ အီးမေးလ် ဝင်မည့်အပိုင်း)
+            // 4. EmailJS Notification
             try { 
                 emailjs.send("service_bk5t2rh", "template_ted9gb3", { 
                     order_id: newOrder.dbId, 
