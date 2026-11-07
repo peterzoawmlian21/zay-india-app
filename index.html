@@ -103,6 +103,7 @@
             <div class="h-80 overflow-y-auto pr-1 space-y-3 pb-4 no-scrollbar">
                 <input type="text" id="reg-name" placeholder="အမည် (Name)" class="w-full bg-white p-3 border border-slate-200 rounded-xl focus:border-orange-500 font-medium text-sm" required>
                 <input type="text" id="reg-phone" placeholder="ဖုန်း (+91...)" class="w-full bg-white p-3 border border-slate-200 rounded-xl focus:border-orange-500 font-medium text-sm" required>
+                <input type="email" id="reg-email" placeholder="အီးမေးလ် (Email)" class="w-full bg-white p-3 border border-slate-200 rounded-xl focus:border-orange-500 font-medium text-sm" required>
                 <input type="password" id="reg-pass" placeholder="စကားဝှက် (Password)" class="w-full bg-white p-3 border border-slate-200 rounded-xl focus:border-orange-500 font-medium text-sm" required>
                 <textarea id="reg-address" placeholder="အိမ်လိပ်စာ အပြည့်အစုံ (Full Address)" class="w-full bg-white p-3 border border-slate-200 rounded-xl focus:border-orange-500 font-medium text-sm" rows="3" required></textarea>
                 <p class="text-[10px] text-slate-400">လိပ်စာအတိအကျ ရေးပေးပါရန်</p>
@@ -167,9 +168,8 @@
                     <div id="checkout-items-list" class="space-y-2 mb-3 text-sm font-semibold text-slate-700 border-b border-slate-200 pb-3"></div>
                     <div class="flex justify-between items-center"><span class="font-bold text-slate-600">Total</span><span class="font-black text-xl text-orange-600">₹<span id="checkout-total">0</span></span></div>
                 </div>
-                <div class="grid grid-cols-2 gap-3 mb-6">
-                    <button id="btn-pay-upi" onclick="window.selectPayment('UPI')" class="border-2 border-blue-500 bg-blue-50 text-blue-700 font-bold py-3 rounded-2xl transition"><i class="fab fa-google-pay mr-1 text-lg"></i> GPay / UPI</button>
-                    <button id="btn-pay-cod" onclick="window.selectPayment('COD')" class="border border-slate-200 text-slate-500 font-bold py-3 rounded-2xl transition flex flex-col items-center leading-tight"><span><i class="fas fa-hand-holding-usd mr-1"></i> COD</span><span class="text-[9px] font-normal mt-0.5">ပစ္စည်းရောက်ငွေချေ</span></button>
+                <div class="mb-6">
+                    <button id="btn-pay-upi" onclick="window.selectPayment('UPI')" class="w-full border-2 border-blue-500 bg-blue-50 text-blue-700 font-bold py-3 rounded-2xl transition"><i class="fab fa-google-pay mr-1 text-lg"></i> GPay / UPI</button>
                 </div>
                 <button onclick="window.placeOrder()" class="w-full bg-slate-900 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all flex flex-col items-center">
                     <span>အတည်ပြုမည်</span><span class="text-[10px] font-normal">Confirm Order</span>
@@ -350,7 +350,8 @@
             e.preventDefault(); const phone = document.getElementById('reg-phone').value.trim();
             if(phone === 'admin') return window.showToast("ဤအမည်ဖြင့် အကောင့်ဖွင့်၍မရပါ", "error");
             if(window.users.find(u => u.phone === phone)) return window.showToast("ဤဖုန်းနံပါတ်ဖြင့် အကောင့်ရှိပြီးသားဖြစ်ပါသည်", "error");
-            window.users.push({ phone, pass: document.getElementById('reg-pass').value.trim(), name: document.getElementById('reg-name').value.trim(), address: document.getElementById('reg-address').value.trim(), role: 'customer' }); 
+            const email = document.getElementById('reg-email').value.trim();
+            window.users.push({ phone, email, pass: document.getElementById('reg-pass').value.trim(), name: document.getElementById('reg-name').value.trim(), address: document.getElementById('reg-address').value.trim(), role: 'customer' }); 
             dbAPI.saveUsers(window.users); 
             window.showToast("အကောင့်အသစ် ဖွင့်ပြီးပါပြီ။ Login ဝင်နိုင်ပါပြီ။", "success"); window.toggleAuth('login'); e.target.reset();
         };
@@ -397,30 +398,27 @@
         window.closeProductDetail = function() { const modal = document.getElementById('product-detail-modal'), sheet = document.getElementById('product-detail-sheet'); modal.classList.add('opacity-0'); sheet.classList.add('translate-y-full'); setTimeout(() => modal.classList.add('hide'), 300); };
         window.openCheckout = () => { if(Object.keys(window.cart).length === 0) return window.showToast("ခြင်းတောင်းထဲတွင် ဘာမှမရှိပါ", "error"); let total = 0; document.getElementById('checkout-items-list').innerHTML = Object.keys(window.cart).map(dbId => { let p = window.products.find(x => x.dbId === dbId); total += p.price * window.cart[dbId]; return `<div class="flex justify-between"><span><span class="text-orange-600 mr-1">${window.cart[dbId]}x</span> ${p.name}</span><span>₹${p.price * window.cart[dbId]}</span></div>`; }).join(''); document.getElementById('checkout-total').innerText = total; const m = document.getElementById('checkout-modal'), s = document.getElementById('checkout-sheet'); m.classList.remove('hide'); setTimeout(() => { m.classList.remove('opacity-0'); s.classList.remove('translate-y-full'); }, 10); };
         window.closeCheckout = () => { const m = document.getElementById('checkout-modal'), s = document.getElementById('checkout-sheet'); m.classList.add('opacity-0'); s.classList.add('translate-y-full'); setTimeout(() => m.classList.add('hide'), 300); };
-        window.selectPayment = (m) => { window.selectedPayment = m; document.getElementById('btn-pay-upi').className = m==='UPI' ? "border-2 border-blue-500 bg-blue-50 text-blue-700 font-bold py-3 rounded-2xl transition" : "border border-slate-200 text-slate-500 font-bold py-3 rounded-2xl transition bg-white"; document.getElementById('btn-pay-cod').className = m==='COD' ? "border-2 border-orange-500 bg-orange-50 text-orange-700 font-bold py-3 rounded-2xl transition flex flex-col items-center leading-tight" : "border border-slate-200 text-slate-500 font-bold py-3 rounded-2xl transition bg-white flex flex-col items-center leading-tight"; };
+        window.selectPayment = (m) => { window.selectedPayment = m; };
 
         // 3. GPay/UPI Logic 
         window.placeOrder = () => {
-            if(window.selectedPayment === 'UPI') {
-                let amt = Object.keys(window.cart).reduce((sum, id) => sum + (window.products.find(p=>p.dbId===id).price * window.cart[id]), 0);
-                
-                // အစ်ကို့ရဲ့ UPI ID သို့ ချိတ်ဆက်ခြင်း
-                const upiUrl = `upi://pay?pa=peterzalian525@oksbi&pn=ZayIndia&am=${amt}&cu=INR`;
-                
-                // ခလုတ်နှိပ်နှိပ်ချင်း GPay သို့ ချက်ချင်း တန်းသွားစေရန်
-                window.location.href = upiUrl;
-                
-                // UTR တောင်းမနေတော့ဘဲ အော်ဒါကို ချက်ချင်း အတည်ပြုလိုက်မည်
-                window.finalizeOrder('Paid via GPay');
-
-            } else window.finalizeOrder('COD');
+            let amt = Object.keys(window.cart).reduce((sum, id) => sum + (window.products.find(p=>p.dbId===id).price * window.cart[id]), 0);
+            
+            // အစ်ကို့ရဲ့ UPI ID သို့ ချိတ်ဆက်ခြင်း
+            const upiUrl = `upi://pay?pa=peterzalian525@oksbi&pn=ZayIndia&am=${amt}&cu=INR`;
+            
+            // ခလုတ်နှိပ်နှိပ်ချင်း GPay သို့ ချက်ချင်း တန်းသွားစေရန်
+            window.location.href = upiUrl;
+            
+            // UTR တောင်းမနေတော့ဘဲ အော်ဒါကို ချက်ချင်း အတည်ပြုလိုက်မည်
+            window.finalizeOrder('Paid via GPay');
         };
 
         window.finalizeOrder = (txnId) => {
             let total = 0, itemsStr = Object.keys(window.cart).map(id => { let p = window.products.find(x => x.dbId === id); total += p.price * window.cart[id]; return `${window.cart[id]}x ${p.name}`; }).join(', ');
             Object.keys(window.cart).forEach(id => { let pIndex = window.products.findIndex(x => x.dbId === id); if (pIndex > -1) { window.products[pIndex].stockQty -= window.cart[id]; if(window.products[pIndex].stockQty < 0) window.products[pIndex].stockQty = 0; } });
 
-            const newOrder = { dbId: 'ORD-' + Date.now(), user: window.currentUser.name, phone: window.currentUser.phone, address: window.currentUser.address, items: itemsStr, total: total, payment: window.selectedPayment, txn: txnId, status: 'pending', time: new Date().toLocaleTimeString() };
+            const newOrder = { dbId: 'ORD-' + Date.now(), user: window.currentUser.name, phone: window.currentUser.phone, email: window.currentUser.email, address: window.currentUser.address, items: itemsStr, total: total, payment: window.selectedPayment, txn: txnId, status: 'pending', time: new Date().toLocaleTimeString() };
             window.orders.unshift(newOrder); dbAPI.saveProducts(window.products); dbAPI.saveOrders(window.orders);
             window.cart = {}; window.closeCheckout(); window.updateCart('',0); window.switchCustomerTab('orders'); window.showToast("အော်ဒါတင်ခြင်း အောင်မြင်ပါသည်!", "success");
 
@@ -430,8 +428,17 @@
                     order_id: newOrder.dbId, 
                     customer_name: newOrder.user, 
                     total_amount: newOrder.total 
-                }); 
-                console.log("Email sent successfully!");
+                });
+                
+                if (newOrder.email) {
+                    emailjs.send("service_bk5t2rh", "YOUR_CUSTOMER_TEMPLATE_ID", {
+                        to_email: newOrder.email,
+                        customer_name: newOrder.user,
+                        order_id: newOrder.dbId,
+                        status_message: "Your order is successfully placed!"
+                    });
+                }
+                console.log("Emails sent successfully!");
             } catch (error) { 
                 console.log("Email sending failed", error); 
             }
@@ -442,7 +449,27 @@
 
         window.switchAdminTab = (t) => { document.getElementById('admin-tab-orders').classList.toggle('hide', t!=='orders'); document.getElementById('admin-tab-products').classList.toggle('hide', t!=='products'); if(t==='orders') window.renderAdminOrders(); else window.renderAdminProducts(); };
         window.renderAdminOrders = () => { document.getElementById('admin-orders-table').innerHTML = window.orders.map((o) => `<tr class="hover:bg-slate-50 transition"><td class="px-6 py-4 font-black text-slate-800">${o.dbId}</td><td class="px-6 py-4"><p class="font-bold text-slate-700">${o.user}</p><p class="text-xs text-slate-500">${o.phone}</p></td><td class="px-6 py-4 text-xs font-semibold text-slate-600 whitespace-normal min-w-[200px]">${o.items}</td><td class="px-6 py-4 text-right font-black text-orange-600">₹${o.total}</td><td class="px-6 py-4 text-xs font-bold ${o.payment==='UPI'?'text-blue-600':'text-slate-500'}">${o.payment}<br>${o.txn?o.txn:''}</td><td class="px-6 py-4 text-xs font-medium text-slate-600 max-w-[250px] whitespace-normal">${o.address}</td><td class="px-6 py-4"><select onchange="window.updateStatus('${o.dbId}', this.value)" class="text-xs font-bold p-2 rounded-lg border outline-none"><option value="pending" ${o.status === 'pending' ? 'selected' : ''}>Pending</option><option value="ontheway" ${o.status === 'ontheway' ? 'selected' : ''}>On the way</option><option value="delivered" ${o.status === 'delivered' ? 'selected' : ''}>Delivered</option></select></td></tr>`).join(''); };
-        window.updateStatus = (id, val) => { let idx = window.orders.findIndex(x => x.dbId === id); if(idx > -1) { window.orders[idx].status = val; dbAPI.saveOrders(window.orders); window.showToast("Status updated", "success"); } };
+        window.updateStatus = (id, val) => { 
+            let idx = window.orders.findIndex(x => x.dbId === id); 
+            if(idx > -1) { 
+                window.orders[idx].status = val; 
+                dbAPI.saveOrders(window.orders); 
+                window.showToast("Status updated", "success"); 
+                
+                let order = window.orders[idx];
+                if (order.email && (val === 'ontheway' || val === 'delivered')) {
+                    let msg = val === 'ontheway' ? "Your order is on the way!" : "Your order is successfully delivered!";
+                    try {
+                        emailjs.send("service_bk5t2rh", "YOUR_CUSTOMER_TEMPLATE_ID", {
+                            to_email: order.email,
+                            customer_name: order.user,
+                            order_id: order.dbId,
+                            status_message: msg
+                        });
+                    } catch(e) { console.log(e); }
+                }
+            } 
+        };
         window.previewImage = (e) => { const file = e.target.files[0]; if (!file) return; const r = new FileReader(); r.onload = (e) => { const img = new Image(); img.onload = () => { const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); let w = img.width, h = img.height, MAX = 500; if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } } else { if (h > MAX) { w *= MAX / h; h = MAX; } } canvas.width = w; canvas.height = h; ctx.drawImage(img, 0, 0, w, h); const dataUrl = canvas.toDataURL('image/jpeg', 0.7); document.getElementById('prod-img-base64').value = dataUrl; document.getElementById('img-preview').src = dataUrl; document.getElementById('img-preview-container').classList.remove('hide'); }; img.src = e.target.result; }; r.readAsDataURL(file); };
         window.renderAdminProducts = () => { document.getElementById('admin-products-table').innerHTML = window.products.map((p) => `<tr class="hover:bg-slate-50 transition"><td class="px-6 py-4"><img src="${p.img}" class="w-10 h-10 rounded-lg object-cover ${p.stockQty <= 0 ? 'grayscale opacity-50' : ''}"></td><td class="px-6 py-4 font-bold text-slate-800">${p.name}</td><td class="px-6 py-4 font-black text-orange-600">₹${p.price}</td><td class="px-6 py-4 text-center"><div class="flex items-center justify-center"><span class="px-3 py-1 text-[11px] font-bold rounded-full ${p.stockQty > 0 ? 'bg-slate-100 text-slate-700' : 'bg-red-100 text-red-600 border border-red-200'}">${p.stockQty > 0 ? p.stockQty + ' ခု' : 'ကုန်ပြီ'}</span><button onclick="window.openRestockModal('${p.dbId}')" class="ml-2 bg-green-100 text-green-700 px-2.5 py-1 rounded text-xs font-bold hover:bg-green-200 transition">+ အသစ်ရောက်</button></div></td><td class="px-6 py-4 text-right"><button onclick="window.openProductModal('${p.dbId}')" class="text-blue-500 hover:scale-110 mx-2"><i class="fas fa-edit"></i></button><button onclick="window.deleteProduct('${p.dbId}')" class="text-red-500 hover:scale-110"><i class="fas fa-trash"></i></button></td></tr>`).join(''); };
         window.openRestockModal = (id) => { let p = window.products.find(x => x.dbId === id); if(!p) return; document.getElementById('restock-prod-id').value = id; document.getElementById('restock-prod-name').innerText = p.name + ` (လက်ရှိ: ${p.stockQty} ခု)`; document.getElementById('restock-qty').value = ''; document.getElementById('restock-modal').classList.remove('hide'); };
