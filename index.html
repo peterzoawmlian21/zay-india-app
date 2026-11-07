@@ -431,7 +431,8 @@
                 });
                 
                 if (newOrder.email) {
-                    emailjs.send("service_bk5t2rh", "YOUR_CUSTOMER_TEMPLATE_ID", {
+                    emailjs.send("service_bk5t2rh", "template_8t9ub6j", 
+                   {
                         to_email: newOrder.email,
                         customer_name: newOrder.user,
                         order_id: newOrder.dbId,
@@ -460,7 +461,7 @@
                 if (order.email && (val === 'ontheway' || val === 'delivered')) {
                     let msg = val === 'ontheway' ? "Your order is on the way!" : "Your order is successfully delivered!";
                     try {
-                        emailjs.send("service_bk5t2rh", "YOUR_CUSTOMER_TEMPLATE_ID", {
+                        emailjs.send("service_bk5t2rh", "template_8t9ub6j", {
                             to_email: order.email,
                             customer_name: order.user,
                             order_id: order.dbId,
