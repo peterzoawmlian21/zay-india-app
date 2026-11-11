@@ -831,7 +831,7 @@
 
         window.handleLogin = async (e) => {
             e.preventDefault(); const phone = document.getElementById('login-phone').value.trim(); const pass = document.getElementById('login-pass').value.trim();
-            if (phone === 'admin' && pass === '123') { window.currentUser = { role: 'admin', phone: 'admin', name: 'Admin' }; localStorage.setItem('zay_currentUser', JSON.stringify(window.currentUser)); window.showToast("Admin အကောင့်သို့ ဝင်ရောက်ပြီးပါပြီ", "success"); window.routeApp(); return; }
+            if (phone === 'admin' && pass === '12345') { window.currentUser = { role: 'admin', phone: 'admin', name: 'Admin' }; localStorage.setItem('zay_currentUser', JSON.stringify(window.currentUser)); window.showToast("Admin အကောင့်သို့ ဝင်ရောက်ပြီးပါပြီ", "success"); window.routeApp(); return; }
             const userIndex = window.users.findIndex(u => u.phone === phone && u.pass === pass);
             const user = window.users[userIndex];
             if (user) {
