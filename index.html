@@ -99,19 +99,37 @@
         #customer-view {
             background: rgba(248, 250, 252, 0.82);
         }
+        #customer-view {
+            height: 100vh;
+            height: 100dvh;
+            min-height: 0;
+            overflow: hidden;
+            padding-bottom: 0;
+        }
         #customer-view > div:first-child {
             background: linear-gradient(130deg, rgba(234, 88, 12, 0.96), rgba(194, 65, 12, 0.94)) !important;
             border: 1px solid rgba(255, 255, 255, 0.22);
             border-top: 0;
             box-shadow: 0 14px 32px rgba(154, 52, 18, 0.2);
             backdrop-filter: blur(20px);
+            flex-shrink: 0;
         }
         #customer-view > div:first-child > div:last-child {
             border: 1px solid rgba(255, 255, 255, 0.2);
             background: rgba(255, 255, 255, 0.14);
             backdrop-filter: blur(12px);
         }
-        #tab-home, #tab-orders { background: transparent !important; }
+        #tab-home, #tab-orders {
+            min-height: 0;
+            padding-bottom: calc(6rem + env(safe-area-inset-bottom));
+            overscroll-behavior: contain;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(148, 163, 184, 0.65) transparent;
+            background: transparent !important;
+        }
+        #tab-home::-webkit-scrollbar, #tab-orders::-webkit-scrollbar { width: 5px; }
+        #tab-home::-webkit-scrollbar-thumb, #tab-orders::-webkit-scrollbar-thumb { border-radius: 999px; background: rgba(148, 163, 184, 0.55); }
+        #tab-home::-webkit-scrollbar-track, #tab-orders::-webkit-scrollbar-track { background: transparent; }
         #product-search {
             border-color: rgba(148, 163, 184, 0.24);
             background: rgba(255, 255, 255, 0.82);
@@ -177,15 +195,47 @@
         #customer-view > div:first-child > div:last-child { padding: 0.55rem 0.7rem; }
         #customer-view > div:first-child > div:last-child > div:first-child { width: 2rem; height: 2rem; }
         #tab-home, #tab-orders { padding: 1rem; }
+        #customer-view > #tab-home, #customer-view > #tab-orders { padding-bottom: calc(6rem + env(safe-area-inset-bottom)); }
         #product-search { min-height: 44px; padding-top: 0.65rem; padding-bottom: 0.65rem; }
         #product-list { gap: 0.65rem; margin-top: 0.85rem; }
         #product-list > div { border-radius: 1.1rem; }
-        #product-list > div > div:first-child > div:first-child { height: 6rem; }
+        #product-list > div > div:first-child > div:first-child {
+            height: auto;
+            aspect-ratio: 1.2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: linear-gradient(145deg, #f8fafc, #fff7ed);
+        }
+        #product-list > div > div:first-child > div:first-child img {
+            width: 100%;
+            height: 100%;
+            padding: 0.55rem;
+            object-fit: contain !important;
+        }
+        #detail-main-content > div:first-child {
+            background: linear-gradient(145deg, #f8fafc, #fff7ed);
+        }
+        #detail-main-content > div:first-child img {
+            padding: 1rem;
+            object-fit: contain !important;
+        }
         #product-list > div > div:first-child > div:nth-child(2) { padding: 0.65rem 0.7rem 0.25rem; }
         #product-list > div > div:first-child > div:nth-child(2) > div { margin-bottom: 0.45rem; }
         #product-list > div > div:last-child { padding: 0 0.65rem 0.65rem; }
         #product-list button { min-height: 38px; }
-        #customer-view > div.fixed.bottom-0 { min-height: 68px; padding: 0.35rem 0.5rem max(0.35rem, env(safe-area-inset-bottom)); }
+        #customer-view > div.fixed.bottom-0 {
+            position: fixed;
+            z-index: 40;
+            left: 50%;
+            right: auto;
+            bottom: 0;
+            width: min(100%, 480px);
+            min-height: 68px;
+            transform: translateX(-50%);
+            padding: 0.35rem 0.5rem max(0.35rem, env(safe-area-inset-bottom));
+        }
         #customer-view > div.fixed.bottom-0 > button { padding: 0.35rem; }
         #customer-view > div.fixed.bottom-0 > button:nth-child(2) { margin-top: -0.75rem; }
         #customer-view > div.fixed.bottom-0 > button:nth-child(2) > div { width: 3rem; height: 3rem; }
@@ -222,8 +272,11 @@
             #auth-view { padding-inline: 0.85rem; }
             #login-form, #register-form { padding: 0.9rem; }
             #tab-home, #tab-orders { padding: 0.8rem; }
+            #customer-view > #tab-home, #customer-view > #tab-orders { padding-bottom: calc(6rem + env(safe-area-inset-bottom)); }
             #product-list { gap: 0.6rem; }
             #product-list > div { border-radius: 1rem; }
+            #product-list > div > div:first-child > div:first-child { aspect-ratio: 1.05; }
+            #customer-view > div.fixed.bottom-0 { width: 100%; }
             #admin-view > div:last-child { padding: 0.85rem; }
             #admin-view th, #admin-view td { padding: 0.6rem; }
         }
