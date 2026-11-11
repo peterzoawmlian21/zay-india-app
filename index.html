@@ -81,6 +81,7 @@
                 <label class="text-xs font-bold text-slate-500 ml-1">စကားဝှက် (Password)</label>
                 <input type="password" id="login-pass" placeholder="••••••••" class="w-full bg-white p-4 border border-slate-200 rounded-2xl focus:outline-none focus:border-orange-500 font-medium" required>
             </div>
+            <button type="button" onclick="window.contactAdminForPassword()" class="w-full text-right text-sm font-bold text-orange-600 hover:text-orange-700">Forgot password?</button>
             <button type="submit" class="w-full bg-orange-600 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-orange-700 active:scale-95 transition-all">
                 အကောင့်ထဲသို့ ဝင်မည်
             </button>
@@ -103,6 +104,7 @@
             <div class="h-80 overflow-y-auto pr-1 space-y-3 pb-4 no-scrollbar">
                 <input type="text" id="reg-name" placeholder="အမည် (Name)" class="w-full bg-white p-3 border border-slate-200 rounded-xl focus:border-orange-500 font-medium text-sm" required>
                 <input type="text" id="reg-phone" placeholder="ဖုန်း (+91...)" class="w-full bg-white p-3 border border-slate-200 rounded-xl focus:border-orange-500 font-medium text-sm" required>
+                <input type="email" id="reg-email" placeholder="အီးမေးလ် (Email)" autocomplete="email" class="w-full bg-white p-3 border border-slate-200 rounded-xl focus:border-orange-500 font-medium text-sm" required>
                 <input type="password" id="reg-pass" placeholder="စကားဝှက် (Password)" class="w-full bg-white p-3 border border-slate-200 rounded-xl focus:border-orange-500 font-medium text-sm" required>
                 <textarea id="reg-address" placeholder="အိမ်လိပ်စာ အပြည့်အစုံ (Full Address)" class="w-full bg-white p-3 border border-slate-200 rounded-xl focus:border-orange-500 font-medium text-sm" rows="3" required></textarea>
                 <p class="text-[10px] text-slate-400">လိပ်စာအတိအကျ ရေးပေးပါရန်</p>
@@ -207,6 +209,7 @@
             <ul class="space-y-1 p-4 flex-1">
                 <li><button onclick="window.switchAdminTab('orders')" id="admin-nav-orders" class="w-full flex items-center px-4 py-3 rounded-xl bg-orange-600/10 text-orange-500 font-bold"><i class="fas fa-shopping-bag w-6"></i> အော်ဒါစာရင်း</button></li>
                 <li><button onclick="window.switchAdminTab('products')" id="admin-nav-products" class="w-full flex items-center px-4 py-3 rounded-xl hover:bg-slate-800 font-semibold"><i class="fas fa-box w-6"></i> ကုန်ပစ္စည်းများ</button></li>
+                <li><button onclick="window.switchAdminTab('accounts')" id="admin-nav-accounts" class="w-full flex items-center px-4 py-3 rounded-xl hover:bg-slate-800 font-semibold"><i class="fas fa-users w-6"></i> Accounts</button></li>
             </ul>
             <div class="p-4 border-t border-slate-800"><button onclick="window.logout()" class="w-full flex items-center px-4 py-3 rounded-xl text-red-400 font-bold"><i class="fas fa-sign-out-alt w-6"></i> ထွက်မည် (Logout)</button></div>
         </div>
@@ -240,6 +243,53 @@
                     </table>
                 </div>
             </div>
+
+            <div id="admin-tab-accounts" class="hide">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h1 class="text-2xl font-black text-slate-900">Account Management</h1>
+                        <p class="text-sm text-slate-500 mt-1">Customers inactive for 180 days after a recorded login can be deleted. Accounts without login history are kept. Passwords are never displayed.</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden overflow-x-auto">
+                    <table class="min-w-full text-left text-sm">
+                        <thead class="bg-slate-50 border-b border-slate-200">
+                            <tr><th class="px-6 py-4 font-bold text-slate-500">Name</th><th class="px-6 py-4 font-bold text-slate-500">Phone</th><th class="px-6 py-4 font-bold text-slate-500">Email</th><th class="px-6 py-4 font-bold text-slate-500">Address</th><th class="px-6 py-4 font-bold text-slate-500">Last Login</th><th class="px-6 py-4 font-bold text-slate-500">Actions</th></tr>
+                        </thead>
+                        <tbody id="admin-accounts-table" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+                <div id="reset-password-modal" class="fixed inset-0 bg-slate-900/50 z-[70] flex items-center justify-center p-4 hide">
+                    <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h2 class="text-xl font-black text-slate-800">Temporary password generated</h2>
+                                <p id="reset-password-user" class="text-sm text-slate-500 mt-1"></p>
+                            </div>
+                            <button type="button" onclick="window.closeResetPasswordModal()" aria-label="Close" class="w-8 h-8 bg-slate-100 rounded-full text-slate-500"><i class="fas fa-times"></i></button>
+                        </div>
+                        <p class="text-sm text-slate-600 mb-3">Share this temporary password with the account owner through a trusted channel. It will not be shown again.</p>
+                        <div class="flex gap-2">
+                            <input id="reset-password-value" type="text" readonly class="min-w-0 flex-1 bg-slate-50 p-3 border rounded-xl font-mono font-bold">
+                            <button type="button" onclick="window.copyResetPassword()" class="bg-slate-900 text-white px-4 rounded-xl font-bold"><i class="fas fa-copy mr-1"></i>Copy</button>
+                        </div>
+                        <button type="button" onclick="window.closeResetPasswordModal()" class="mt-4 w-full bg-slate-100 text-slate-700 font-bold py-3 rounded-xl">Done</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="customer-password-change-modal" class="fixed inset-0 bg-slate-900/50 z-[80] flex items-center justify-center p-4 hide">
+        <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl">
+            <h2 class="text-xl font-black text-slate-800 mb-2">Set a new password</h2>
+            <p class="text-sm text-slate-500 mb-4">Your password was reset by the admin. Choose a new password to continue.</p>
+            <form onsubmit="window.changeTemporaryPassword(event)" class="space-y-3">
+                <input id="new-account-password" type="password" autocomplete="new-password" minlength="8" placeholder="New password (at least 8 characters)" class="w-full bg-slate-50 p-3 border rounded-xl" required>
+                <input id="confirm-account-password" type="password" autocomplete="new-password" minlength="8" placeholder="Confirm new password" class="w-full bg-slate-50 p-3 border rounded-xl" required>
+                <button type="submit" class="w-full bg-orange-600 text-white font-bold py-3 rounded-xl">Update password</button>
+                <p id="password-change-error" class="text-sm text-red-600" role="status" aria-live="polite"></p>
+            </form>
         </div>
     </div>
 
@@ -341,11 +391,15 @@
                 if(loadedFlags.users && loadedFlags.products && loadedFlags.orders) {
                     document.getElementById('app-loading').classList.add('hide');
                     const saved = localStorage.getItem('zay_currentUser');
-                    if (saved) { window.currentUser = JSON.parse(saved); window.routeApp(); }
+                    if (saved) {
+                        window.currentUser = JSON.parse(saved);
+                        window.routeApp();
+                        if (window.currentUser.passwordResetRequired) window.openRequiredPasswordChange();
+                    }
                     else { document.getElementById('auth-view').classList.remove('hide'); }
                 }
             };
-            db.ref('users').on('value', (s) => { window.users = normalizeCollection(s.val(), 'users'); if(!loadedFlags.users) { loadedFlags.users = true; checkInitialLoad(); } });
+            db.ref('users').on('value', (s) => { window.users = normalizeCollection(s.val(), 'users'); if(!loadedFlags.users) { loadedFlags.users = true; checkInitialLoad(); } if (window.currentUser?.role === 'admin' && !document.getElementById('admin-tab-accounts').classList.contains('hide')) window.renderAdminAccounts(); });
             db.ref('products').on('value', (s) => { window.products = normalizeCollection(s.val(), 'products'); if(!loadedFlags.products) { loadedFlags.products = true; checkInitialLoad(); } if (window.currentUser?.role === 'admin') window.renderAdminProducts(); if (window.currentUser?.role === 'customer') window.renderProducts(); });
             let prevLen = -1;
             db.ref('orders').on('value', (s) => {
@@ -371,20 +425,95 @@
 
         window.toggleAuth = (v) => { document.getElementById('login-form').classList.toggle('hide', v!=='login'); document.getElementById('register-form').classList.toggle('hide', v!=='register'); };
         
-        window.handleRegister = (e) => {
-            e.preventDefault(); const phone = document.getElementById('reg-phone').value.trim();
-            if(phone === 'admin') return window.showToast("ဤအမည်ဖြင့် အကောင့်ဖွင့်၍မရပါ", "error");
-            if(window.users.find(u => u.phone === phone)) return window.showToast("ဤဖုန်းနံပါတ်ဖြင့် အကောင့်ရှိပြီးသားဖြစ်ပါသည်", "error");
-            window.users.push({ phone, pass: document.getElementById('reg-pass').value.trim(), name: document.getElementById('reg-name').value.trim(), address: document.getElementById('reg-address').value.trim(), role: 'customer' }); 
-            dbAPI.saveUsers(window.users); 
-            window.showToast("အကောင့်အသစ် ဖွင့်ပြီးပါပြီ။ Login ဝင်နိုင်ပါပြီ။", "success"); window.toggleAuth('login'); e.target.reset();
+        window.handleRegister = async (e) => {
+            e.preventDefault();
+            const phone = document.getElementById('reg-phone').value.trim();
+            const email = document.getElementById('reg-email').value.trim().toLowerCase();
+            if (phone === 'admin') return window.showToast("ဤအမည်ဖြင့် အကောင့်ဖွင့်၍မရပါ", "error");
+            if (window.users.some(user => user.phone === phone)) return window.showToast("ဤဖုန်းနံပါတ်ဖြင့် အကောင့်ရှိပြီးသားဖြစ်ပါသည်", "error");
+            if (window.users.some(user => user.email && user.email.toLowerCase() === email)) return window.showToast("ဤအီးမေးလ်ဖြင့် အကောင့်ရှိပြီးသားဖြစ်ပါသည်", "error");
+            const newUser = {
+                phone,
+                email,
+                pass: document.getElementById('reg-pass').value.trim(),
+                name: document.getElementById('reg-name').value.trim(),
+                address: document.getElementById('reg-address').value.trim(),
+                role: 'customer'
+            };
+            const users = [...window.users, newUser];
+            try {
+                await dbAPI.saveUsers(users);
+                window.users = users;
+                window.showToast("အကောင့်အသစ် ဖွင့်ပြီးပါပြီ။ Login ဝင်နိုင်ပါပြီ။", "success");
+                window.toggleAuth('login');
+                e.target.reset();
+            } catch (error) {
+                console.error('Account registration failed', error);
+                window.showToast(`Could not create account: ${error.message || 'Please try again.'}`, 'error');
+            }
         };
 
-        window.handleLogin = (e) => {
+        window.handleLogin = async (e) => {
             e.preventDefault(); const phone = document.getElementById('login-phone').value.trim(); const pass = document.getElementById('login-pass').value.trim();
             if (phone === 'admin' && pass === '123') { window.currentUser = { role: 'admin', phone: 'admin', name: 'Admin' }; localStorage.setItem('zay_currentUser', JSON.stringify(window.currentUser)); window.showToast("Admin အကောင့်သို့ ဝင်ရောက်ပြီးပါပြီ", "success"); window.routeApp(); return; }
-            const user = window.users.find(u => u.phone === phone && u.pass === pass);
-            if (user) { window.currentUser = user; localStorage.setItem('zay_currentUser', JSON.stringify(window.currentUser)); window.showToast("Login အောင်မြင်ပါသည်", "success"); window.routeApp(); } else { window.showToast("ဖုန်းနံပါတ် (သို့) စကားဝှက် မှားယွင်းနေပါသည်", "error"); }
+            const userIndex = window.users.findIndex(u => u.phone === phone && u.pass === pass);
+            const user = window.users[userIndex];
+            if (user) {
+                const loggedInUser = { ...user, lastLoginAt: new Date().toISOString() };
+                const users = window.users.map((account, index) => index === userIndex ? loggedInUser : account);
+                try {
+                    await dbAPI.saveUsers(users);
+                    window.users = users;
+                } catch (error) {
+                    console.error('Could not record customer login time', error);
+                    window.showToast('Login succeeded, but activity could not be recorded. This account will not be eligible for inactive-account cleanup yet.', 'error');
+                }
+                window.currentUser = loggedInUser;
+                localStorage.setItem('zay_currentUser', JSON.stringify(window.currentUser));
+                window.showToast("Login အောင်မြင်ပါသည်", "success");
+                window.routeApp();
+                if (user.passwordResetRequired) window.openRequiredPasswordChange();
+            } else { window.showToast("ဖုန်းနံပါတ် (သို့) စကားဝှက် မှားယွင်းနေပါသည်", "error"); }
+        };
+
+        window.openRequiredPasswordChange = () => {
+            document.getElementById('new-account-password').value = '';
+            document.getElementById('confirm-account-password').value = '';
+            document.getElementById('password-change-error').innerText = '';
+            document.getElementById('customer-password-change-modal').classList.remove('hide');
+        };
+        window.changeTemporaryPassword = async (event) => {
+            event.preventDefault();
+            const errorMessage = document.getElementById('password-change-error');
+            const newPassword = document.getElementById('new-account-password').value;
+            const confirmPassword = document.getElementById('confirm-account-password').value;
+            if (newPassword.length < 8) {
+                errorMessage.innerText = 'Password must be at least 8 characters.';
+                return;
+            }
+            if (newPassword !== confirmPassword) {
+                errorMessage.innerText = 'The passwords do not match.';
+                return;
+            }
+            const userIndex = window.users.findIndex(user => user.phone === window.currentUser?.phone);
+            if (userIndex < 0) {
+                errorMessage.innerText = 'Account not found. Please sign in again or contact the admin.';
+                return;
+            }
+            const users = window.users.map((user, index) => index === userIndex
+                ? { ...user, pass: newPassword, passwordResetRequired: false }
+                : user);
+            try {
+                await dbAPI.saveUsers(users);
+                window.users = users;
+                window.currentUser = users[userIndex];
+                localStorage.setItem('zay_currentUser', JSON.stringify(window.currentUser));
+                document.getElementById('customer-password-change-modal').classList.add('hide');
+                window.showToast('Password updated successfully.', 'success');
+            } catch (error) {
+                console.error('Temporary password change failed', error);
+                errorMessage.innerText = `Could not update password: ${error.message || 'Please try again.'}`;
+            }
         };
 
         window.logout = () => { localStorage.removeItem('zay_currentUser'); window.currentUser = null; window.cart = {}; document.getElementById('auth-view').classList.remove('hide'); document.getElementById('customer-view').classList.add('hide'); document.getElementById('admin-view').classList.add('hide'); document.getElementById('login-form').reset(); window.showToast("အကောင့်မှ ထွက်ပြီးပါပြီ", "success"); };
@@ -422,8 +551,11 @@
         window.closeProductDetail = function() { const modal = document.getElementById('product-detail-modal'), sheet = document.getElementById('product-detail-sheet'); modal.classList.add('opacity-0'); sheet.classList.add('translate-y-full'); setTimeout(() => modal.classList.add('hide'), 300); };
         window.openCheckout = () => { if(Object.keys(window.cart).length === 0) return window.showToast("ခြင်းတောင်းထဲတွင် ဘာမှမရှိပါ", "error"); let total = 0; document.getElementById('checkout-items-list').innerHTML = Object.keys(window.cart).map(dbId => { let p = window.products.find(x => x.dbId === dbId); total += p.price * window.cart[dbId]; return `<div class="flex justify-between"><span><span class="text-orange-600 mr-1">${window.cart[dbId]}x</span> ${p.name}</span><span>₹${p.price * window.cart[dbId]}</span></div>`; }).join(''); document.getElementById('checkout-total').innerText = total; const m = document.getElementById('checkout-modal'), s = document.getElementById('checkout-sheet'); m.classList.remove('hide'); setTimeout(() => { m.classList.remove('opacity-0'); s.classList.remove('translate-y-full'); }, 10); };
         window.closeCheckout = () => { const m = document.getElementById('checkout-modal'), s = document.getElementById('checkout-sheet'); m.classList.add('opacity-0'); s.classList.add('translate-y-full'); setTimeout(() => m.classList.add('hide'), 300); };
-        window.selectPayment = (m) => { window.selectedPayment = m; document.getElementById('btn-pay-upi').className = m==='UPI' ? "border-2 border-blue-500 bg-blue-50 text-blue-700 font-bold py-3 rounded-2xl transition" : "border border-slate-200 text-slate-500 font-bold py-3 rounded-2xl transition bg-white"; document.getElementById('btn-pay-cod').className = m==='COD' ? "border-2 border-orange-500 bg-orange-50 text-orange-700 font-bold py-3 rounded-2xl transition flex flex-col items-center leading-tight" : "border border-slate-200 text-slate-500 font-bold py-3 rounded-2xl transition bg-white flex flex-col items-center leading-tight"; };
-
+        window.selectPayment = (m) => { window.selectedPayment = m; document.getElementById('btn-pay-upi').className = m==='UPI' ? "border-2 border-blue-500 bg-blue-50 text-blue-700 font-bold py-3 rounded-2xl transition" : "border border-slate-200 text-slate-500 font-bold py-3 rounded-2xl transition bg-white"; document.getElementById('btn-pay-cod').className = m==='COD' ? "border-2 border-orange-500 bg-orange-50 text-orange-700 font-bold py-3 rounded-2xl transition flex flex-col items-center leading-tight" : "border border-slate-200 text-slate-500 font-bold py-3 rounded-2xl transition bg-white flex flex-col items-center leading-tight";         };
+        window.contactAdminForPassword = () => {
+            const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP_NUMBER}?${new URLSearchParams({ text: 'forgot passwords' })}`;
+            window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+        };
         window.contactAdminWhatsApp = (orderId = null) => {
             if (!window.currentUser || window.currentUser.role !== 'customer') return window.showToast('Please sign in as a customer to contact the admin.', 'error');
             const order = orderId ? window.orders.find(item => item.dbId === orderId) : null;
@@ -594,7 +726,105 @@
             }).join('');
         };
 
-        window.switchAdminTab = (t) => { document.getElementById('admin-tab-orders').classList.toggle('hide', t!=='orders'); document.getElementById('admin-tab-products').classList.toggle('hide', t!=='products'); if(t==='orders') window.renderAdminOrders(); else window.renderAdminProducts(); };
+        window.switchAdminTab = (t) => {
+            if (window.currentUser?.role !== 'admin') return window.showToast('Admin access required.', 'error');
+            ['orders', 'products', 'accounts'].forEach(tab => {
+                document.getElementById(`admin-tab-${tab}`).classList.toggle('hide', t !== tab);
+                const nav = document.getElementById(`admin-nav-${tab}`);
+                nav.className = `w-full flex items-center px-4 py-3 rounded-xl ${t === tab ? 'bg-orange-600/10 text-orange-500 font-bold' : 'hover:bg-slate-800 font-semibold'}`;
+            });
+            if (t === 'orders') window.renderAdminOrders();
+            else if (t === 'products') window.renderAdminProducts();
+            else if (t === 'accounts') window.renderAdminAccounts();
+        };
+        window.renderAdminAccounts = () => {
+            if (window.currentUser?.role !== 'admin') return window.showToast('Admin access required.', 'error');
+            const table = document.getElementById('admin-accounts-table');
+            const escapeHtml = value => String(value || '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+            const customers = window.users.filter(user => user.role === 'customer');
+            const inactiveThreshold = 180 * 24 * 60 * 60 * 1000;
+            const now = Date.now();
+            table.innerHTML = customers.length
+                ? customers.map(user => {
+                    const lastLogin = user.lastLoginAt ? Date.parse(user.lastLoginAt) : NaN;
+                    const isInactive = Number.isFinite(lastLogin) && now - lastLogin >= inactiveThreshold;
+                    const lastLoginLabel = Number.isFinite(lastLogin)
+                        ? `${escapeHtml(new Date(lastLogin).toLocaleString())}${isInactive ? ' (Inactive)' : ''}`
+                        : 'Activity unknown';
+                    return `<tr><td class="px-6 py-4 font-bold text-slate-800">${escapeHtml(user.name)}</td><td class="px-6 py-4">${escapeHtml(user.phone)}</td><td class="px-6 py-4">${escapeHtml(user.email || 'Not provided')}</td><td class="px-6 py-4 whitespace-normal min-w-[220px]">${escapeHtml(user.address)}</td><td class="px-6 py-4 whitespace-nowrap">${lastLoginLabel}</td><td class="px-6 py-4"><div class="flex gap-2"><button type="button" data-reset-phone="${escapeHtml(user.phone)}" class="reset-user-password bg-orange-50 text-orange-700 px-3 py-2 rounded-lg font-bold hover:bg-orange-100">Reset password</button>${isInactive ? `<button type="button" data-delete-phone="${escapeHtml(user.phone)}" class="delete-inactive-account bg-red-50 text-red-700 px-3 py-2 rounded-lg font-bold hover:bg-red-100">Delete inactive</button>` : ''}</div></td></tr>`;
+                }).join('')
+                : '<tr><td colspan="6" class="px-6 py-8 text-center text-slate-500">No customer accounts found.</td></tr>';
+            table.querySelectorAll('.reset-user-password').forEach(button => {
+                button.addEventListener('click', () => window.resetUserPassword(button.dataset.resetPhone));
+            });
+            table.querySelectorAll('.delete-inactive-account').forEach(button => {
+                button.addEventListener('click', () => window.deleteInactiveAccount(button.dataset.deletePhone));
+            });
+        };
+        window.deleteInactiveAccount = async (phone) => {
+            if (window.currentUser?.role !== 'admin') return window.showToast('Admin access required.', 'error');
+            const user = window.users.find(account => account.phone === phone && account.role === 'customer');
+            if (!user) return window.showToast('Customer account not found.', 'error');
+            const lastLogin = user.lastLoginAt ? Date.parse(user.lastLoginAt) : NaN;
+            const inactiveThreshold = 180 * 24 * 60 * 60 * 1000;
+            if (!Number.isFinite(lastLogin) || Date.now() - lastLogin < inactiveThreshold) {
+                return window.showToast('Only accounts with a recorded login at least 180 days ago can be deleted here.', 'error');
+            }
+            if (!window.confirm(`Permanently delete ${user.name || user.phone}'s account? Existing order history will be retained.`)) return;
+
+            const users = window.users.filter(account => account.phone !== phone);
+            try {
+                await dbAPI.saveUsers(users);
+                window.users = users;
+                window.renderAdminAccounts();
+                window.showToast('Inactive account deleted. Order history was retained.', 'success');
+            } catch (error) {
+                console.error('Inactive account deletion failed', error);
+                window.showToast(`Could not delete account: ${error.message || 'Please try again.'}`, 'error');
+            }
+        };
+        window.resetUserPassword = async (phone) => {
+            if (window.currentUser?.role !== 'admin') return window.showToast('Admin access required.', 'error');
+            const userIndex = window.users.findIndex(user => user.phone === phone && user.role === 'customer');
+            if (userIndex < 0) return window.showToast('Customer account not found.', 'error');
+            const user = window.users[userIndex];
+            if (!window.confirm(`Generate a new temporary password for ${user.name || user.phone}? Their current password will stop working.`)) return;
+
+            const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
+            const randomValues = new Uint32Array(16);
+            window.crypto.getRandomValues(randomValues);
+            const temporaryPassword = Array.from(randomValues, value => alphabet[value % alphabet.length]).join('');
+            const users = window.users.map((account, index) => index === userIndex
+                ? { ...account, pass: temporaryPassword, passwordResetRequired: true }
+                : account);
+            try {
+                await dbAPI.saveUsers(users);
+                window.users = users;
+                document.getElementById('reset-password-user').innerText = `${user.name || 'Customer'} (${user.phone})`;
+                document.getElementById('reset-password-value').value = temporaryPassword;
+                document.getElementById('reset-password-modal').classList.remove('hide');
+                window.renderAdminAccounts();
+            } catch (error) {
+                console.error('Customer password reset failed', error);
+                window.showToast(`Could not reset password: ${error.message || 'Please try again.'}`, 'error');
+            }
+        };
+        window.closeResetPasswordModal = () => {
+            document.getElementById('reset-password-value').value = '';
+            document.getElementById('reset-password-user').innerText = '';
+            document.getElementById('reset-password-modal').classList.add('hide');
+        };
+        window.copyResetPassword = async () => {
+            const password = document.getElementById('reset-password-value').value;
+            if (!password) return window.showToast('No temporary password is available to copy.', 'error');
+            try {
+                await navigator.clipboard.writeText(password);
+                window.showToast('Temporary password copied. Share it only with the account owner.', 'success');
+            } catch (error) {
+                console.error('Could not copy temporary password', error);
+                window.showToast('Could not access the clipboard. Select and copy the temporary password manually.', 'error');
+            }
+        };
         window.renderAdminOrders = () => { document.getElementById('admin-orders-table').innerHTML = window.orders.map((order) => {
             const invoiceAvailable = ['confirmed', 'ontheway', 'delivered'].includes(order.status);
             const orderActions = order.status === 'pending'
