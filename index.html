@@ -635,7 +635,78 @@
             initDatabase(); 
         };
 
-        const dbAPI = { saveUsers: (u) => db.ref('users').set(u), saveProducts: (p) => db.ref('products').set(p), saveOrders: (o) => db.ref('orders').set(o), saveInventoryAndOrders: (products, orders) => db.ref().update({ products, orders }), saveCustomerProfile: (users, orders) => db.ref().update({ users, orders }) };
+        const normalizeProductCollection = value => Array.isArray(value)
+            ? value.filter(item => item && typeof item === 'object' && !Array.isArray(item)).map(item => ({ ...item }))
+            : Object.entries(value || {})
+                .filter(([, item]) => item && typeof item === 'object' && !Array.isArray(item))
+                .map(([key, item]) => ({ ...item, dbId: item.dbId || key }));
+        const dbAPI = {
+            saveUsers: users => db.ref('users').set(users),
+            transactProducts: update => {
+                let failureMessage = '';
+                return db.ref('products').transaction(current => {
+                    const isArray = Array.isArray(current);
+                    if (current != null && !isArray && (typeof current !== 'object' || Object.values(current).some(item => item && typeof item !== 'object'))) {
+                        failureMessage = 'Product data has an unexpected format. No products were changed.';
+                        return;
+                    }
+
+                    const entries = isArray
+                        ? current.map((item, index) => ({ key: String(index), item }))
+                        : Object.entries(current || {}).map(([key, item]) => ({ key, item }));
+                    const productEntries = entries.filter(entry => entry.item && typeof entry.item === 'object' && !Array.isArray(entry.item));
+                    const products = productEntries.map(entry => ({ ...entry.item, dbId: entry.item.dbId || entry.key }));
+                    const updatedProducts = update(products, message => { failureMessage = message; });
+                    if (!updatedProducts) return;
+                    if (isArray || current == null) return updatedProducts;
+
+                    const originalKeys = new Map(productEntries.map(entry => [entry.item.dbId || entry.key, entry.key]));
+                    return updatedProducts.reduce((next, product) => {
+                        next[originalKeys.get(product.dbId) || product.dbId] = product;
+                        return next;
+                    }, {});
+                }).then(result => {
+                    if (!result.committed) throw new Error(failureMessage || 'The product update was not applied. Please refresh and try again.');
+                    return result.snapshot.val();
+                });
+            },
+            saveProduct: (id, product) => dbAPI.transactProducts((products, fail) => {
+                const index = id ? products.findIndex(item => item.dbId === id) : -1;
+                if (id && index < 0) {
+                    fail('Product not found. Refresh the product list and try again.');
+                    return;
+                }
+                if (!id && products.some(item => String(item.name || '').toLowerCase() === product.name.toLowerCase())) {
+                    fail('A product with this name already exists.');
+                    return;
+                }
+                if (id) products[index] = { ...products[index], ...product, dbId: id };
+                else products.unshift(product);
+                return products;
+            }),
+            adjustProductStock: adjustments => dbAPI.transactProducts((products, fail) => {
+                const updated = products.map(product => ({ ...product }));
+                for (const { dbId, delta } of adjustments) {
+                    const product = updated.find(item => item.dbId === dbId);
+                    const nextStock = Number(product?.stockQty) + delta;
+                    if (!product || !Number.isInteger(delta) || !Number.isFinite(nextStock) || nextStock < 0) {
+                        fail(product ? `Not enough stock to update ${product.name}.` : 'A product in this update no longer exists.');
+                        return;
+                    }
+                    product.stockQty = nextStock;
+                }
+                return updated;
+            }),
+            deleteProduct: id => dbAPI.transactProducts((products, fail) => {
+                if (!products.some(product => product.dbId === id)) {
+                    fail('Product not found. Refresh the product list and try again.');
+                    return;
+                }
+                return products.filter(product => product.dbId !== id);
+            }),
+            saveOrders: orders => db.ref('orders').set(orders),
+            saveCustomerProfile: (users, orders) => db.ref().update({ users, orders })
+        };
         const ADMIN_WHATSAPP_NUMBER = '916909235738';
 
         window.groupOrdersByDate = orders => {
@@ -1286,21 +1357,16 @@
             const order = window.orders[orderIndex];
             window.renderAdminOrders();
             try {
-                const products = window.products.map(product => ({ ...product }));
                 const inventoryItems = window.getOrderInventoryItems(order);
                 if (!inventoryItems || inventoryItems.some(item => !item)) return window.showToast('Could not match this order’s items to current products. Inventory was not changed.', 'error');
 
                 const alreadyDeducted = order.inventoryDeducted === undefined;
                 if (!alreadyDeducted) {
-                    for (const { product: orderProduct, quantity } of inventoryItems) {
-                        const product = products.find(item => item.dbId === orderProduct.dbId);
-                        if (!product || Number(product.stockQty) < quantity) return window.showToast(`Not enough stock to confirm ${orderProduct.name}.`, 'error');
-                        product.stockQty = Number(product.stockQty) - quantity;
-                    }
+                    const savedProducts = await dbAPI.adjustProductStock(inventoryItems.map(({ product, quantity }) => ({ dbId: product.dbId, delta: -quantity })));
+                    window.products = normalizeProductCollection(savedProducts);
                 }
                 const orders = window.orders.map((item, index) => index === orderIndex ? { ...item, status: 'confirmed', inventoryDeducted: true } : item);
-                await dbAPI.saveInventoryAndOrders(products, orders);
-                window.products = products;
+                await dbAPI.saveOrders(orders);
                 window.orders = orders;
                 window.renderAdminProducts();
                 window.renderAdminOrders();
@@ -1322,18 +1388,14 @@
             const order = window.orders[orderIndex];
             window.renderAdminOrders();
             try {
-                const products = window.products.map(product => ({ ...product }));
                 if (order.inventoryDeducted === undefined) {
                     const inventoryItems = window.getOrderInventoryItems(order);
                     if (!inventoryItems || inventoryItems.some(item => !item)) return window.showToast('Could not restore this order’s previous inventory deduction. Order was not rejected.', 'error');
-                    for (const { product: orderProduct, quantity } of inventoryItems) {
-                        const product = products.find(item => item.dbId === orderProduct.dbId);
-                        product.stockQty = Number(product.stockQty) + quantity;
-                    }
+                    const savedProducts = await dbAPI.adjustProductStock(inventoryItems.map(({ product, quantity }) => ({ dbId: product.dbId, delta: quantity })));
+                    window.products = normalizeProductCollection(savedProducts);
                 }
                 const orders = window.orders.map((item, index) => index === orderIndex ? { ...item, status: 'rejected', inventoryDeducted: false } : item);
-                await dbAPI.saveInventoryAndOrders(products, orders);
-                window.products = products;
+                await dbAPI.saveOrders(orders);
                 window.orders = orders;
                 window.renderAdminProducts();
                 window.renderAdminOrders();
@@ -1415,7 +1477,23 @@
         };
         window.renderAdminProducts = () => { document.getElementById('admin-products-table').innerHTML = window.products.map((p) => `<tr class="hover:bg-slate-50 transition"><td class="px-6 py-4"><img src="${p.img}" class="w-10 h-10 rounded-lg object-cover ${p.stockQty <= 0 ? 'grayscale opacity-50' : ''}"></td><td class="px-6 py-4 font-bold text-slate-800">${p.name}</td><td class="px-6 py-4 font-black text-orange-600">₹${p.price}</td><td class="px-6 py-4 text-center"><div class="flex items-center justify-center"><span class="px-3 py-1 text-[11px] font-bold rounded-full ${p.stockQty > 0 ? 'bg-slate-100 text-slate-700' : 'bg-red-100 text-red-600 border border-red-200'}">${p.stockQty > 0 ? p.stockQty + ' ခု' : 'ကုန်ပြီ'}</span><button onclick="window.openRestockModal('${p.dbId}')" class="ml-2 bg-green-100 text-green-700 px-2.5 py-1 rounded text-xs font-bold hover:bg-green-200 transition">+ အသစ်ရောက်</button></div></td><td class="px-6 py-4 text-right"><button onclick="window.openProductModal('${p.dbId}')" class="text-blue-500 hover:scale-110 mx-2"><i class="fas fa-edit"></i></button><button onclick="window.deleteProduct('${p.dbId}')" class="text-red-500 hover:scale-110"><i class="fas fa-trash"></i></button></td></tr>`).join(''); };
         window.openRestockModal = (id) => { let p = window.products.find(x => x.dbId === id); if(!p) return; document.getElementById('restock-prod-id').value = id; document.getElementById('restock-prod-name').innerText = p.name + ` (လက်ရှိ: ${p.stockQty} ခု)`; document.getElementById('restock-qty').value = ''; document.getElementById('restock-modal').classList.remove('hide'); };
-        window.confirmRestock = (e) => { e.preventDefault(); let id = document.getElementById('restock-prod-id').value; let addQty = parseInt(document.getElementById('restock-qty').value); let idx = window.products.findIndex(x => x.dbId === id); if(idx > -1 && addQty > 0) { window.products[idx].stockQty += addQty; dbAPI.saveProducts(window.products); window.showToast(`${addQty} ခု ထပ်ပေါင်းထည့်ပြီးပါပြီ`, "success"); document.getElementById('restock-modal').classList.add('hide'); } };
+        window.confirmRestock = async (e) => {
+            e.preventDefault();
+            if (window.currentUser?.role !== 'admin') return window.showToast('Admin access required.', 'error');
+            const id = document.getElementById('restock-prod-id').value;
+            const addQty = Number.parseInt(document.getElementById('restock-qty').value, 10);
+            if (!Number.isInteger(addQty) || addQty <= 0) return window.showToast('Enter a positive whole-number quantity.', 'error');
+            try {
+                const savedProducts = await dbAPI.adjustProductStock([{ dbId: id, delta: addQty }]);
+                window.products = normalizeProductCollection(savedProducts);
+                window.renderAdminProducts();
+                window.showToast(`${addQty} ခု ထပ်ပေါင်းထည့်ပြီးပါပြီ`, 'success');
+                document.getElementById('restock-modal').classList.add('hide');
+            } catch (error) {
+                console.error('Product restock failed', error);
+                window.showToast(`Could not restock product: ${error.message || 'Please try again.'}`, 'error');
+            }
+        };
         window.openProductModal = (id = null) => {
             window.productImageProcessing = false;
             document.getElementById('save-product-button').disabled = false;
@@ -1447,6 +1525,7 @@
         };
         window.saveProduct = async (e) => {
             e.preventDefault();
+            if (window.currentUser?.role !== 'admin') return window.showToast('Admin access required.', 'error');
             const form = document.getElementById('product-form');
             const feedback = document.getElementById('product-save-feedback');
             feedback.innerText = '';
@@ -1473,24 +1552,13 @@
                 return window.showToast(feedback.innerText, 'error');
             }
 
-            const products = window.products.slice();
-            const product = { name, price, stockQty, img: image };
-            if (id) {
-                const index = products.findIndex(item => item.dbId === id);
-                if (index < 0) {
-                    feedback.innerText = 'Product not found. Please refresh and try again.';
-                    return window.showToast(feedback.innerText, 'error');
-                }
-                products[index] = { ...products[index], ...product };
-            } else {
-                products.unshift({ ...product, dbId: 'PROD-' + Date.now() });
-            }
+            const product = { name, price, stockQty, img: image, dbId: id || 'PROD-' + Date.now() };
 
             button.disabled = true;
             button.innerText = 'Saving...';
             try {
-                await dbAPI.saveProducts(products);
-                window.products = products;
+                const savedProducts = await dbAPI.saveProduct(id, product);
+                window.products = normalizeProductCollection(savedProducts);
                 window.renderAdminProducts();
                 document.getElementById('product-modal').classList.add('hide');
                 window.showToast('Product saved successfully.', 'success');
@@ -1503,7 +1571,21 @@
                 button.innerText = 'Save Product';
             }
         };
-        window.deleteProduct = (id) => { window.products = window.products.filter(p => p.dbId !== id); dbAPI.saveProducts(window.products); window.showToast("ဖျက်ပစ်လိုက်ပါပြီ", "success"); };
+        window.deleteProduct = async (id) => {
+            if (window.currentUser?.role !== 'admin') return window.showToast('Admin access required.', 'error');
+            const product = window.products.find(item => item.dbId === id);
+            if (!product) return window.showToast('Product not found. Please refresh and try again.', 'error');
+            if (!window.confirm(`Permanently delete "${product.name}"? This cannot be undone.`)) return;
+            try {
+                const savedProducts = await dbAPI.deleteProduct(id);
+                window.products = normalizeProductCollection(savedProducts);
+                window.renderAdminProducts();
+                window.showToast('Product permanently deleted.', 'success');
+            } catch (error) {
+                console.error('Product deletion failed', error);
+                window.showToast(`Could not delete product: ${error.message || 'Please try again.'}`, 'error');
+            }
+        };
     </script>
 </body>
 </html>
