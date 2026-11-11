@@ -328,6 +328,9 @@
             <button type="submit" class="w-full bg-orange-600 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-orange-700 active:scale-95 transition-all">
                 အကောင့်ထဲသို့ ဝင်မည်
             </button>
+            <button type="button" onclick="window.signInWithGoogle()" class="w-full bg-white border border-slate-200 text-slate-700 font-bold py-3.5 rounded-2xl shadow-sm hover:bg-slate-50 active:scale-95 transition-all">
+                <i class="fab fa-google mr-2 text-red-500"></i>Continue with Google
+            </button>
             <div class="relative flex py-5 items-center">
                 <div class="flex-grow border-t border-slate-200"></div><span class="flex-shrink-0 mx-4 text-slate-400 text-xs font-bold">OR</span><div class="flex-grow border-t border-slate-200"></div>
             </div>
@@ -353,6 +356,9 @@
                 <p class="text-[10px] text-slate-400">လိပ်စာအတိအကျ ရေးပေးပါရန်</p>
             </div>
             <button type="submit" class="w-full bg-slate-800 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-slate-900 active:scale-95 transition-all">စာရင်းသွင်းမည် (Register)</button>
+            <button type="button" onclick="window.signInWithGoogle()" class="w-full bg-white border border-slate-200 text-slate-700 font-bold py-3.5 rounded-2xl shadow-sm hover:bg-slate-50 active:scale-95 transition-all">
+                <i class="fab fa-google mr-2 text-red-500"></i>Sign up with Google
+            </button>
             <p class="text-center mt-3 text-sm font-semibold text-slate-600 cursor-pointer hover:underline" onclick="window.toggleAuth('login')"><i class="fas fa-arrow-left mr-1"></i> နောက်သို့ပြန်သွားမည် (Back to Login)</p>
         </form>
     </div>
@@ -550,6 +556,24 @@
         </div>
     </div>
 
+    <!-- Shown once after the first Google sign-in: Google gives name + email, but orders need phone + address -->
+    <div id="google-profile-modal" class="fixed inset-0 bg-slate-900/50 z-[80] flex items-center justify-center p-4 hide">
+        <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h2 class="text-xl font-black text-slate-800 mb-2">Complete your profile</h2>
+            <p class="text-sm text-slate-500 mb-4">Signed in with Google as <span id="google-profile-account" class="font-bold text-slate-700"></span>. Add your phone number and delivery address to start ordering.</p>
+            <form onsubmit="window.completeGoogleProfile(event)" class="space-y-3">
+                <input id="google-profile-name" type="text" autocomplete="name" placeholder="အမည် (Name)" class="w-full bg-slate-50 p-3 border rounded-xl" required>
+                <input id="google-profile-phone" type="tel" autocomplete="tel" placeholder="ဖုန်း (+91...)" class="w-full bg-slate-50 p-3 border rounded-xl" required>
+                <textarea id="google-profile-address" rows="3" autocomplete="street-address" placeholder="အိမ်လိပ်စာ အပြည့်အစုံ (Full Address)" class="w-full bg-slate-50 p-3 border rounded-xl" required></textarea>
+                <p id="google-profile-error" class="text-sm text-red-600" role="status" aria-live="polite"></p>
+                <div class="flex gap-3">
+                    <button type="button" onclick="window.cancelGoogleProfile()" class="flex-1 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl">Cancel</button>
+                    <button id="google-profile-submit" type="submit" class="flex-1 bg-orange-600 text-white font-bold py-3 rounded-xl disabled:opacity-50">Save & continue</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div id="customer-password-change-modal" class="fixed inset-0 bg-slate-900/50 z-[80] flex items-center justify-center p-4 hide">
         <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl">
             <h2 class="text-xl font-black text-slate-800 mb-2">Set a new password</h2>
@@ -734,8 +758,86 @@
             // Firebase Auth (not localStorage) is the source of truth for who is signed in.
             // During registration the profile is not written yet, so handleRegister loads the user itself.
             auth.onAuthStateChanged(firebaseUser => { if (!window.registrationInProgress) window.loadSignedInUser(firebaseUser); });
+            // Surface errors from the redirect fallback of Google sign-in.
+            auth.getRedirectResult().catch(error => {
+                console.error('Google sign-in redirect failed', error);
+                window.showToast(`Google sign-in failed: ${error.message || 'Please try again.'}`, 'error');
+            });
         };
         window.registrationInProgress = false;
+
+        // Google sign-in. Popup first; fall back to a full-page redirect where popups are blocked
+        // (common in phone in-app browsers). After either, onAuthStateChanged loads the account.
+        window.signInWithGoogle = async () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            provider.setCustomParameters({ prompt: 'select_account' });
+            try {
+                await auth.signInWithPopup(provider);
+            } catch (error) {
+                if (['auth/popup-blocked', 'auth/operation-not-supported-in-this-environment'].includes(error.code)) {
+                    return auth.signInWithRedirect(provider);
+                }
+                if (['auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(error.code)) return;
+                console.error('Google sign-in failed', error);
+                const message = error.code === 'auth/unauthorized-domain'
+                    ? 'Google sign-in is not enabled for this website address yet. Please use phone login or contact the admin.'
+                    : error.code === 'auth/account-exists-with-different-credential'
+                        ? 'This email is already used with another sign-in method.'
+                        : `Google sign-in failed: ${error.message || 'Please try again.'}`;
+                window.showToast(message, 'error');
+            }
+        };
+        window.openGoogleProfile = firebaseUser => {
+            document.getElementById('app-loading').classList.add('hide');
+            document.getElementById('google-profile-account').innerText = firebaseUser.email || '';
+            document.getElementById('google-profile-name').value = firebaseUser.displayName || '';
+            document.getElementById('google-profile-phone').value = '';
+            document.getElementById('google-profile-address').value = '';
+            document.getElementById('google-profile-error').innerText = '';
+            document.getElementById('google-profile-modal').classList.remove('hide');
+        };
+        window.cancelGoogleProfile = async () => {
+            document.getElementById('google-profile-modal').classList.add('hide');
+            await auth.signOut();
+        };
+        window.completeGoogleProfile = async event => {
+            event.preventDefault();
+            const firebaseUser = auth.currentUser;
+            const errorMessage = document.getElementById('google-profile-error');
+            const submit = document.getElementById('google-profile-submit');
+            if (!firebaseUser) { errorMessage.innerText = 'Your Google session ended. Please sign in again.'; return; }
+            const phone = normalizePhone(document.getElementById('google-profile-phone').value);
+            const name = document.getElementById('google-profile-name').value.trim();
+            const address = document.getElementById('google-profile-address').value.trim();
+            if (phone.length < 8 || phone.length > 15) { errorMessage.innerText = 'Enter a valid phone number (8–15 digits, country code allowed).'; return; }
+            if (!name || !address) { errorMessage.innerText = 'Enter your name and delivery address.'; return; }
+            submit.disabled = true;
+            errorMessage.innerText = '';
+            try {
+                // Claim the phone number and create the profile in one atomic write.
+                // The rules reject it if another account already owns this number.
+                await db.ref().update({
+                    [`phones/${phone}`]: firebaseUser.uid,
+                    [`users/${firebaseUser.uid}`]: {
+                        dbId: firebaseUser.uid, phone, name, address,
+                        email: (firebaseUser.email || '').toLowerCase(),
+                        role: 'customer',
+                        createdAt: new Date().toISOString()
+                    }
+                });
+                document.getElementById('google-profile-modal').classList.add('hide');
+                window.showToast('Welcome! Your account is ready.', 'success');
+                await window.loadSignedInUser(firebaseUser);
+            } catch (error) {
+                console.error('Google profile setup failed', error);
+                errorMessage.innerText = error.code === 'PERMISSION_DENIED' || /permission/i.test(error.message || '')
+                    ? 'This phone number is already registered to another account. Log in with that account instead, or contact the admin.'
+                    : `Could not save your profile: ${error.message || 'Please try again.'}`;
+            } finally {
+                submit.disabled = false;
+            }
+        };
+
         window.loadSignedInUser = async firebaseUser => {
                 detachListeners();
                 window.currentUser = null;
@@ -748,6 +850,9 @@
                     }
                     const profile = (await db.ref(`users/${firebaseUser.uid}`).once('value')).val();
                     if (!profile) {
+                        const usedGoogle = firebaseUser.providerData.some(provider => provider.providerId === 'google.com');
+                        // First Google sign-in: ask for the phone + address that orders need.
+                        if (usedGoogle) return window.openGoogleProfile(firebaseUser);
                         await auth.signOut();
                         return window.showToast('No customer profile was found for this login. Please register again or contact the admin.', 'error');
                     }
@@ -888,14 +993,18 @@
                 credential = await auth.createUserWithEmailAndPassword(phoneToLoginEmail(phone), password);
                 const uid = credential.user.uid;
                 // The password is stored only in Firebase Auth (hashed), never in the database.
-                await db.ref(`users/${uid}`).set({
-                    dbId: uid,
-                    phone,
-                    email,
-                    name: document.getElementById('reg-name').value.trim(),
-                    address: document.getElementById('reg-address').value.trim(),
-                    role: 'customer',
-                    createdAt: new Date().toISOString()
+                // Claim the phone number in the same atomic write so a Google account can't take it.
+                await db.ref().update({
+                    [`phones/${phone}`]: uid,
+                    [`users/${uid}`]: {
+                        dbId: uid,
+                        phone,
+                        email,
+                        name: document.getElementById('reg-name').value.trim(),
+                        address: document.getElementById('reg-address').value.trim(),
+                        role: 'customer',
+                        createdAt: new Date().toISOString()
+                    }
                 });
                 e.target.reset();
                 window.toggleAuth('login');

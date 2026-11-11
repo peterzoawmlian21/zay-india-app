@@ -55,6 +55,10 @@ exports.deleteCustomerAccount = onCall(async (request) => {
   } catch (error) {
     if (error.code !== 'auth/user-not-found') throw error;
   }
-  await admin.database().ref(`users/${uid}`).remove();
+  const phone = (await admin.database().ref(`users/${uid}/phone`).once('value')).val();
+  const updates = { [`users/${uid}`]: null };
+  // Free the phone number so it can be registered again.
+  if (phone && (await admin.database().ref(`phones/${phone}`).once('value')).val() === uid) updates[`phones/${phone}`] = null;
+  await admin.database().ref().update(updates);
   return { deleted: true };
 });
