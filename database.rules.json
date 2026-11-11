@@ -1,0 +1,54 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "admins": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": false
+      }
+    },
+
+    "products": {
+      ".read": "auth != null",
+      ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+      "$productId": {
+        ".validate": "newData.hasChildren(['name', 'price', 'stockQty'])",
+        "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200" },
+        "price": { ".validate": "newData.isNumber() && newData.val() > 0" },
+        "stockQty": { ".validate": "newData.isNumber() && newData.val() >= 0" }
+      }
+    },
+
+    "users": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
+      ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        "dbId":    { ".validate": "newData.val() === $uid" },
+        "role":    { ".validate": "newData.val() === 'customer'" },
+        "phone":   { ".validate": "newData.isString() && (!data.exists() || newData.val() === data.val()) && (root.child('admins').child(auth.uid).val() === true || auth.token.email === newData.val() + '@phone.zayindia.app')" },
+        "name":    { ".validate": "newData.isString() && newData.val().length <= 200" },
+        "email":   { ".validate": "newData.isString() && newData.val().length <= 200" },
+        "address": { ".validate": "newData.isString() && newData.val().length <= 1000" },
+        "createdAt":   { ".validate": "newData.isString()" },
+        "lastLoginAt": { ".validate": "newData.isString()" },
+        "passwordResetRequired": { ".validate": "newData.val() === false || root.child('admins').child(auth.uid).val() === true" },
+        "pass": { ".validate": "false" },
+        "$other": { ".validate": "false" }
+      }
+    },
+
+    "orders": {
+      ".indexOn": ["uid"],
+      ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true || (query.orderByChild === 'uid' && query.equalTo === auth.uid))",
+      ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+      "$orderId": {
+        ".read": "auth != null && data.child('uid').val() === auth.uid",
+        ".write": "auth != null && !data.exists() && $orderId.matches(/^ORD-[0-9]+$/) && newData.child('dbId').val() === $orderId && newData.child('uid').val() === auth.uid && newData.child('status').val() === 'pending' && newData.child('inventoryDeducted').val() === false && newData.child('phone').val() === root.child('users').child(auth.uid).child('phone').val() && newData.child('total').isNumber() && newData.child('total').val() > 0"
+      }
+    }
+  }
+}

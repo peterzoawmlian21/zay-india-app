@@ -13,6 +13,8 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js"></script>
 
     <!-- EmailJS SDK -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
@@ -315,7 +317,7 @@
                 <p class="text-xs font-bold text-slate-500">အကောင့်ရှိပြီးသား ဝယ်သူများအတွက် (Login)</p>
             </div>
             <div>
-                <label class="text-xs font-bold text-slate-500 ml-1">ဖုန်းနံပါတ် (Phone Number)</label>
+                <label class="text-xs font-bold text-slate-500 ml-1">ဖုန်းနံပါတ် (Phone Number) <span class="font-medium text-slate-400">— admin: email</span></label>
                 <input type="text" id="login-phone" placeholder="+91 xxxxxxxxxx" class="w-full bg-white p-4 border border-slate-200 rounded-2xl focus:outline-none focus:border-orange-500 font-medium" required>
             </div>
             <div>
@@ -401,10 +403,10 @@
                 </div>
                 <form id="customer-profile-form" onsubmit="window.saveCustomerProfile(event)" class="space-y-4">
                     <div><label for="profile-name" class="mb-1 block text-xs font-bold text-slate-600">Name</label><input id="profile-name" type="text" autocomplete="name" required class="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 font-medium focus:border-orange-500 focus:outline-none"></div>
-                    <div><label for="profile-phone" class="mb-1 block text-xs font-bold text-slate-600">Phone number (used to log in)</label><input id="profile-phone" type="tel" autocomplete="tel" required class="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 font-medium focus:border-orange-500 focus:outline-none"></div>
+                    <div><label for="profile-phone" class="mb-1 block text-xs font-bold text-slate-600">Phone number (used to log in)</label><input id="profile-phone" type="tel" autocomplete="tel" readonly class="w-full rounded-xl border border-slate-200 bg-slate-100 p-3 font-medium text-slate-500 focus:outline-none"></div>
                     <div><label for="profile-email" class="mb-1 block text-xs font-bold text-slate-600">Email address</label><input id="profile-email" type="email" autocomplete="email" required class="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 font-medium focus:border-orange-500 focus:outline-none"></div>
                     <div><label for="profile-address" class="mb-1 block text-xs font-bold text-slate-600">Delivery address</label><textarea id="profile-address" rows="3" autocomplete="street-address" required class="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 font-medium focus:border-orange-500 focus:outline-none"></textarea></div>
-                    <p class="rounded-xl bg-slate-50 p-3 text-xs text-slate-500">Password is not changed here. Updating your phone number also updates the login number linked to your existing order history.</p>
+                    <p class="rounded-xl bg-slate-50 p-3 text-xs text-slate-500">Password is not changed here. Your phone number is your login and cannot be changed here; contact the admin if it needs to change.</p>
                     <p id="customer-profile-feedback" class="text-sm font-semibold text-red-600" role="status" aria-live="polite"></p>
                     <div class="flex gap-3"><button type="button" onclick="window.closeCustomerProfile()" class="flex-1 rounded-xl bg-slate-100 py-3 font-bold text-slate-600">Cancel</button><button id="save-customer-profile-button" type="submit" class="flex-1 rounded-xl bg-orange-600 py-3 font-bold text-white disabled:opacity-50">Save changes</button></div>
                 </form>
@@ -623,6 +625,17 @@
         
         if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
         const db = firebase.database();
+        const auth = firebase.auth();
+        // Must match the region in functions/index.js
+        const cloudFunctions = firebase.app().functions('asia-southeast1');
+
+        // Customers log in with their phone number. Firebase Auth needs an email, so each
+        // phone maps to a synthetic, non-deliverable address. database.rules.json relies on
+        // this exact domain to check that users/{uid}/phone belongs to the signed-in user.
+        const PHONE_LOGIN_DOMAIN = 'phone.zayindia.app';
+        const normalizePhone = value => String(value || '').replace(/\D/g, '');
+        const phoneToLoginEmail = phone => `${normalizePhone(phone)}@${PHONE_LOGIN_DOMAIN}`;
+        const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 
         window.users = []; window.products = []; window.orders = [];
         window.currentUser = null; window.cart = {};
@@ -642,7 +655,30 @@
         };
 
         // Realtime Fetching
-        const initDatabase = () => {
+        // Listeners are attached only after Firebase Auth confirms who is signed in, and only
+        // for data that role may read. The security rules enforce the same boundaries.
+        let activeListeners = [];
+        const detachListeners = () => {
+            activeListeners.forEach(({ ref, handler }) => ref.off('value', handler));
+            activeListeners = [];
+        };
+        const listen = (ref, handler) => {
+            ref.on('value', handler, error => {
+                console.error('Realtime listener failed', error);
+                window.showToast(`Could not load data: ${error.message || 'permission denied'}`, 'error');
+            });
+            activeListeners.push({ ref, handler });
+        };
+        const showAuthView = () => {
+            document.getElementById('app-loading').classList.add('hide');
+            document.getElementById('customer-view').classList.add('hide');
+            document.getElementById('admin-view').classList.add('hide');
+            document.getElementById('auth-view').classList.remove('hide');
+        };
+
+        const initDatabase = (role, uid) => {
+            detachListeners();
+            window.users = []; window.products = []; window.orders = [];
             let loadedFlags = { users: false, products: false, orders: false };
             const normalizeCollection = (value, collectionName) => {
                 if (value == null) return [];
@@ -658,19 +694,29 @@
             const checkInitialLoad = () => {
                 if(loadedFlags.users && loadedFlags.products && loadedFlags.orders) {
                     document.getElementById('app-loading').classList.add('hide');
-                    const saved = localStorage.getItem('zay_currentUser');
-                    if (saved) {
-                        window.currentUser = JSON.parse(saved);
-                        window.routeApp();
-                        if (window.currentUser.passwordResetRequired) window.openRequiredPasswordChange();
-                    }
-                    else { document.getElementById('auth-view').classList.remove('hide'); }
+                    window.routeApp();
+                    if (window.currentUser.passwordResetRequired) window.openRequiredPasswordChange();
                 }
             };
-            db.ref('users').on('value', (s) => { window.users = normalizeCollection(s.val(), 'users'); if(!loadedFlags.users) { loadedFlags.users = true; checkInitialLoad(); } if (window.currentUser?.role === 'admin' && !document.getElementById('admin-tab-accounts').classList.contains('hide')) window.renderAdminAccounts(); });
-            db.ref('products').on('value', (s) => { window.products = normalizeCollection(s.val(), 'products'); if(!loadedFlags.products) { loadedFlags.products = true; checkInitialLoad(); } if (window.currentUser?.role === 'admin') window.renderAdminProducts(); if (window.currentUser?.role === 'customer') window.renderProducts(); });
+            if (role === 'admin') {
+                listen(db.ref('users'), (s) => { window.users = normalizeCollection(s.val(), 'users'); if(!loadedFlags.users) { loadedFlags.users = true; checkInitialLoad(); } if (!document.getElementById('admin-tab-accounts').classList.contains('hide')) window.renderAdminAccounts(); });
+            } else {
+                // A customer can read only their own profile.
+                listen(db.ref(`users/${uid}`), (s) => {
+                    const profile = s.val();
+                    if (profile) {
+                        window.users = [{ ...profile, dbId: uid }];
+                        window.currentUser = { ...profile, dbId: uid, uid, role: 'customer' };
+                        if (loadedFlags.users) document.getElementById('customer-header-address').innerText = window.currentUser.address || '';
+                    }
+                    if(!loadedFlags.users) { loadedFlags.users = true; checkInitialLoad(); }
+                });
+            }
+            listen(db.ref('products'), (s) => { window.products = normalizeCollection(s.val(), 'products'); if(!loadedFlags.products) { loadedFlags.products = true; checkInitialLoad(); } if (window.currentUser?.role === 'admin') window.renderAdminProducts(); if (window.currentUser?.role === 'customer') window.renderProducts(); });
             let prevLen = -1;
-            db.ref('orders').on('value', (s) => {
+            // Customers may only run this exact query (enforced in database.rules.json).
+            const ordersRef = role === 'admin' ? db.ref('orders') : db.ref('orders').orderByChild('uid').equalTo(uid);
+            listen(ordersRef, (s) => {
                 window.orders = normalizeCollection(s.val(), 'orders'); if(!loadedFlags.orders) { loadedFlags.orders = true; checkInitialLoad(); }
                 if (window.currentUser?.role === 'admin' && prevLen !== -1 && window.orders.length > prevLen) {
                     try{ const ctx=new(window.AudioContext||window.webkitAudioContext)();const osc=ctx.createOscillator();osc.type='sine';osc.frequency.setValueAtTime(800,ctx.currentTime);osc.connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+0.3); }catch(er){} 
@@ -683,9 +729,37 @@
         };
 
         // 2. EmailJS Initialization
-        window.onload = () => { 
-            emailjs.init("vgPZYQlwYuKkHWVlf"); 
-            initDatabase(); 
+        window.onload = () => {
+            emailjs.init("vgPZYQlwYuKkHWVlf");
+            // Firebase Auth (not localStorage) is the source of truth for who is signed in.
+            // During registration the profile is not written yet, so handleRegister loads the user itself.
+            auth.onAuthStateChanged(firebaseUser => { if (!window.registrationInProgress) window.loadSignedInUser(firebaseUser); });
+        };
+        window.registrationInProgress = false;
+        window.loadSignedInUser = async firebaseUser => {
+                detachListeners();
+                window.currentUser = null;
+                if (!firebaseUser) return showAuthView();
+                try {
+                    const isAdmin = (await db.ref(`admins/${firebaseUser.uid}`).once('value')).val() === true;
+                    if (isAdmin) {
+                        window.currentUser = { role: 'admin', uid: firebaseUser.uid, name: 'Admin', phone: 'admin', email: firebaseUser.email };
+                        return initDatabase('admin', firebaseUser.uid);
+                    }
+                    const profile = (await db.ref(`users/${firebaseUser.uid}`).once('value')).val();
+                    if (!profile) {
+                        await auth.signOut();
+                        return window.showToast('No customer profile was found for this login. Please register again or contact the admin.', 'error');
+                    }
+                    window.currentUser = { ...profile, dbId: firebaseUser.uid, uid: firebaseUser.uid, role: 'customer' };
+                    db.ref(`users/${firebaseUser.uid}/lastLoginAt`).set(new Date().toISOString())
+                        .catch(error => console.error('Could not record customer login time', error));
+                    initDatabase('customer', firebaseUser.uid);
+                } catch (error) {
+                    console.error('Could not load the signed-in account', error);
+                    window.showToast(`Could not load your account: ${error.message || 'Please try again.'}`, 'error');
+                    await auth.signOut();
+                }
         };
 
         const normalizeProductCollection = value => Array.isArray(value)
@@ -694,7 +768,6 @@
                 .filter(([, item]) => item && typeof item === 'object' && !Array.isArray(item))
                 .map(([key, item]) => ({ ...item, dbId: item.dbId || key }));
         const dbAPI = {
-            saveUsers: users => db.ref('users').set(users),
             transactProducts: update => {
                 let failureMessage = '';
                 return db.ref('products').transaction(current => {
@@ -757,8 +830,8 @@
                 }
                 return products.filter(product => product.dbId !== id);
             }),
-            saveOrders: orders => db.ref('orders').set(orders),
-            saveCustomerProfile: (users, orders) => db.ref().update({ users, orders })
+            // Update one order only; never overwrite the whole orders node.
+            updateOrder: (id, changes) => db.ref(`orders/${id}`).update(changes)
         };
         const ADMIN_WHATSAPP_NUMBER = '916909235738';
 
@@ -803,51 +876,63 @@
         
         window.handleRegister = async (e) => {
             e.preventDefault();
-            const phone = document.getElementById('reg-phone').value.trim();
+            const phone = normalizePhone(document.getElementById('reg-phone').value);
             const email = document.getElementById('reg-email').value.trim().toLowerCase();
-            if (phone === 'admin') return window.showToast("ဤအမည်ဖြင့် အကောင့်ဖွင့်၍မရပါ", "error");
-            if (window.users.some(user => user.phone === phone)) return window.showToast("ဤဖုန်းနံပါတ်ဖြင့် အကောင့်ရှိပြီးသားဖြစ်ပါသည်", "error");
-            if (window.users.some(user => user.email && user.email.toLowerCase() === email)) return window.showToast("ဤအီးမေးလ်ဖြင့် အကောင့်ရှိပြီးသားဖြစ်ပါသည်", "error");
-            const newUser = {
-                phone,
-                email,
-                pass: document.getElementById('reg-pass').value.trim(),
-                name: document.getElementById('reg-name').value.trim(),
-                address: document.getElementById('reg-address').value.trim(),
-                role: 'customer'
-            };
-           try {
-                const newUserRef = db.ref('users').push();
-                newUser.dbId = newUserRef.key;
-                await newUserRef.set(newUser);
-                window.showToast("အကောင့်အသစ် ဖွင့်ပြီးပါပြီ။ Login ဝင်နိုင်ပါပြီ။", "success");
-                window.toggleAuth('login');
+            const password = document.getElementById('reg-pass').value;
+            if (phone.length < 8 || phone.length > 15) return window.showToast('Enter a valid phone number (8–15 digits, country code allowed).', 'error');
+            if (password.length < 8) return window.showToast('Password must be at least 8 characters.', 'error');
+            window.registrationInProgress = true;
+            let credential = null;
+            try {
+                // Firebase Auth rejects a second account for the same phone (auth/email-already-in-use).
+                credential = await auth.createUserWithEmailAndPassword(phoneToLoginEmail(phone), password);
+                const uid = credential.user.uid;
+                // The password is stored only in Firebase Auth (hashed), never in the database.
+                await db.ref(`users/${uid}`).set({
+                    dbId: uid,
+                    phone,
+                    email,
+                    name: document.getElementById('reg-name').value.trim(),
+                    address: document.getElementById('reg-address').value.trim(),
+                    role: 'customer',
+                    createdAt: new Date().toISOString()
+                });
                 e.target.reset();
+                window.toggleAuth('login');
+                window.showToast("အကောင့်အသစ် ဖွင့်ပြီးပါပြီ။", "success");
+                window.registrationInProgress = false;
+                await window.loadSignedInUser(credential.user);
             } catch (error) {
                 console.error('Account registration failed', error);
-                window.showToast(`Could not create account: ${error.message || 'Please try again.'}`, 'error');
+                // Don't leave an Auth account behind without a profile.
+                if (credential?.user) await credential.user.delete().catch(() => auth.signOut());
+                const message = error.code === 'auth/email-already-in-use'
+                    ? "ဤဖုန်းနံပါတ်ဖြင့် အကောင့်ရှိပြီးသားဖြစ်ပါသည်"
+                    : `Could not create account: ${error.message || 'Please try again.'}`;
+                window.showToast(message, 'error');
+            } finally {
+                window.registrationInProgress = false;
             }
         };
 
         window.handleLogin = async (e) => {
-            e.preventDefault(); const phone = document.getElementById('login-phone').value.trim(); const pass = document.getElementById('login-pass').value.trim();
-            if (phone === 'admin' && pass === '12345') { window.currentUser = { role: 'admin', phone: 'admin', name: 'Admin' }; localStorage.setItem('zay_currentUser', JSON.stringify(window.currentUser)); window.showToast("Admin အကောင့်သို့ ဝင်ရောက်ပြီးပါပြီ", "success"); window.routeApp(); return; }
-            const userIndex = window.users.findIndex(u => u.phone === phone && u.pass === pass);
-            const user = window.users[userIndex];
-            if (user) {
-                const loggedInUser = { ...user, lastLoginAt: new Date().toISOString() };
-                try {
-                    await db.ref(`users/${user.dbId}`).update({ lastLoginAt: loggedInUser.lastLoginAt });
-                } catch (error) {
-                    console.error('Could not record customer login time', error);
-                    window.showToast('Login succeeded, but activity could not be recorded. This account will not be eligible for inactive-account cleanup yet.', 'error');
-                }
-                window.currentUser = loggedInUser;
-                localStorage.setItem('zay_currentUser', JSON.stringify(window.currentUser));
+            e.preventDefault();
+            const login = document.getElementById('login-phone').value.trim();
+            const pass = document.getElementById('login-pass').value;
+            // The admin signs in with their real email; customers with their phone number.
+            const loginEmail = login.includes('@') ? login.toLowerCase() : phoneToLoginEmail(login);
+            try {
+                await auth.signInWithEmailAndPassword(loginEmail, pass);
+                // onAuthStateChanged loads the account and routes to the right view.
+                document.getElementById('login-form').reset();
                 window.showToast("Login အောင်မြင်ပါသည်", "success");
-                window.routeApp();
-                if (user.passwordResetRequired) window.openRequiredPasswordChange();
-            } else { window.showToast("ဖုန်းနံပါတ် (သို့) စကားဝှက် မှားယွင်းနေပါသည်", "error"); }
+            } catch (error) {
+                console.error('Login failed', error.code);
+                const message = error.code === 'auth/too-many-requests'
+                    ? 'Too many failed attempts. Please wait a few minutes and try again.'
+                    : "ဖုန်းနံပါတ် (သို့) စကားဝှက် မှားယွင်းနေပါသည်";
+                window.showToast(message, 'error');
+            }
         };
 
         window.openCustomerProfile = () => {
@@ -872,52 +957,23 @@
                 feedback.innerText = 'Sign in as a customer to edit your profile.';
                 return;
             }
-            const originalPhone = window.currentUser.phone;
-            const userIndex = window.users.findIndex(user => user.role === 'customer' && user.phone === originalPhone);
-            if (userIndex < 0) {
-                feedback.innerText = 'Your account could not be found. Sign in again and retry.';
-                return;
-            }
-
             const name = document.getElementById('profile-name').value.trim();
-            const phone = document.getElementById('profile-phone').value.trim();
             const email = document.getElementById('profile-email').value.trim().toLowerCase();
             const address = document.getElementById('profile-address').value.trim();
-            if (!name || !phone || !email || !address) {
+            if (!name || !email || !address) {
                 feedback.innerText = 'Complete all profile fields before saving.';
                 return;
             }
-            if (phone.toLowerCase() === 'admin') {
-                feedback.innerText = 'This phone number cannot be used.';
-                return;
-            }
-            if (window.users.some((user, index) => index !== userIndex && user.role === 'customer' && user.phone === phone)) {
-                feedback.innerText = 'This phone number is already used by another account.';
-                return;
-            }
-            if (window.users.some((user, index) => index !== userIndex && user.email && user.email.toLowerCase() === email)) {
-                feedback.innerText = 'This email address is already used by another account.';
-                return;
-            }
 
-           const updatedUser = { ...window.users[userIndex], name, phone, email, address };
             saveButton.disabled = true;
             feedback.innerText = '';
             try {
-                const updates = {};
-                updates[`users/${updatedUser.dbId}`] = updatedUser;
-                window.orders.forEach(order => {
-                    if (order.phone === originalPhone) {
-                        updates[`orders/${order.dbId}/phone`] = phone;
-                    }
-                });
-                await db.ref().update(updates);
-                window.currentUser = updatedUser;
-                localStorage.setItem('zay_currentUser', JSON.stringify(updatedUser));
+                // Phone is the login identity and is not editable; the rules reject changes to it.
+                await db.ref(`users/${window.currentUser.uid}`).update({ name, email, address });
+                window.currentUser = { ...window.currentUser, name, email, address };
                 document.getElementById('customer-header-address').innerText = address;
-                window.renderCustomerOrders();
                 window.closeCustomerProfile();
-                window.showToast('Your profile was updated. Your existing order history stays linked to your account.', 'success');
+                window.showToast('Your profile was updated.', 'success');
             } catch (error) {
                 console.error('Customer profile update failed.', error);
                 feedback.innerText = `Could not save your profile: ${error.message || 'Please try again.'}`;
@@ -945,28 +1001,26 @@
                 errorMessage.innerText = 'The passwords do not match.';
                 return;
             }
-            const userIndex = window.users.findIndex(user => user.phone === window.currentUser?.phone);
-            if (userIndex < 0) {
+            const firebaseUser = auth.currentUser;
+            if (!firebaseUser || !window.currentUser?.uid) {
                 errorMessage.innerText = 'Account not found. Please sign in again or contact the admin.';
                 return;
             }
-            const users = window.users.map((user, index) => index === userIndex
-                ? { ...user, pass: newPassword, passwordResetRequired: false }
-                : user);
             try {
-                await dbAPI.saveUsers(users);
-                window.users = users;
-                window.currentUser = users[userIndex];
-                localStorage.setItem('zay_currentUser', JSON.stringify(window.currentUser));
+                await firebaseUser.updatePassword(newPassword);
+                await db.ref(`users/${window.currentUser.uid}/passwordResetRequired`).set(false);
+                window.currentUser = { ...window.currentUser, passwordResetRequired: false };
                 document.getElementById('customer-password-change-modal').classList.add('hide');
                 window.showToast('Password updated successfully.', 'success');
             } catch (error) {
                 console.error('Temporary password change failed', error);
-                errorMessage.innerText = `Could not update password: ${error.message || 'Please try again.'}`;
+                errorMessage.innerText = error.code === 'auth/requires-recent-login'
+                    ? 'For security, log out and log in again with the temporary password, then set a new one.'
+                    : `Could not update password: ${error.message || 'Please try again.'}`;
             }
         };
 
-        window.logout = () => { localStorage.removeItem('zay_currentUser'); window.currentUser = null; window.cart = {}; document.getElementById('auth-view').classList.remove('hide'); document.getElementById('customer-view').classList.add('hide'); document.getElementById('admin-view').classList.add('hide'); document.getElementById('login-form').reset(); window.showToast("အကောင့်မှ ထွက်ပြီးပါပြီ", "success"); };
+        window.logout = () => { detachListeners(); auth.signOut().catch(error => console.error('Sign-out failed', error)); localStorage.removeItem('zay_currentUser'); window.currentUser = null; window.cart = {}; window.users = []; window.orders = []; document.getElementById('auth-view').classList.remove('hide'); document.getElementById('customer-view').classList.add('hide'); document.getElementById('admin-view').classList.add('hide'); document.getElementById('login-form').reset(); window.showToast("အကောင့်မှ ထွက်ပြီးပါပြီ", "success"); };
 
         window.routeApp = () => { document.getElementById('auth-view').classList.add('hide'); if (window.currentUser.role === 'admin') { document.getElementById('admin-view').classList.remove('hide'); window.switchAdminTab('orders'); } else { document.getElementById('customer-view').classList.remove('hide'); document.getElementById('customer-header-address').innerText = window.currentUser.address; window.switchCustomerTab('home'); } };
 
@@ -1037,14 +1091,12 @@
         };
         window.closeCheckout = () => { const m = document.getElementById('checkout-modal'), s = document.getElementById('checkout-sheet'); m.classList.add('opacity-0'); s.classList.add('translate-y-full'); setTimeout(() => m.classList.add('hide'), 300); };
         window.contactAdminForPassword = () => {
-            const phone = document.getElementById('login-phone').value.trim();
+            // Signed-out visitors can no longer read the user list, so we don't look the account up here.
+            const phone = normalizePhone(document.getElementById('login-phone').value);
             if (!phone) return window.showToast('Enter your registered phone number first.', 'error');
-            const user = window.users.find(account => account.role === 'customer' && account.phone === phone);
-            if (!user) return window.showToast('No customer account found for that phone number. Check it and try again.', 'error');
             const message = [
                 'Hello Admin, I forgot the password for my Zay India account. Please help me reset it.',
-                `Account name: ${user.name || 'Not provided'}.`,
-                `My registered phone number is: ${user.phone}.`,
+                `My registered phone number is: ${phone}.`,
                 'Thank you.'
             ].join('\n');
             const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP_NUMBER}?${new URLSearchParams({ text: message })}`;
@@ -1066,7 +1118,7 @@
         window.contactAdminWhatsApp = orderId => {
             if (!window.currentUser || window.currentUser.role !== 'customer') return window.showToast('Please sign in as a customer to contact the admin.', 'error');
             const order = window.orders.find(item => item.dbId === orderId);
-            if (!order || order.phone !== window.currentUser.phone) return window.showToast('Order not found for this account.', 'error');
+            if (!order || order.uid !== window.currentUser.uid) return window.showToast('Order not found for this account.', 'error');
             window.open(window.buildAdminWhatsAppUrl(order), '_blank', 'noopener,noreferrer');
         };
 
@@ -1110,6 +1162,7 @@
             const itemsStr = lineItems.map(item => `${item.quantity}x ${item.name}`).join(', ');
             const newOrder = {
                 dbId: 'ORD-' + Date.now(),
+                uid: window.currentUser.uid,
                 user: window.currentUser.name,
                 phone: window.currentUser.phone,
                 address: window.currentUser.address,
@@ -1179,7 +1232,7 @@
             if (!['confirmed', 'ontheway', 'delivered'].includes(order.status)) {
                 return window.showToast(order.status === 'rejected' ? 'This order was rejected. No invoice is available.' : 'The invoice will be available after the admin confirms this order.', 'error');
             }
-            if (!window.currentUser || (window.currentUser.role !== 'admin' && (window.currentUser.role !== 'customer' || order.phone !== window.currentUser.phone))) {
+            if (!window.currentUser || (window.currentUser.role !== 'admin' && (window.currentUser.role !== 'customer' || order.uid !== window.currentUser.uid))) {
                 return window.showToast('You are not allowed to download this invoice.', 'error');
             }
 
@@ -1236,7 +1289,7 @@
         window.switchCustomerTab = (t) => { document.getElementById('tab-home').classList.toggle('hide', t!=='home'); document.getElementById('tab-orders').classList.toggle('hide', t!=='orders'); document.getElementById('nav-home').className = `flex flex-col items-center p-2 w-1/3 ${t==='home'?'text-orange-600':'text-slate-400'}`; document.getElementById('nav-orders').className = `flex flex-col items-center p-2 w-1/3 ${t==='orders'?'text-orange-600':'text-slate-400'}`; if(t==='home') window.renderProducts(); else window.renderCustomerOrders(); };
         window.renderCustomerOrders = () => {
             const list = document.getElementById('customer-orders-list');
-            const myOrders = window.orders.filter(order => order.phone === window.currentUser.phone);
+            const myOrders = window.orders.filter(order => order.uid === window.currentUser.uid);
             if (myOrders.length === 0) return list.innerHTML = `<p class="text-slate-500 font-semibold text-center mt-5">မှာယူထားသော မှတ်တမ်းမရှိသေးပါ။</p>`;
             list.innerHTML = window.groupOrdersByDate(myOrders).map(group => `
                 <section class="space-y-3" aria-label="Orders from ${group.label}">
@@ -1286,19 +1339,40 @@
                     const lastLoginLabel = Number.isFinite(lastLogin)
                         ? `${escapeHtml(new Date(lastLogin).toLocaleString())}${isInactive ? ' (Inactive)' : ''}`
                         : 'Activity unknown';
-                    return `<tr><td class="px-6 py-4 font-bold text-slate-800">${escapeHtml(user.name)}</td><td class="px-6 py-4">${escapeHtml(user.phone)}</td><td class="px-6 py-4">${escapeHtml(user.email || 'Not provided')}</td><td class="px-6 py-4 whitespace-normal min-w-[220px]">${escapeHtml(user.address)}</td><td class="px-6 py-4 whitespace-nowrap">${lastLoginLabel}</td><td class="px-6 py-4"><div class="flex gap-2"><button type="button" data-reset-phone="${escapeHtml(user.phone)}" class="reset-user-password bg-orange-50 text-orange-700 px-3 py-2 rounded-lg font-bold hover:bg-orange-100">Reset password</button>${isInactive ? `<button type="button" data-delete-phone="${escapeHtml(user.phone)}" class="delete-inactive-account bg-red-50 text-red-700 px-3 py-2 rounded-lg font-bold hover:bg-red-100">Delete inactive</button>` : ''}</div></td></tr>`;
+                    // Accounts created before Firebase Auth have a plaintext `pass` field and no login.
+                    const isLegacy = Object.prototype.hasOwnProperty.call(user, 'pass');
+                    const actions = isLegacy
+                        ? `<span class="text-xs font-bold text-slate-500">Old account – must re-register</span><button type="button" data-delete-uid="${escapeHtml(user.dbId)}" class="delete-legacy-account bg-red-50 text-red-700 px-3 py-2 rounded-lg font-bold hover:bg-red-100">Delete</button>`
+                        : `<button type="button" data-reset-uid="${escapeHtml(user.dbId)}" class="reset-user-password bg-orange-50 text-orange-700 px-3 py-2 rounded-lg font-bold hover:bg-orange-100">Reset password</button>${isInactive ? `<button type="button" data-delete-uid="${escapeHtml(user.dbId)}" class="delete-inactive-account bg-red-50 text-red-700 px-3 py-2 rounded-lg font-bold hover:bg-red-100">Delete inactive</button>` : ''}`;
+                    return `<tr><td class="px-6 py-4 font-bold text-slate-800">${escapeHtml(user.name)}</td><td class="px-6 py-4">${escapeHtml(user.phone)}</td><td class="px-6 py-4">${escapeHtml(user.email || 'Not provided')}</td><td class="px-6 py-4 whitespace-normal min-w-[220px]">${escapeHtml(user.address)}</td><td class="px-6 py-4 whitespace-nowrap">${lastLoginLabel}</td><td class="px-6 py-4"><div class="flex items-center gap-2">${actions}</div></td></tr>`;
                 }).join('')
                 : '<tr><td colspan="6" class="px-6 py-8 text-center text-slate-500">No customer accounts found.</td></tr>';
             table.querySelectorAll('.reset-user-password').forEach(button => {
-                button.addEventListener('click', () => window.resetUserPassword(button.dataset.resetPhone));
+                button.addEventListener('click', () => window.resetUserPassword(button.dataset.resetUid));
             });
             table.querySelectorAll('.delete-inactive-account').forEach(button => {
-                button.addEventListener('click', () => window.deleteInactiveAccount(button.dataset.deletePhone));
+                button.addEventListener('click', () => window.deleteInactiveAccount(button.dataset.deleteUid));
+            });
+            table.querySelectorAll('.delete-legacy-account').forEach(button => {
+                button.addEventListener('click', () => window.deleteLegacyAccount(button.dataset.deleteUid));
             });
         };
-        window.deleteInactiveAccount = async (phone) => {
+        window.deleteLegacyAccount = async (id) => {
             if (window.currentUser?.role !== 'admin') return window.showToast('Admin access required.', 'error');
-            const user = window.users.find(account => account.phone === phone && account.role === 'customer');
+            const user = window.users.find(account => account.dbId === id);
+            if (!user) return window.showToast('Customer account not found.', 'error');
+            if (!window.confirm(`Delete the old record for ${user.name || user.phone}? This removes their stored plaintext password. They can register again with the same phone number. Order history is kept.`)) return;
+            try {
+                await db.ref(`users/${id}`).remove();
+                window.showToast('Old account record deleted.', 'success');
+            } catch (error) {
+                console.error('Legacy account deletion failed', error);
+                window.showToast(`Could not delete account: ${error.message || 'Please try again.'}`, 'error');
+            }
+        };
+        window.deleteInactiveAccount = async (uid) => {
+            if (window.currentUser?.role !== 'admin') return window.showToast('Admin access required.', 'error');
+            const user = window.users.find(account => account.dbId === uid && account.role === 'customer');
             if (!user) return window.showToast('Customer account not found.', 'error');
             const lastLogin = user.lastLoginAt ? Date.parse(user.lastLoginAt) : NaN;
             const inactiveThreshold = 180 * 24 * 60 * 60 * 1000;
@@ -1306,39 +1380,27 @@
                 return window.showToast('Only accounts with a recorded login at least 180 days ago can be deleted here.', 'error');
             }
             if (!window.confirm(`Permanently delete ${user.name || user.phone}'s account? Existing order history will be retained.`)) return;
-
-            const users = window.users.filter(account => account.phone !== phone);
             try {
-                await dbAPI.saveUsers(users);
-                window.users = users;
-                window.renderAdminAccounts();
+                // Deleting a Firebase Auth login requires the Admin SDK, so this runs as a Cloud Function.
+                await cloudFunctions.httpsCallable('deleteCustomerAccount')({ uid });
                 window.showToast('Inactive account deleted. Order history was retained.', 'success');
             } catch (error) {
                 console.error('Inactive account deletion failed', error);
                 window.showToast(`Could not delete account: ${error.message || 'Please try again.'}`, 'error');
             }
         };
-        window.resetUserPassword = async (phone) => {
+        window.resetUserPassword = async (uid) => {
             if (window.currentUser?.role !== 'admin') return window.showToast('Admin access required.', 'error');
-            const userIndex = window.users.findIndex(user => user.phone === phone && user.role === 'customer');
-            if (userIndex < 0) return window.showToast('Customer account not found.', 'error');
-            const user = window.users[userIndex];
+            const user = window.users.find(account => account.dbId === uid && account.role === 'customer');
+            if (!user) return window.showToast('Customer account not found.', 'error');
             if (!window.confirm(`Generate a new temporary password for ${user.name || user.phone}? Their current password will stop working.`)) return;
-
-            const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
-            const randomValues = new Uint32Array(16);
-            window.crypto.getRandomValues(randomValues);
-            const temporaryPassword = Array.from(randomValues, value => alphabet[value % alphabet.length]).join('');
-            const users = window.users.map((account, index) => index === userIndex
-                ? { ...account, pass: temporaryPassword, passwordResetRequired: true }
-                : account);
             try {
-                await dbAPI.saveUsers(users);
-                window.users = users;
+                // Only the server (Admin SDK) can set another user's password. The function checks
+                // that the caller is in /admins, generates the temporary password, and returns it once.
+                const result = await cloudFunctions.httpsCallable('resetCustomerPassword')({ uid });
                 document.getElementById('reset-password-user').innerText = `${user.name || 'Customer'} (${user.phone})`;
-                document.getElementById('reset-password-value').value = temporaryPassword;
+                document.getElementById('reset-password-value').value = result.data.temporaryPassword;
                 document.getElementById('reset-password-modal').classList.remove('hide');
-                window.renderAdminAccounts();
             } catch (error) {
                 console.error('Customer password reset failed', error);
                 window.showToast(`Could not reset password: ${error.message || 'Please try again.'}`, 'error');
@@ -1369,7 +1431,7 @@
                         <h3 class="rounded-xl border border-orange-100 bg-orange-50 px-4 py-2 text-sm font-black text-orange-800">${group.label}</h3>
                         <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">${group.orders.map(order => {
                             const busy = window.orderActionsInProgress.has(order.dbId);
-                            return `<article class="rounded-2xl border border-orange-200 bg-white p-4 shadow-sm"><div class="mb-3 flex flex-wrap items-start justify-between gap-2"><div><p class="font-black text-slate-900">${order.user || 'Customer'}</p><p class="text-xs font-semibold text-slate-500">${order.dbId} · ${order.phone || ''}</p></div><p class="font-black text-orange-600">₹${Number(order.total || 0).toFixed(2)}</p></div><p class="mb-2 text-sm font-semibold text-slate-700">${order.items || 'No item details'}</p><p class="mb-4 text-xs text-slate-500">${order.address || 'No delivery address provided'}</p><div class="grid grid-cols-2 gap-3"><button type="button" ${busy ? 'disabled' : ''} onclick="window.confirmOrder('${order.dbId}')" class="rounded-xl bg-green-600 px-4 py-3 font-black text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"><i class="fas fa-check mr-2"></i>Confirm order</button><button type="button" ${busy ? 'disabled' : ''} onclick="window.rejectOrder('${order.dbId}')" class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 font-black text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"><i class="fas fa-times mr-2"></i>Reject order</button></div></article>`;
+                            return `<article class="rounded-2xl border border-orange-200 bg-white p-4 shadow-sm"><div class="mb-3 flex flex-wrap items-start justify-between gap-2"><div><p class="font-black text-slate-900">${escapeHtml(order.user || 'Customer')}</p><p class="text-xs font-semibold text-slate-500">${escapeHtml(order.dbId)} · ${escapeHtml(order.phone || '')}</p></div><p class="font-black text-orange-600">₹${Number(order.total || 0).toFixed(2)}</p></div><p class="mb-2 text-sm font-semibold text-slate-700">${escapeHtml(order.items || 'No item details')}</p><p class="mb-4 text-xs text-slate-500">${escapeHtml(order.address || 'No delivery address provided')}</p><div class="grid grid-cols-2 gap-3"><button type="button" ${busy ? 'disabled' : ''} onclick="window.confirmOrder('${order.dbId}')" class="rounded-xl bg-green-600 px-4 py-3 font-black text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"><i class="fas fa-check mr-2"></i>Confirm order</button><button type="button" ${busy ? 'disabled' : ''} onclick="window.rejectOrder('${order.dbId}')" class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 font-black text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"><i class="fas fa-times mr-2"></i>Reject order</button></div></article>`;
                         }).join('')}</div>
                     </section>
                 `).join('')
@@ -1383,7 +1445,7 @@
                 : order.status === 'confirmed' || order.status === 'ontheway'
                     ? `<select onchange="window.updateStatus('${order.dbId}', this.value)" class="text-xs font-bold p-2 rounded-lg border outline-none"><option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>Confirmed</option><option value="ontheway" ${order.status === 'ontheway' ? 'selected' : ''}>On the way</option><option value="delivered">Delivered</option></select>`
                     : `<span class="text-xs font-bold ${order.status === 'rejected' ? 'text-red-600' : 'text-green-700'}">${order.status === 'rejected' ? 'Rejected' : 'Delivered'}</span>`;
-            return `<tr class="hover:bg-slate-50 transition"><td class="px-6 py-4 font-black text-slate-800">${order.dbId}</td><td class="px-6 py-4"><p class="font-bold text-slate-700">${order.user}</p><p class="text-xs text-slate-500">${order.phone}</p></td><td class="px-6 py-4 text-xs font-semibold text-slate-600 whitespace-normal min-w-[200px]">${order.items}</td><td class="px-6 py-4 text-right font-black text-orange-600">₹${order.total}</td><td class="px-6 py-4 text-xs font-medium text-slate-600 max-w-[250px] whitespace-normal">${order.address}</td><td class="px-6 py-4">${orderActions}</td><td class="px-6 py-4">${invoiceAvailable ? `<button onclick="window.downloadInvoice('${order.dbId}')" class="bg-orange-50 text-orange-700 px-3 py-2 rounded-lg font-bold hover:bg-orange-100 transition"><i class="fas fa-download mr-1"></i>Download</button>` : '<span class="text-xs font-semibold text-slate-400">Unavailable</span>'}</td></tr>`;
+            return `<tr class="hover:bg-slate-50 transition"><td class="px-6 py-4 font-black text-slate-800">${escapeHtml(order.dbId)}</td><td class="px-6 py-4"><p class="font-bold text-slate-700">${escapeHtml(order.user)}</p><p class="text-xs text-slate-500">${escapeHtml(order.phone)}</p></td><td class="px-6 py-4 text-xs font-semibold text-slate-600 whitespace-normal min-w-[200px]">${escapeHtml(order.items)}</td><td class="px-6 py-4 text-right font-black text-orange-600">₹${Number(order.total || 0).toFixed(2)}</td><td class="px-6 py-4 text-xs font-medium text-slate-600 max-w-[250px] whitespace-normal">${escapeHtml(order.address)}</td><td class="px-6 py-4">${orderActions}</td><td class="px-6 py-4">${invoiceAvailable ? `<button onclick="window.downloadInvoice('${order.dbId}')" class="bg-orange-50 text-orange-700 px-3 py-2 rounded-lg font-bold hover:bg-orange-100 transition"><i class="fas fa-download mr-1"></i>Download</button>` : '<span class="text-xs font-semibold text-slate-400">Unavailable</span>'}</td></tr>`;
                 }).join('')}
             `).join('');
         };
@@ -1419,9 +1481,7 @@
                     const savedProducts = await dbAPI.adjustProductStock(inventoryItems.map(({ product, quantity }) => ({ dbId: product.dbId, delta: -quantity })));
                     window.products = normalizeProductCollection(savedProducts);
                 }
-                const orders = window.orders.map((item, index) => index === orderIndex ? { ...item, status: 'confirmed', inventoryDeducted: true } : item);
-                await dbAPI.saveOrders(orders);
-                window.orders = orders;
+                await dbAPI.updateOrder(id, { status: 'confirmed', inventoryDeducted: true });
                 window.renderAdminProducts();
                 window.renderAdminOrders();
                 window.showToast('Order confirmed and inventory updated. Invoice is now available.', 'success');
@@ -1448,9 +1508,7 @@
                     const savedProducts = await dbAPI.adjustProductStock(inventoryItems.map(({ product, quantity }) => ({ dbId: product.dbId, delta: quantity })));
                     window.products = normalizeProductCollection(savedProducts);
                 }
-                const orders = window.orders.map((item, index) => index === orderIndex ? { ...item, status: 'rejected', inventoryDeducted: false } : item);
-                await dbAPI.saveOrders(orders);
-                window.orders = orders;
+                await dbAPI.updateOrder(id, { status: 'rejected', inventoryDeducted: false });
                 window.renderAdminProducts();
                 window.renderAdminOrders();
                 window.showToast('Order rejected. Inventory is unchanged and no invoice is available.', 'success');
@@ -1465,10 +1523,9 @@
         window.updateStatus = async (id, val) => {
             const index = window.orders.findIndex(order => order.dbId === id);
             if (index < 0 || !['ontheway', 'delivered'].includes(val) || !['confirmed', 'ontheway'].includes(window.orders[index].status)) return window.showToast('Unable to update order status.', 'error');
-            const orders = window.orders.map((order, orderIndex) => orderIndex === index ? { ...order, status: val } : order);
+            if (window.currentUser?.role !== 'admin') return window.showToast('Admin access required.', 'error');
             try {
-                await dbAPI.saveOrders(orders);
-                window.orders = orders;
+                await dbAPI.updateOrder(id, { status: val });
                 window.renderAdminOrders();
                 window.showToast('Status updated.', 'success');
             } catch (error) {
