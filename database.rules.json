@@ -93,6 +93,7 @@
         "email":   { ".validate": "newData.isString() && newData.val().length <= 200" },
         "address": { ".validate": "newData.isString() && newData.val().length <= 1000" },
         "createdAt":   { ".validate": "newData.isString()" },
+        "signInMethod": { ".validate": "newData.isString() && newData.val().matches(/^(phone|google)$/) && (!data.exists() || data.val() === newData.val() || root.child('admins').child(auth.uid).val() === true)" },
         "lastLoginAt": { ".validate": "newData.isString()" },
         "passwordResetRequired": { ".validate": "newData.val() === false || root.child('admins').child(auth.uid).val() === true" },
         "pass": { ".validate": "false" },

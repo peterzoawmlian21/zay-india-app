@@ -1004,7 +1004,7 @@
             toast.innerHTML = `<div style="display:flex;gap:.6rem;align-items:flex-start"><i class="fas ${type==='success'?'fa-circle-check':type==='error'?'fa-circle-exclamation':'fa-circle-info'}"></i><div style="font-weight:600">${msg}</div></div>`;
             container.appendChild(toast);
             setTimeout(() => toast.classList.add('show'), 10);
-            setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3000);
+            setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, type === 'error' ? 7000 : 3000);
         };
 
         // Realtime Fetching
@@ -1172,6 +1172,7 @@
                         dbId: firebaseUser.uid, phone, name, address,
                         email: (firebaseUser.email || '').toLowerCase(),
                         role: 'customer',
+                        signInMethod: 'google',
                         createdAt: new Date().toISOString()
                     }
                 });
@@ -1368,6 +1369,7 @@
                         name: document.getElementById('reg-name').value.trim(),
                         address: document.getElementById('reg-address').value.trim(),
                         role: 'customer',
+                        signInMethod: 'phone',
                         createdAt: new Date().toISOString()
                     }
                 });
@@ -2040,7 +2042,9 @@
                     const isLegacy = Object.prototype.hasOwnProperty.call(user, 'pass');
                     const actions = isLegacy
                         ? `<span class="badge badge-muted">Old account, must re-register</span><button type="button" data-delete-uid="${escapeHtml(user.dbId)}" class="delete-legacy-account btn btn-sm btn-danger-soft">Delete</button>`
-                        : `<button type="button" data-reset-uid="${escapeHtml(user.dbId)}" class="reset-user-password btn btn-sm btn-ghost"><i class="fas fa-key"></i>Reset password</button>${isInactive ? `<button type="button" data-delete-uid="${escapeHtml(user.dbId)}" class="delete-inactive-account btn btn-sm btn-danger-soft">Delete inactive</button>` : ''}`;
+                        : `${user.signInMethod === 'google'
+                            ? '<span class="badge badge-info" title="Signs in with Google, so there is no password to reset"><i class="fab fa-google"></i>Google login</span>'
+                            : `<button type="button" data-reset-uid="${escapeHtml(user.dbId)}" class="reset-user-password btn btn-sm btn-ghost"><i class="fas fa-key"></i>Reset password</button>`}${isInactive ? `<button type="button" data-delete-uid="${escapeHtml(user.dbId)}" class="delete-inactive-account btn btn-sm btn-danger-soft">Delete inactive</button>` : ''}`;
                     return `<tr><td style="font-weight:600">${escapeHtml(user.name)}</td><td style="white-space:nowrap">${escapeHtml(user.phone)}</td><td>${escapeHtml(user.email || 'Not provided')}</td><td style="min-width:200px;font-size:.82rem;color:var(--muted)">${escapeHtml(user.address)}</td><td style="white-space:nowrap;font-size:.82rem">${isInactive ? '<span class="badge badge-pending">Inactive</span> ' : ''}${lastLoginLabel}</td><td><div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap">${actions}</div></td></tr>`;
                 }).join('')
                 : '<tr><td colspan="6"><div class="empty"><i class="fas fa-users"></i><p>No customer accounts yet.</p></div></td></tr>';
