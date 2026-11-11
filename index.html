@@ -269,7 +269,7 @@
         .admin-brand small { display: block; font-size: 0.72rem; color: var(--muted); font-weight: 600; }
         .admin-nav { display: flex; gap: 0.25rem; padding: 0 0.75rem 0.6rem; overflow-x: auto; scrollbar-width: none; }
         .admin-nav::-webkit-scrollbar { display: none; }
-        @media (max-width: 899px) { .admin-nav .en-inline { display: none; } .admin-nav button { flex: 1; justify-content: center; } }
+        @media (max-width: 899px) { .admin-nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); } .admin-nav .en-inline { display: none; } .admin-nav button { flex-direction: column; justify-content: center; gap: .15rem; min-height: 54px; padding: .4rem .2rem; font-size: .72rem; white-space: normal; text-align: center; } .admin-nav button i { font-size: 1rem; } }
         .admin-nav button { display: flex; align-items: center; gap: 0.6rem; white-space: nowrap; min-height: 42px; padding: 0.5rem 0.85rem; border: 0; border-radius: 10px; background: none; color: var(--muted); font-weight: 600; cursor: pointer; }
         .admin-nav button:hover { background: var(--well); color: var(--ink); }
         .admin-nav button.is-active { background: var(--brand-soft); color: var(--brand-ink); }
@@ -304,6 +304,38 @@
         @media (min-width: 1200px) { .pending-grid { grid-template-columns: 1fr 1fr; } }
         .pending-card { padding: 1rem; border-left: 3px solid var(--brand); }
         .status-select { min-height: 36px; padding: 0.3rem 0.6rem; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); font-size: 0.82rem; font-weight: 600; }
+
+        /* ---------- Finance ---------- */
+        :root { --series-revenue: #2a78d6; --series-cost: #eb6834; }
+        .fin-filters { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin-bottom: 1rem; }
+        .fin-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; margin-bottom: 1rem; }
+        @media (max-width: 640px) { .fin-tiles { grid-template-columns: 1fr; } }
+        .fin-tile { padding: 1rem 1.1rem; }
+        .fin-tile-label { font-size: .85rem; font-weight: 600; }
+        .fin-tile-value { margin-top: .35rem; font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+        .fin-tile-sub { margin-top: .2rem; font-size: .78rem; color: var(--muted); }
+        .fin-chart-card { padding: 1rem 1.1rem; margin-bottom: 1.5rem; position: relative; }
+        .fin-chart-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: .5rem; }
+        .fin-legend { display: flex; gap: 1rem; font-size: .8rem; color: var(--muted); }
+        .fin-legend span { display: inline-flex; align-items: center; gap: .4rem; }
+        .fin-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+        .fin-chart { width: 100%; }
+        .fin-chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+        .fin-chart .tick { font-size: 11px; fill: var(--muted); font-family: var(--font); }
+        .fin-chart .grid { stroke: var(--line); stroke-width: 1; }
+        .fin-chart .hit { fill: transparent; cursor: default; }
+        .fin-chart .hit:hover, .fin-chart .hit.is-hover { fill: rgba(16, 24, 40, 0.04); }
+        .fin-tooltip { position: absolute; z-index: 5; pointer-events: none; min-width: 160px; padding: .6rem .75rem; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); box-shadow: 0 8px 24px rgba(16, 24, 40, 0.14); font-size: .8rem; }
+        .fin-tooltip strong { display: block; margin-bottom: .3rem; }
+        .fin-tooltip .row { display: flex; justify-content: space-between; gap: 1rem; }
+        .fin-tooltip .row span:first-child { display: inline-flex; align-items: center; gap: .35rem; color: var(--muted); }
+        .fin-tooltip .row i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+        .fin-table-toggle { margin-top: .75rem; }
+        .fin-table-toggle summary { cursor: pointer; font-size: .82rem; font-weight: 600; color: var(--brand-ink); }
+        .fin-table-toggle .table-wrap { margin-top: .5rem; max-height: 280px; overflow-y: auto; }
+        .fin-columns { display: grid; gap: 1.5rem; }
+        .fin-columns > section { min-width: 0; }
+        @media (min-width: 1100px) { .fin-columns { grid-template-columns: 1fr 1fr; } }
 
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
@@ -506,6 +538,7 @@
                 <button type="button" onclick="window.switchAdminTab('orders')" id="admin-nav-orders" class="is-active"><i class="fas fa-receipt"></i>အော်ဒါများ <span class="en-inline">Orders</span></button>
                 <button type="button" onclick="window.switchAdminTab('products')" id="admin-nav-products"><i class="fas fa-box"></i>ပစ္စည်းများ <span class="en-inline">Products</span></button>
                 <button type="button" onclick="window.switchAdminTab('accounts')" id="admin-nav-accounts"><i class="fas fa-users"></i>ဝယ်သူများ <span class="en-inline">Customers</span></button>
+                <button type="button" onclick="window.switchAdminTab('finance')" id="admin-nav-finance"><i class="fas fa-chart-column"></i>ငွေစာရင်း <span class="en-inline">Finance</span></button>
             </nav>
             <div class="admin-logout-wide"><button onclick="window.logout()" class="btn btn-ghost btn-block"><i class="fas fa-arrow-right-from-bracket"></i>ထွက်မည် <span class="en-inline">Log out</span></button></div>
         </aside>
@@ -567,7 +600,100 @@
                     </div>
                 </div>
             </div>
+            <div id="admin-tab-finance" class="hide">
+                <div class="admin-page-head">
+                    <div><h1>ငွေစာရင်း <span class="en-inline">Finance</span></h1><p>Revenue counts confirmed, on-the-way and delivered orders. Costs are the stock purchases and expenses you record here.</p></div>
+                    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+                        <button type="button" onclick="window.exportFinanceCsv()" class="btn btn-ghost"><i class="fas fa-file-arrow-down"></i>Export CSV</button>
+                        <button type="button" onclick="window.openExpenseModal()" class="btn btn-primary"><i class="fas fa-plus"></i>Add cost</button>
+                    </div>
+                </div>
+
+                <div class="fin-filters">
+                    <label for="finance-period" class="sr-only">Period</label>
+                    <select id="finance-period" class="status-select" onchange="window.renderFinance()">
+                        <option value="this-month">This month</option>
+                        <option value="last-month">Last month</option>
+                        <option value="last-30">Last 30 days</option>
+                        <option value="this-year">This year</option>
+                        <option value="all">All time</option>
+                        <option value="custom">Custom dates</option>
+                    </select>
+                    <span id="finance-custom" class="hide" style="display:inline-flex;gap:.4rem;align-items:center">
+                        <label for="finance-from" class="sr-only">From</label><input type="date" id="finance-from" class="status-select" onchange="window.renderFinance()">
+                        <span style="color:var(--muted)">to</span>
+                        <label for="finance-to" class="sr-only">To</label><input type="date" id="finance-to" class="status-select" onchange="window.renderFinance()">
+                    </span>
+                    <span id="finance-range-label" style="font-size:.82rem;color:var(--muted)"></span>
+                </div>
+
+                <div class="fin-tiles">
+                    <div class="card fin-tile"><p class="fin-tile-label">ဝင်ငွေ <span class="en-inline">Revenue</span></p><p class="fin-tile-value" id="fin-revenue">₹0</p><p class="fin-tile-sub" id="fin-revenue-sub"></p></div>
+                    <div class="card fin-tile"><p class="fin-tile-label">ကုန်ကျစရိတ် <span class="en-inline">Costs</span></p><p class="fin-tile-value" id="fin-cost">₹0</p><p class="fin-tile-sub" id="fin-cost-sub"></p></div>
+                    <div class="card fin-tile"><p class="fin-tile-label">အမြတ် <span class="en-inline">Profit</span></p><p class="fin-tile-value" id="fin-profit">₹0</p><p class="fin-tile-sub" id="fin-profit-sub"></p></div>
+                </div>
+
+                <section class="card fin-chart-card" aria-labelledby="fin-chart-title">
+                    <div class="fin-chart-head">
+                        <h2 id="fin-chart-title" class="admin-section-head" style="margin:0;font-size:1rem;font-weight:700">Revenue and costs</h2>
+                        <div class="fin-legend" aria-hidden="true"><span><i style="background:var(--series-revenue)"></i>Revenue</span><span><i style="background:var(--series-cost)"></i>Costs</span></div>
+                    </div>
+                    <div id="finance-chart" class="fin-chart"></div>
+                    <div id="finance-tooltip" class="fin-tooltip hide" role="status"></div>
+                    <details class="fin-table-toggle">
+                        <summary>Show as table</summary>
+                        <div class="table-wrap"><table class="table"><thead><tr><th id="fin-table-period">Period</th><th class="num">Revenue</th><th class="num">Costs</th><th class="num">Profit</th></tr></thead><tbody id="finance-chart-table"></tbody></table></div>
+                    </details>
+                </section>
+
+                <div class="fin-columns">
+                    <section>
+                        <div class="admin-section-head"><h2>အရောင်းရဆုံး <span class="en-inline">Best sellers</span></h2></div>
+                        <div class="card table-wrap"><table class="table"><thead><tr><th>Product</th><th class="num">Sold</th><th class="num">Revenue</th></tr></thead><tbody id="finance-best-sellers"></tbody></table></div>
+                    </section>
+                    <section>
+                        <div class="admin-section-head"><h2>ကုန်ကျစရိတ်များ <span class="en-inline">Costs recorded</span></h2></div>
+                        <div class="card table-wrap"><table class="table"><thead><tr><th>Date</th><th>What</th><th class="num">Amount</th><th></th></tr></thead><tbody id="finance-expenses"></tbody></table></div>
+                    </section>
+                </div>
+            </div>
         </main>
+    </div>
+
+    <!-- Add a cost: stock purchase or other expense -->
+    <div id="expense-modal" class="overlay z-[70] hide">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="expense-modal-title">
+            <div class="modal-head">
+                <div><h2 id="expense-modal-title" class="modal-title">ကုန်ကျစရိတ်ထည့်မည် <span class="en-inline">Add cost</span></h2><p class="modal-sub">Record stock you bought or another business expense.</p></div>
+                <button type="button" onclick="window.closeExpenseModal()" aria-label="Close" class="icon-btn"><i class="fas fa-xmark"></i></button>
+            </div>
+            <form id="expense-form" onsubmit="window.saveExpense(event)" style="display:flex;flex-direction:column;gap:0.9rem">
+                <div><label for="expense-category" class="field-label">အမျိုးအစား <span class="en-inline">Type</span></label>
+                    <select id="expense-category" class="field" onchange="window.updateExpenseForm()">
+                        <option value="stock">Stock purchase</option>
+                        <option value="transport">Transport</option>
+                        <option value="packaging">Packaging</option>
+                        <option value="delivery">Delivery</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div id="expense-stock-fields" style="display:grid;grid-template-columns:2fr 1fr;gap:.75rem">
+                    <div><label for="expense-product" class="field-label">ပစ္စည်း <span class="en-inline">Product</span></label><select id="expense-product" class="field"></select></div>
+                    <div><label for="expense-qty" class="field-label">အရေအတွက် <span class="en-inline">Qty</span></label><input id="expense-qty" type="number" min="1" step="1" inputmode="numeric" class="field"></div>
+                    <label style="grid-column:1/-1;display:flex;gap:.5rem;align-items:center;font-size:.88rem"><input id="expense-add-stock" type="checkbox" checked style="width:18px;height:18px;accent-color:var(--brand)">Also add these units to stock</label>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+                    <div><label for="expense-amount" class="field-label">ပေးခဲ့သည့်ငွေ <span class="en-inline">Amount ₹</span></label><input id="expense-amount" type="number" min="0.01" step="0.01" inputmode="decimal" class="field" required></div>
+                    <div><label for="expense-date" class="field-label">ရက်စွဲ <span class="en-inline">Date</span></label><input id="expense-date" type="date" class="field" required></div>
+                </div>
+                <div><label for="expense-note" class="field-label">မှတ်ချက် <span class="en-inline">Note (optional)</span></label><input id="expense-note" type="text" maxlength="500" class="field" placeholder="e.g. Supplier name, bus fare to Delhi"></div>
+                <p id="expense-error" class="error-text" role="status" aria-live="polite"></p>
+                <div class="modal-actions">
+                    <button type="button" onclick="window.closeExpenseModal()" class="btn btn-ghost">Cancel</button>
+                    <button id="expense-save" type="submit" class="btn btn-primary">Save cost</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- Shown once after the first Google sign-in: Google gives name + email, but orders need phone + address -->
@@ -637,6 +763,7 @@
             <form onsubmit="window.confirmRestock(event)" style="display:flex;flex-direction:column;gap:0.9rem">
                 <input type="hidden" id="restock-prod-id">
                 <div><label for="restock-qty" class="field-label">အသစ်ရောက်သည့်အရေအတွက် <span class="en-inline">Quantity received</span></label><input type="number" id="restock-qty" placeholder="10" class="field" required min="1" inputmode="numeric"></div>
+                <div><label for="restock-cost" class="field-label">ပေးခဲ့သည့်ငွေ <span class="en-inline">Amount paid ₹ (optional)</span></label><input type="number" id="restock-cost" placeholder="e.g. 2000" class="field" min="0" step="0.01" inputmode="decimal"><p class="field-hint">Fill this in to count the purchase in Finance.</p></div>
                 <div class="modal-actions">
                     <button type="button" onclick="document.getElementById('restock-modal').classList.add('hide')" class="btn btn-ghost">Cancel</button>
                     <button type="submit" class="btn btn-whatsapp">Add stock</button>
@@ -672,7 +799,7 @@
         const phoneToLoginEmail = phone => `${normalizePhone(phone)}@${PHONE_LOGIN_DOMAIN}`;
         const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 
-        window.users = []; window.products = []; window.orders = [];
+        window.users = []; window.products = []; window.orders = []; window.expenses = [];
         window.currentUser = null; window.cart = {};
         window.productImageProcessing = false;
         window.orderActionsInProgress = new Set();
@@ -713,7 +840,7 @@
 
         const initDatabase = (role, uid) => {
             detachListeners();
-            window.users = []; window.products = []; window.orders = [];
+            window.users = []; window.products = []; window.orders = []; window.expenses = [];
             let loadedFlags = { users: false, products: false, orders: false };
             const normalizeCollection = (value, collectionName) => {
                 if (value == null) return [];
@@ -735,6 +862,8 @@
             };
             if (role === 'admin') {
                 listen(db.ref('users'), (s) => { window.users = normalizeCollection(s.val(), 'users'); if(!loadedFlags.users) { loadedFlags.users = true; checkInitialLoad(); } if (!document.getElementById('admin-tab-accounts').classList.contains('hide')) window.renderAdminAccounts(); });
+                // Finance data (admin only). Doesn't block the first render.
+                listen(db.ref('expenses'), (s) => { window.expenses = normalizeCollection(s.val(), 'expenses'); window.refreshFinanceIfOpen(); });
             } else {
                 // A customer can read only their own profile.
                 listen(db.ref(`users/${uid}`), (s) => {
@@ -758,7 +887,7 @@
                     window.showToast("အော်ဒါသစ် ဝင်လာပါပြီ", "info");
                 }
                 prevLen = window.orders.length;
-                if (window.currentUser?.role === 'admin') window.renderAdminOrders();
+                if (window.currentUser?.role === 'admin') { window.renderAdminOrders(); window.refreshFinanceIfOpen(); }
                 if (window.currentUser?.role === 'customer') window.renderCustomerOrders();
             });
         };
@@ -1465,7 +1594,7 @@
 
         window.switchAdminTab = (t) => {
             if (window.currentUser?.role !== 'admin') return window.showToast('Admin access required.', 'error');
-            ['orders', 'products', 'accounts'].forEach(tab => {
+            ['orders', 'products', 'accounts', 'finance'].forEach(tab => {
                 document.getElementById(`admin-tab-${tab}`).classList.toggle('hide', t !== tab);
                 const nav = document.getElementById(`admin-nav-${tab}`);
                 nav.classList.toggle('is-active', t === tab);
@@ -1474,6 +1603,7 @@
             if (t === 'orders') window.renderAdminOrders();
             else if (t === 'products') window.renderAdminProducts();
             else if (t === 'accounts') window.renderAdminAccounts();
+            else if (t === 'finance') window.renderFinance();
         };
         window.renderAdminAccounts = () => {
             if (window.currentUser?.role !== 'admin') return window.showToast('Admin access required.', 'error');
@@ -1598,6 +1728,292 @@
                 }).join('')}
             `).join('') : '<tr><td colspan="7"><div class="empty"><i class="fas fa-receipt"></i><p>No orders yet.</p></div></td></tr>';
         };
+        // ---------- Finance (admin) ----------
+        // Revenue: orders the admin accepted. Pending and rejected orders are never counted.
+        const REVENUE_STATUSES = ['confirmed', 'ontheway', 'delivered'];
+        const EXPENSE_CATEGORIES = { stock: 'Stock purchase', transport: 'Transport', packaging: 'Packaging', delivery: 'Delivery', other: 'Other' };
+        const pad2 = n => String(n).padStart(2, '0');
+        const toDateKey = date => `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+        const keyToDate = key => { const [y, m, d] = key.split('-').map(Number); return new Date(y, m - 1, d); };
+        window.todayKey = () => toDateKey(new Date());
+        const formatMoney = value => '₹' + (Number(value) || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+        const formatMoneyCompact = value => {
+            const n = Math.abs(value);
+            const text = n >= 100000 ? `${(n / 100000).toFixed(n >= 1000000 ? 0 : 1)}L` : n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}K` : String(Math.round(n));
+            return (value < 0 ? '−₹' : '₹') + text.replace('.0', '');
+        };
+        const orderDateKey = order => {
+            const raw = order.createdAt || order.timestamp || order.date;
+            const date = raw ? new Date(raw) : null;
+            return date && Number.isFinite(date.getTime()) ? toDateKey(date) : null;
+        };
+
+        window.getFinancePeriod = () => {
+            const choice = document.getElementById('finance-period').value;
+            document.getElementById('finance-custom').classList.toggle('hide', choice !== 'custom');
+            const now = new Date();
+            const today = toDateKey(now);
+            if (choice === 'this-month') return { from: toDateKey(new Date(now.getFullYear(), now.getMonth(), 1)), to: today };
+            if (choice === 'last-month') return { from: toDateKey(new Date(now.getFullYear(), now.getMonth() - 1, 1)), to: toDateKey(new Date(now.getFullYear(), now.getMonth(), 0)) };
+            if (choice === 'last-30') return { from: toDateKey(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29)), to: today };
+            if (choice === 'this-year') return { from: `${now.getFullYear()}-01-01`, to: today };
+            if (choice === 'custom') {
+                const fromInput = document.getElementById('finance-from'), toInput = document.getElementById('finance-to');
+                if (!fromInput.value) fromInput.value = toDateKey(new Date(now.getFullYear(), now.getMonth(), 1));
+                if (!toInput.value) toInput.value = today;
+                const [from, to] = fromInput.value <= toInput.value ? [fromInput.value, toInput.value] : [toInput.value, fromInput.value];
+                return { from, to };
+            }
+            // All time: from the earliest order or cost on record.
+            const keys = [...window.orders.map(orderDateKey), ...window.expenses.map(e => e.date)].filter(Boolean).sort();
+            return { from: keys[0] || today, to: keys.length && keys[keys.length - 1] > today ? keys[keys.length - 1] : today };
+        };
+
+        window.getFinanceData = () => {
+            const { from, to } = window.getFinancePeriod();
+            const inRange = key => key && key >= from && key <= to;
+            const orders = window.orders.filter(order => REVENUE_STATUSES.includes(order.status) && inRange(orderDateKey(order)));
+            const expenses = window.expenses.filter(expense => inRange(expense.date));
+            return { from, to, orders, expenses };
+        };
+
+        window.refreshFinanceIfOpen = () => {
+            const tab = document.getElementById('admin-tab-finance');
+            if (tab && !tab.classList.contains('hide') && window.currentUser?.role === 'admin') window.renderFinance();
+        };
+
+        window.renderFinance = () => {
+            if (window.currentUser?.role !== 'admin') return;
+            const { from, to, orders, expenses } = window.getFinanceData();
+            const fmtRange = key => keyToDate(key).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+            document.getElementById('finance-range-label').innerText = from === to ? fmtRange(from) : `${fmtRange(from)} – ${fmtRange(to)}`;
+
+            const revenue = orders.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+            const stockCost = expenses.filter(e => e.category === 'stock').reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+            const otherCost = expenses.filter(e => e.category !== 'stock').reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+            const cost = stockCost + otherCost;
+            const profit = revenue - cost;
+            document.getElementById('fin-revenue').innerText = formatMoney(revenue);
+            document.getElementById('fin-revenue-sub').innerText = `${orders.length} order${orders.length === 1 ? '' : 's'}`;
+            document.getElementById('fin-cost').innerText = formatMoney(cost);
+            document.getElementById('fin-cost-sub').innerText = `Stock ${formatMoney(stockCost)}, other ${formatMoney(otherCost)}`;
+            const profitEl = document.getElementById('fin-profit');
+            profitEl.innerText = (profit < 0 ? '−' : '') + formatMoney(Math.abs(profit));
+            profitEl.style.color = profit < 0 ? 'var(--danger)' : 'var(--ink)';
+            document.getElementById('fin-profit-sub').innerText = revenue > 0
+                ? (profit < 0 ? 'Costs are higher than revenue' : `Margin ${Math.round((profit / revenue) * 100)}% of revenue`)
+                : (cost > 0 ? 'No revenue in this period yet' : 'Nothing recorded in this period');
+
+            window.renderFinanceChart(from, to, orders, expenses);
+            window.renderBestSellers(orders);
+            window.renderExpenseList(expenses);
+        };
+
+        // Buckets: one per day for ranges up to ~2 months, otherwise one per month.
+        const buildBuckets = (from, to) => {
+            const start = keyToDate(from), end = keyToDate(to);
+            const days = Math.round((end - start) / 86400000) + 1;
+            const buckets = [];
+            if (days <= 62) {
+                for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                    const key = toDateKey(d);
+                    buckets.push({ key, match: k => k === key, label: d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }), short: String(d.getDate()), revenue: 0, cost: 0 });
+                }
+                return { unit: 'Day', buckets };
+            }
+            for (let d = new Date(start.getFullYear(), start.getMonth(), 1); d <= end; d.setMonth(d.getMonth() + 1)) {
+                const prefix = `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
+                buckets.push({ key: prefix, match: k => k.startsWith(prefix), label: d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }), short: d.toLocaleDateString(undefined, { month: 'short' }), revenue: 0, cost: 0 });
+            }
+            return { unit: 'Month', buckets };
+        };
+        const niceMax = value => {
+            if (value <= 0) return 100;
+            const exp = Math.pow(10, Math.floor(Math.log10(value)));
+            const step = [1, 2, 2.5, 5, 10].map(m => m * exp).find(s => value / s <= 4) || 10 * exp;
+            return Math.ceil(value / step) * step;
+        };
+        // Bar with 4px rounded top corners anchored to the baseline.
+        const barPath = (x, y, w, h) => {
+            if (h <= 0) return '';
+            const r = Math.min(4, w / 2, h);
+            return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`;
+        };
+
+        window.renderFinanceChart = (from, to, orders, expenses) => {
+            const { unit, buckets } = buildBuckets(from, to);
+            orders.forEach(order => { const key = orderDateKey(order); const b = buckets.find(x => x.match(key)); if (b) b.revenue += Number(order.total) || 0; });
+            expenses.forEach(expense => { const b = buckets.find(x => x.match(expense.date)); if (b) b.cost += Number(expense.amount) || 0; });
+            window.financeBuckets = buckets;
+            document.getElementById('fin-chart-title').innerText = `Revenue and costs by ${unit.toLowerCase()}`;
+            document.getElementById('fin-table-period').innerText = unit;
+            document.getElementById('finance-chart-table').innerHTML = buckets.filter(b => b.revenue || b.cost).map(b => `<tr><td>${escapeHtml(b.label)}</td><td class="num">${formatMoney(b.revenue)}</td><td class="num">${formatMoney(b.cost)}</td><td class="num">${formatMoney(b.revenue - b.cost)}</td></tr>`).join('') || '<tr><td colspan="4" style="color:var(--muted)">Nothing recorded in this period.</td></tr>';
+
+            const container = document.getElementById('finance-chart');
+            const width = Math.max(container.clientWidth || 600, 280);
+            const height = 220, padL = 44, padR = 8, padT = 10, padB = 26;
+            const plotW = width - padL - padR, plotH = height - padT - padB;
+            const max = niceMax(Math.max(...buckets.map(b => Math.max(b.revenue, b.cost)), 0));
+            const ticks = [0, 0.25, 0.5, 0.75, 1].map(f => f * max);
+            const slot = plotW / buckets.length;
+            const barW = Math.max(2, Math.min(18, (slot - 6) / 2));
+            const y = v => padT + plotH - (v / max) * plotH;
+            const labelEvery = Math.ceil(buckets.length / Math.max(1, Math.floor(plotW / 36)));
+            let svg = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Bar chart of revenue and costs by ${unit.toLowerCase()}. Use the table view for exact values.">`;
+            ticks.forEach(t => { svg += `<line class="grid" x1="${padL}" x2="${width - padR}" y1="${y(t)}" y2="${y(t)}"></line><text class="tick" x="${padL - 6}" y="${y(t) + 4}" text-anchor="end">${formatMoneyCompact(t)}</text>`; });
+            buckets.forEach((b, i) => {
+                const cx = padL + slot * i + slot / 2;
+                // 2px gap between the pair of bars.
+                svg += `<path d="${barPath(cx - barW - 1, y(b.revenue), barW, plotH + padT - y(b.revenue))}" fill="var(--series-revenue)"></path>`;
+                svg += `<path d="${barPath(cx + 1, y(b.cost), barW, plotH + padT - y(b.cost))}" fill="var(--series-cost)"></path>`;
+                if (i % labelEvery === 0) svg += `<text class="tick" x="${cx}" y="${height - 8}" text-anchor="middle">${escapeHtml(b.short)}</text>`;
+                svg += `<rect class="hit" data-i="${i}" x="${padL + slot * i}" y="${padT}" width="${slot}" height="${plotH}"></rect>`;
+            });
+            svg += '</svg>';
+            container.innerHTML = svg;
+
+            const tooltip = document.getElementById('finance-tooltip');
+            const card = container.closest('.fin-chart-card');
+            container.querySelectorAll('.hit').forEach(rect => {
+                const show = () => {
+                    const b = window.financeBuckets[Number(rect.dataset.i)];
+                    const p = b.revenue - b.cost;
+                    tooltip.innerHTML = `<strong>${escapeHtml(b.label)}</strong><div class="row"><span><i style="background:var(--series-revenue)"></i>Revenue</span><span>${formatMoney(b.revenue)}</span></div><div class="row"><span><i style="background:var(--series-cost)"></i>Costs</span><span>${formatMoney(b.cost)}</span></div><div class="row" style="margin-top:.25rem;font-weight:700"><span>Profit</span><span>${p < 0 ? '−' : ''}${formatMoney(Math.abs(p))}</span></div>`;
+                    tooltip.classList.remove('hide');
+                    const r = rect.getBoundingClientRect(), c = card.getBoundingClientRect();
+                    const left = Math.min(Math.max(r.left - c.left + r.width / 2 - tooltip.offsetWidth / 2, 8), c.width - tooltip.offsetWidth - 8);
+                    tooltip.style.left = `${left}px`;
+                    tooltip.style.top = `${Math.max(r.top - c.top - tooltip.offsetHeight + 40, 8)}px`;
+                };
+                rect.addEventListener('mouseenter', show);
+                rect.addEventListener('click', show);
+                rect.addEventListener('mouseleave', () => tooltip.classList.add('hide'));
+            });
+        };
+
+        window.renderBestSellers = orders => {
+            const totals = new Map();
+            orders.forEach(order => {
+                const items = Array.isArray(order.lineItems) && order.lineItems.length ? order.lineItems
+                    : String(order.items || '').split(',').map(entry => { const m = entry.trim().match(/^(\d+)\s*x\s+(.+)$/i); return m ? { name: m[2].trim(), quantity: Number(m[1]), subtotal: null } : null; }).filter(Boolean);
+                items.forEach(item => {
+                    const key = item.productId || item.name;
+                    const row = totals.get(key) || { name: item.name, quantity: 0, revenue: 0, unknown: false };
+                    row.quantity += Number(item.quantity) || 0;
+                    if (item.subtotal == null) row.unknown = true; else row.revenue += Number(item.subtotal) || 0;
+                    totals.set(key, row);
+                });
+            });
+            const rows = [...totals.values()].sort((a, b) => b.revenue - a.revenue || b.quantity - a.quantity).slice(0, 10);
+            document.getElementById('finance-best-sellers').innerHTML = rows.length
+                ? rows.map(r => `<tr><td class="cell-name">${escapeHtml(r.name)}</td><td class="num">${r.quantity}</td><td class="num">${formatMoney(r.revenue)}${r.unknown ? ' <span title="Some older orders have no price breakdown" style="color:var(--faint)">*</span>' : ''}</td></tr>`).join('')
+                : '<tr><td colspan="3"><div class="empty" style="padding:1.25rem"><p>No confirmed sales in this period.</p></div></td></tr>';
+        };
+
+        window.renderExpenseList = expenses => {
+            const rows = [...expenses].sort((a, b) => (b.date || '').localeCompare(a.date || '') || (b.createdAt || '').localeCompare(a.createdAt || ''));
+            document.getElementById('finance-expenses').innerHTML = rows.length
+                ? rows.map(e => {
+                    const what = e.category === 'stock'
+                        ? `${escapeHtml(e.productName || 'Stock')}${e.quantity ? ` × ${e.quantity}` : ''}`
+                        : escapeHtml(EXPENSE_CATEGORIES[e.category] || 'Other');
+                    return `<tr><td style="white-space:nowrap;font-size:.82rem">${escapeHtml(keyToDate(e.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }))}</td><td><p style="font-weight:600">${what}</p>${e.note ? `<p style="font-size:.78rem;color:var(--muted)">${escapeHtml(e.note)}</p>` : ''}${e.category === 'stock' ? '<span class="badge badge-muted" style="margin-top:.2rem">Stock</span>' : ''}</td><td class="num" style="font-weight:700">${formatMoney(e.amount)}</td><td class="num"><button type="button" class="icon-btn delete-expense" data-id="${escapeHtml(e.dbId)}" aria-label="Delete this cost" title="Delete" style="width:34px;height:34px;color:var(--danger)"><i class="fas fa-trash"></i></button></td></tr>`;
+                }).join('')
+                : '<tr><td colspan="4"><div class="empty" style="padding:1.25rem"><p>No costs recorded in this period.</p><button type="button" class="btn btn-soft btn-sm" style="margin-top:.6rem" onclick="window.openExpenseModal()">Add cost</button></div></td></tr>';
+            document.querySelectorAll('#finance-expenses .delete-expense').forEach(button => button.addEventListener('click', () => window.deleteExpense(button.dataset.id)));
+        };
+
+        window.deleteExpense = async id => {
+            if (window.currentUser?.role !== 'admin') return window.showToast('Admin access required.', 'error');
+            const expense = window.expenses.find(e => e.dbId === id);
+            if (!expense) return;
+            if (!window.confirm(`Delete this ${formatMoney(expense.amount)} cost? Stock levels are not changed.`)) return;
+            try {
+                await db.ref(`expenses/${id}`).remove();
+                window.showToast('Cost deleted.', 'success');
+            } catch (error) {
+                console.error('Expense deletion failed', error);
+                window.showToast(`Could not delete the cost: ${error.message || 'Please try again.'}`, 'error');
+            }
+        };
+
+        window.openExpenseModal = () => {
+            if (window.currentUser?.role !== 'admin') return window.showToast('Admin access required.', 'error');
+            document.getElementById('expense-form').reset();
+            document.getElementById('expense-date').value = window.todayKey();
+            document.getElementById('expense-error').innerText = '';
+            document.getElementById('expense-product').innerHTML = window.products.length
+                ? window.products.map(p => `<option value="${escapeHtml(p.dbId)}">${escapeHtml(p.name)}</option>`).join('')
+                : '<option value="">No products yet</option>';
+            document.getElementById('expense-category').value = window.products.length ? 'stock' : 'transport';
+            window.updateExpenseForm();
+            document.getElementById('expense-modal').classList.remove('hide');
+        };
+        window.closeExpenseModal = () => document.getElementById('expense-modal').classList.add('hide');
+        window.updateExpenseForm = () => {
+            const isStock = document.getElementById('expense-category').value === 'stock';
+            document.getElementById('expense-stock-fields').style.display = isStock ? 'grid' : 'none';
+            document.getElementById('expense-qty').required = isStock;
+        };
+        window.saveExpense = async event => {
+            event.preventDefault();
+            const errorEl = document.getElementById('expense-error');
+            const category = document.getElementById('expense-category').value;
+            const amount = Number(document.getElementById('expense-amount').value);
+            const date = document.getElementById('expense-date').value;
+            const note = document.getElementById('expense-note').value.trim();
+            if (!Number.isFinite(amount) || amount <= 0) { errorEl.innerText = 'Enter the amount you paid.'; return; }
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { errorEl.innerText = 'Choose a date.'; return; }
+            const expenseId = 'EXP-' + Date.now();
+            const expense = { category, amount, date, createdAt: new Date().toISOString() };
+            if (note) expense.note = note;
+            const updates = {};
+            if (category === 'stock') {
+                const productId = document.getElementById('expense-product').value;
+                const product = window.products.find(p => p.dbId === productId);
+                const quantity = Number.parseInt(document.getElementById('expense-qty').value, 10);
+                if (!product) { errorEl.innerText = 'Choose the product you bought.'; return; }
+                if (!Number.isInteger(quantity) || quantity <= 0) { errorEl.innerText = 'Enter how many units you bought.'; return; }
+                Object.assign(expense, { productId, productName: product.name, quantity });
+                if (document.getElementById('expense-add-stock').checked) updates[`products/${productId}/stockQty`] = firebase.database.ServerValue.increment(quantity);
+            }
+            updates[`expenses/${expenseId}`] = expense;
+            const saveButton = document.getElementById('expense-save');
+            saveButton.disabled = true;
+            errorEl.innerText = '';
+            try {
+                await db.ref().update(updates);
+                window.closeExpenseModal();
+                window.showToast(updates[`expenses/${expenseId}`] && Object.keys(updates).length > 1 ? `Cost saved and ${expense.quantity} added to stock.` : 'Cost saved.', 'success');
+            } catch (error) {
+                console.error('Saving expense failed', error);
+                errorEl.innerText = `Could not save: ${error.message || 'Please try again.'}`;
+            } finally {
+                saveButton.disabled = false;
+            }
+        };
+
+        window.exportFinanceCsv = () => {
+            if (window.currentUser?.role !== 'admin') return window.showToast('Admin access required.', 'error');
+            const { from, to, orders, expenses } = window.getFinanceData();
+            // Quote every cell; prefix formula-like text so spreadsheets don't execute it.
+            const cell = value => { let text = String(value ?? ''); if (/^[=+\-@\t\r]/.test(text)) text = "'" + text; return `"${text.replace(/"/g, '""')}"`; };
+            const rows = [['Date', 'Type', 'Category', 'Description', 'Amount (INR)']];
+            orders.forEach(o => rows.push([orderDateKey(o), 'Revenue', 'Order', `${o.dbId} ${o.user || ''}: ${o.items || ''}`, Number(o.total) || 0]));
+            expenses.forEach(e => rows.push([e.date, 'Cost', EXPENSE_CATEGORIES[e.category] || e.category, e.category === 'stock' ? `${e.productName || ''} x ${e.quantity || ''}${e.note ? ' (' + e.note + ')' : ''}` : (e.note || ''), Number(e.amount) || 0]));
+            rows.sort((a, b) => a === rows[0] ? -1 : b === rows[0] ? 1 : String(a[0]).localeCompare(String(b[0])));
+            // BOM so Excel reads Burmese text as UTF-8.
+            const csv = '﻿' + rows.map(r => r.map(cell).join(',')).join('\r\n');
+            const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `zay-india-finance-${from}-to-${to}.csv`;
+            document.body.appendChild(link); link.click(); link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            window.showToast(`Exported ${rows.length - 1} rows.`, 'success');
+        };
+        window.addEventListener('resize', () => { clearTimeout(window.financeResizeTimer); window.financeResizeTimer = setTimeout(window.refreshFinanceIfOpen, 150); });
+
         window.getOrderInventoryItems = (order) => {
             let items = Array.isArray(order.lineItems) ? order.lineItems : [];
             if (!items.length && typeof order.items === 'string') {
@@ -1743,15 +2159,26 @@
                 return `<tr><td><img src="${p.img}" alt="" class="thumb" style="${out ? 'filter:grayscale(1);opacity:.5' : ''}"></td><td class="cell-name" style="font-weight:600">${escapeHtml(p.name)}</td><td class="num" style="font-weight:700">₹${formatPrice(p.price)}</td><td><div style="display:flex;align-items:center;gap:.5rem">${out ? '<span class="badge badge-danger">ကုန်သွားပြီ · Sold out</span>' : `<span class="badge badge-muted">${p.stockQty} ခု</span>`}<button type="button" onclick="window.openRestockModal('${p.dbId}')" class="btn btn-sm btn-soft"><i class="fas fa-plus"></i>Add stock</button></div></td><td class="num"><div style="display:inline-flex;gap:.35rem"><button type="button" onclick="window.openProductModal('${p.dbId}')" class="icon-btn" aria-label="Edit ${escapeHtml(p.name)}" title="Edit"><i class="fas fa-pen"></i></button><button type="button" onclick="window.deleteProduct('${p.dbId}')" class="icon-btn" style="color:var(--danger)" aria-label="Delete ${escapeHtml(p.name)}" title="Delete"><i class="fas fa-trash"></i></button></div></td></tr>`;
             }).join('');
         };
-        window.openRestockModal = (id) => { const p = window.products.find(x => x.dbId === id); if (!p) return; document.getElementById('restock-prod-id').value = id; document.getElementById('restock-prod-name').innerText = `${p.name}: လက်ရှိ ${p.stockQty} ခု (${p.stockQty} in stock)`; document.getElementById('restock-qty').value = ''; document.getElementById('restock-modal').classList.remove('hide'); };
+        window.openRestockModal = (id) => { const p = window.products.find(x => x.dbId === id); if (!p) return; document.getElementById('restock-prod-id').value = id; document.getElementById('restock-prod-name').innerText = `${p.name}: လက်ရှိ ${p.stockQty} ခု (${p.stockQty} in stock)`; document.getElementById('restock-qty').value = ''; document.getElementById('restock-cost').value = ''; document.getElementById('restock-modal').classList.remove('hide'); };
         window.confirmRestock = async (e) => {
             e.preventDefault();
             if (window.currentUser?.role !== 'admin') return window.showToast('Admin access required.', 'error');
             const id = document.getElementById('restock-prod-id').value;
             const addQty = Number.parseInt(document.getElementById('restock-qty').value, 10);
             if (!Number.isInteger(addQty) || addQty <= 0) return window.showToast('Enter a positive whole-number quantity.', 'error');
-         try {
-                await db.ref(`products/${id}/stockQty`).set(firebase.database.ServerValue.increment(addQty));
+            const costInput = document.getElementById('restock-cost').value.trim();
+            const cost = costInput === '' ? 0 : Number(costInput);
+            if (!Number.isFinite(cost) || cost < 0) return window.showToast('Enter the amount paid as a number, or leave it empty.', 'error');
+            try {
+                // Stock increase and its cost are written together, so they can't get out of sync.
+                const updates = { [`products/${id}/stockQty`]: firebase.database.ServerValue.increment(addQty) };
+                if (cost > 0) {
+                    const product = window.products.find(item => item.dbId === id);
+                    const expenseId = 'EXP-' + Date.now();
+                    updates[`expenses/${expenseId}`] = { category: 'stock', amount: cost, quantity: addQty, productId: id, productName: product?.name || '', date: window.todayKey(), createdAt: new Date().toISOString() };
+                }
+                await db.ref().update(updates);
+                document.getElementById('restock-cost').value = '';
                 window.showToast(`${addQty} ခု ထပ်ပေါင်းထည့်ပြီးပါပြီ`, 'success');
                 document.getElementById('restock-modal').classList.add('hide');
             } catch (error) {
