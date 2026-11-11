@@ -689,11 +689,17 @@
                 <div class="admin-page-head">
                     <div><h1>ငွေစာရင်း <span class="en-inline">Finance</span></h1><p>Revenue counts confirmed, on-the-way and delivered orders. Costs are the stock purchases and expenses you record here.</p></div>
                     <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+                        <button type="button" onclick="window.resetFinance()" class="btn btn-ghost"><i class="fas fa-rotate-left"></i>Reset finance</button>
                         <button type="button" onclick="window.exportFinanceCsv()" class="btn btn-ghost"><i class="fas fa-file-arrow-down"></i>Export CSV</button>
                         <button type="button" onclick="window.openExpenseModal()" class="btn btn-primary"><i class="fas fa-plus"></i>Add cost</button>
                     </div>
                 </div>
 
+                <div id="finance-reset-notice" class="note note-muted hide" style="align-items:center;margin-bottom:1rem;flex-wrap:wrap">
+                    <i class="fas fa-rotate-left"></i>
+                    <span style="flex:1;min-width:200px" id="finance-reset-text"></span>
+                    <button type="button" onclick="window.undoFinanceReset()" class="btn btn-sm btn-ghost">Undo reset</button>
+                </div>
                 <div class="fin-filters">
                     <label for="finance-period" class="sr-only">Period</label>
                     <select id="finance-period" class="status-select" onchange="window.renderFinance()">
@@ -1005,6 +1011,7 @@
                 listen(db.ref('users'), (s) => { window.users = normalizeCollection(s.val(), 'users'); if(!loadedFlags.users) { loadedFlags.users = true; checkInitialLoad(); } if (!document.getElementById('admin-tab-accounts').classList.contains('hide')) window.renderAdminAccounts(); });
                 // Finance data (admin only). Doesn't block the first render.
                 listen(db.ref('expenses'), (s) => { window.expenses = normalizeCollection(s.val(), 'expenses'); window.refreshFinanceIfOpen(); });
+                listen(db.ref('settings/financeStart'), (s) => { window.financeStart = s.val(); window.refreshFinanceIfOpen(); });
             } else {
                 // A customer can read only their own profile.
                 listen(db.ref(`users/${uid}`), (s) => {
@@ -2043,17 +2050,58 @@
                 const [from, to] = fromInput.value <= toInput.value ? [fromInput.value, toInput.value] : [toInput.value, fromInput.value];
                 return { from, to };
             }
-            // All time: from the earliest order or cost on record.
+            // All time: from the reset day if there is one, otherwise the earliest order or cost on record.
+            if (window.financeStart?.at && Number.isFinite(Date.parse(window.financeStart.at))) return { from: toDateKey(new Date(window.financeStart.at)), to: today };
             const keys = [...window.orders.map(orderDateKey), ...window.expenses.map(e => e.date)].filter(Boolean).sort();
             return { from: keys[0] || today, to: keys.length && keys[keys.length - 1] > today ? keys[keys.length - 1] : today };
         };
 
+        // After "Reset finance", only orders placed and costs recorded after that moment count.
+        // Nothing is deleted; undoing the reset brings the older numbers back.
+        const financeResetTime = () => {
+            const at = window.financeStart?.at ? Date.parse(window.financeStart.at) : NaN;
+            return Number.isFinite(at) ? at : null;
+        };
+        const afterReset = iso => {
+            const reset = financeResetTime();
+            if (reset === null) return true;
+            const t = iso ? Date.parse(iso) : NaN;
+            return Number.isFinite(t) && t >= reset;
+        };
         window.getFinanceData = () => {
-            const { from, to } = window.getFinancePeriod();
+            let { from, to } = window.getFinancePeriod();
+            const reset = financeResetTime();
+            if (reset !== null) {
+                const resetKey = toDateKey(new Date(reset));
+                if (from < resetKey) from = resetKey;
+                if (to < from) to = from;
+            }
             const inRange = key => key && key >= from && key <= to;
-            const orders = window.orders.filter(order => REVENUE_STATUSES.includes(order.status) && inRange(orderDateKey(order)));
-            const expenses = window.expenses.filter(expense => inRange(expense.date));
+            const orders = window.orders.filter(order => REVENUE_STATUSES.includes(order.status) && inRange(orderDateKey(order)) && afterReset(order.createdAt || order.timestamp || order.date));
+            const expenses = window.expenses.filter(expense => inRange(expense.date) && afterReset(expense.createdAt));
             return { from, to, orders, expenses };
+        };
+        window.resetFinance = async () => {
+            if (window.currentUser?.role !== 'admin') return window.showToast('Admin access required.', 'error');
+            if (!window.confirm('Reset finance to ₹0 from now?\n\nOrders placed and costs recorded before now will no longer be counted here. Nothing is deleted: orders stay in the Orders tab, and you can undo this reset at any time.')) return;
+            try {
+                await db.ref('settings/financeStart').set({ at: new Date().toISOString() });
+                window.showToast('Finance reset. Counting starts from now.', 'success');
+            } catch (error) {
+                console.error('Finance reset failed', error);
+                window.showToast(`Could not reset finance: ${error.message || 'Please try again.'}`, 'error');
+            }
+        };
+        window.undoFinanceReset = async () => {
+            if (window.currentUser?.role !== 'admin') return window.showToast('Admin access required.', 'error');
+            if (!window.confirm('Undo the finance reset? All earlier orders and costs will be counted again.')) return;
+            try {
+                await db.ref('settings/financeStart').remove();
+                window.showToast('Reset undone. All finance history is counted again.', 'success');
+            } catch (error) {
+                console.error('Undo finance reset failed', error);
+                window.showToast(`Could not undo the reset: ${error.message || 'Please try again.'}`, 'error');
+            }
         };
 
         window.refreshFinanceIfOpen = () => {
@@ -2064,6 +2112,9 @@
         window.renderFinance = () => {
             if (window.currentUser?.role !== 'admin') return;
             const { from, to, orders, expenses } = window.getFinanceData();
+            const reset = financeResetTime();
+            document.getElementById('finance-reset-notice').classList.toggle('hide', reset === null);
+            if (reset !== null) document.getElementById('finance-reset-text').innerText = `Counting from ${new Date(reset).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' })}, when finance was reset. Earlier orders and costs are hidden here, not deleted.`;
             const fmtRange = key => keyToDate(key).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
             document.getElementById('finance-range-label').innerText = from === to ? fmtRange(from) : `${fmtRange(from)} – ${fmtRange(to)}`;
 
