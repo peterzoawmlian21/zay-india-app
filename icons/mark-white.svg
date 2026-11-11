@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="80 96 352 332">
+  <!-- Basket + tea sprig mark only, white, for orange surfaces (e.g. the shop banner watermark). -->
+  <g fill="#FFFFFF">
+    <path d="M150 252 C150 118 362 118 362 252" fill="none" stroke="#FFFFFF" stroke-width="28" stroke-linecap="round"/>
+    <path d="M258 214 C262 158 294 126 340 114 C336 162 306 202 258 214 Z"/>
+    <path d="M252 222 C236 180 208 160 170 154 C178 194 206 218 252 222 Z"/>
+    <rect x="94" y="228" width="324" height="40" rx="20"/>
+    <path d="M118 280 H394 L386 316 H126 Z"/>
+    <path d="M128 328 H384 L376 364 H136 Z"/>
+    <path d="M138 376 H374 L368 398 Q364 414 348 414 H164 Q148 414 144 398 Z"/>
+  </g>
+</svg>

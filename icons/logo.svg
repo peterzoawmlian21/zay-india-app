@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Zay India">
+  <!-- Zay India logo: a woven market basket with a two-leaf tea sprig (laphet) rising from it. -->
+  <rect width="512" height="512" rx="112" fill="#EA580C"/>
+  <g transform="translate(256 256) scale(1.1) translate(-256 -265)" fill="#FFFFFF">
+    <!-- handle -->
+    <path d="M150 252 C150 118 362 118 362 252" fill="none" stroke="#FFFFFF" stroke-width="28" stroke-linecap="round"/>
+    <!-- tea sprig: two pointed leaves, outlined in orange so they read cleanly over the handle -->
+    <g stroke="#EA580C" stroke-width="14" stroke-linejoin="round">
+      <path d="M258 214 C262 158 294 126 340 114 C336 162 306 202 258 214 Z"/>
+      <path d="M252 222 C236 180 208 160 170 154 C178 194 206 218 252 222 Z"/>
+    </g>
+    <!-- rim -->
+    <rect x="94" y="228" width="324" height="40" rx="20"/>
+    <!-- woven body: three bands that taper toward the base -->
+    <path d="M118 280 H394 L386 316 H126 Z"/>
+    <path d="M128 328 H384 L376 364 H136 Z"/>
+    <path d="M138 376 H374 L368 398 Q364 414 348 414 H164 Q148 414 144 398 Z"/>
+  </g>
+</svg>

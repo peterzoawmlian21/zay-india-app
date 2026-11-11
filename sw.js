@@ -4,8 +4,8 @@
 // - Same-origin files: network first, cached copy only when offline.
 // - Everything else (Firebase, Google Fonts, CDNs) is left to the browser untouched,
 //   so live data and logins are never cached here.
-const CACHE = 'zay-india-v1';
-const APP_SHELL = ['./', './index.html', './manifest.json', './icons/icon-192.png', './icons/icon-512.png'];
+const CACHE = 'zay-india-v2';
+const APP_SHELL = ['./', './index.html', './manifest.json', './icons/logo.svg', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));

@@ -79,8 +79,8 @@
         .en-inline { font-size: 0.8em; font-weight: 500; color: var(--muted); margin-left: 0.35em; }
 
         /* ---------- Wordmark: the one bold element ---------- */
-        .wordmark { display: flex; align-items: baseline; gap: 0.5rem; }
-        .wordmark-my { font-family: 'Noto Sans Myanmar', sans-serif; font-weight: 700; color: var(--brand); line-height: 1; letter-spacing: -0.01em; }
+        .wordmark { display: flex; align-items: center; gap: 0.6rem; }
+        .logo { display: block; flex-shrink: 0; border-radius: 22%; }
         .wordmark-en { font-weight: 800; letter-spacing: -0.02em; color: var(--ink); }
 
         /* ---------- Controls ---------- */
@@ -158,8 +158,8 @@
         /* Auth */
         #auth-view { justify-content: center; padding: 2rem 1.25rem; background: var(--surface); }
         .auth-hero { margin-bottom: 1.75rem; }
-        .auth-hero .wordmark-my { font-size: 4.25rem; }
-        .auth-hero .wordmark-en { font-size: 1.6rem; }
+        .auth-hero .logo { width: 64px; height: 64px; }
+        .auth-hero .wordmark-en { font-size: 1.75rem; }
         .auth-hero p { margin-top: 0.75rem; color: var(--muted); font-size: 0.95rem; max-width: 30ch; }
         .segmented { display: grid; grid-template-columns: 1fr 1fr; padding: 4px; background: var(--well); border-radius: 14px; margin-bottom: 1.25rem; }
         .segmented button { min-height: 44px; border: 0; border-radius: 10px; background: transparent; font-weight: 600; color: var(--muted); cursor: pointer; }
@@ -172,7 +172,7 @@
         #customer-view { height: 100vh; height: 100dvh; overflow: hidden; }
         .shop-header { flex-shrink: 0; background: var(--surface); border-bottom: 1px solid var(--line); padding: max(14px, env(safe-area-inset-top)) 1rem 0.85rem; }
         .shop-header-top { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
-        .shop-header .wordmark-my { font-size: 1.9rem; }
+        .shop-header .logo { width: 38px; height: 38px; }
         .shop-header .wordmark-en { font-size: 1.05rem; }
         .address-chip {
             margin-top: 0.75rem; width: 100%; display: flex; align-items: center; gap: 0.6rem; text-align: left;
@@ -273,7 +273,7 @@
         #admin-view { min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); }
         .admin-side { background: var(--surface); border-bottom: 1px solid var(--line); flex-shrink: 0; }
         .admin-brand { display: flex; align-items: center; justify-content: space-between; padding: 0.9rem 1rem; }
-        .admin-brand .wordmark-my { font-size: 1.6rem; }
+        .admin-brand .logo { width: 34px; height: 34px; }
         .admin-brand .wordmark-en { font-size: 1rem; }
         .admin-brand small { display: block; font-size: 0.72rem; color: var(--muted); font-weight: 600; }
         .admin-nav { display: flex; gap: 0.25rem; padding: 0 0.75rem 0.6rem; overflow-x: auto; scrollbar-width: none; }
@@ -367,7 +367,7 @@
         .shop-banner { position: relative; overflow: hidden; display: flex; gap: .7rem; align-items: flex-start; margin-bottom: 1rem; padding: 1rem 1.1rem; border-radius: var(--r-card); background: var(--brand); color: #fff; font-weight: 600; line-height: 1.45; }
         .shop-banner > i { margin-top: .2rem; opacity: .9; }
         .shop-banner p { position: relative; z-index: 1; max-width: 32ch; }
-        .shop-banner::after { content: 'ဈေး'; position: absolute; right: -.4rem; bottom: -1.9rem; font-family: 'Noto Sans Myanmar', sans-serif; font-weight: 700; font-size: 6rem; line-height: 1; color: rgba(255, 255, 255, .14); pointer-events: none; }
+        .shop-banner::after { content: ''; position: absolute; right: -.6rem; bottom: -1.2rem; width: 6.5rem; height: 6.5rem; background: url('icons/mark-white.svg') center / contain no-repeat; opacity: .16; pointer-events: none; }
 
         /* ---------- Skeletons ---------- */
         .skeleton { border-radius: 8px; background: linear-gradient(90deg, #ECEEF2 25%, #F6F7F9 37%, #ECEEF2 63%); background-size: 400% 100%; animation: shimmer 1.3s ease-in-out infinite; }
@@ -414,7 +414,7 @@
 
     <!-- Loading Screen -->
     <div id="app-loading">
-        <div class="wordmark"><span class="wordmark-my" style="font-size:2.5rem">ဈေး</span></div>
+        <img src="icons/logo.svg" alt="Zay India" class="logo" width="64" height="64">
         <div class="spinner" role="status" aria-label="Loading"></div>
     </div>
 
@@ -426,13 +426,13 @@
     <!-- ========================================== -->
     <div id="auth-view" class="app hide">
         <header class="auth-hero">
-            <div class="wordmark"><span class="wordmark-my" lang="my">ဈေး</span><span class="wordmark-en">Zay India</span></div>
+            <div class="wordmark"><img src="icons/logo.svg" alt="" class="logo"><span class="wordmark-en">Zay India</span></div>
             <p lang="my">Graphic Era မြန်မာကျောင်းသားများအတွက် မြန်မာစားသောက်ကုန်ဆိုင်</p>
         </header>
 
         <div id="install-card" class="install-card hide">
             <img src="icons/icon-192.png" alt="">
-            <div class="install-text"><p class="install-title">ဖုန်းထဲ အက်ပ်အဖြစ်ထည့်မည်</p><p class="install-sub">Install Zay India on your home screen</p></div>
+            <div class="install-text"><p class="install-title">အက်ပ်အဖြစ် ထည့်မည်</p><p class="install-sub">Install Zay India on your home screen</p></div>
             <button type="button" onclick="window.installApp()" class="btn btn-dark btn-sm"><i class="fas fa-download"></i>Install</button>
         </div>
 
@@ -494,7 +494,7 @@
     <div id="customer-view" class="app hide">
         <header class="shop-header">
             <div class="shop-header-top">
-                <div class="wordmark"><span class="wordmark-my" lang="my">ဈေး</span><span class="wordmark-en">Zay India</span></div>
+                <div class="wordmark"><img src="icons/logo.svg" alt="" class="logo"><span class="wordmark-en">Zay India</span></div>
                 <div style="display:flex;gap:0.4rem">
                     <button type="button" onclick="window.openCustomerProfile()" class="icon-btn" aria-label="My profile" title="My profile"><i class="fas fa-user"></i></button>
                     <button type="button" onclick="window.logout()" class="icon-btn" aria-label="Log out" title="Log out"><i class="fas fa-arrow-right-from-bracket"></i></button>
@@ -605,7 +605,7 @@
         <aside class="admin-side">
             <div class="admin-brand">
                 <div>
-                    <div class="wordmark"><span class="wordmark-my" lang="my">ဈေး</span><span class="wordmark-en">Zay India</span></div>
+                    <div class="wordmark"><img src="icons/logo.svg" alt="" class="logo"><span class="wordmark-en">Zay India</span></div>
                     <small>Admin</small>
                 </div>
                 <button onclick="window.logout()" class="icon-btn admin-logout-narrow" aria-label="Log out" title="Log out"><i class="fas fa-arrow-right-from-bracket"></i></button>
