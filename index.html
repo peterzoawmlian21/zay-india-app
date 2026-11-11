@@ -725,9 +725,13 @@
         window.closeCheckout = () => { const m = document.getElementById('checkout-modal'), s = document.getElementById('checkout-sheet'); m.classList.add('opacity-0'); s.classList.add('translate-y-full'); setTimeout(() => m.classList.add('hide'), 300); };
         window.contactAdminForPassword = () => {
             const phone = document.getElementById('login-phone').value.trim();
+            if (!phone) return window.showToast('Enter your registered phone number first.', 'error');
+            const user = window.users.find(account => account.role === 'customer' && account.phone === phone);
+            if (!user) return window.showToast('No customer account found for that phone number. Check it and try again.', 'error');
             const message = [
                 'Hello Admin, I forgot the password for my Zay India account. Please help me reset it.',
-                `My registered phone number is: ${phone || '[enter your registered phone number]'}.`,
+                `Account name: ${user.name || 'Not provided'}.`,
+                `My registered phone number is: ${user.phone}.`,
                 'Thank you.'
             ].join('\n');
             const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP_NUMBER}?${new URLSearchParams({ text: message })}`;
