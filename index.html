@@ -630,11 +630,14 @@
                 <ol class="pay-steps" id="pay-steps">
                     <li>
                         <p class="pay-step-title">ငွေပေးချေပါ <span class="en-inline">Pay this amount</span></p>
-                        <a id="pay-open-app" href="#" class="btn btn-primary btn-block" style="margin-bottom:.6rem"><i class="fas fa-mobile-screen-button"></i>Open UPI app</a>
+                        <a id="pay-open-app" href="#" class="btn btn-primary btn-block"><i class="fas fa-mobile-screen-button"></i>Open UPI app</a>
+                        <p id="pay-gpay-note" class="note note-muted" style="margin:.5rem 0 .75rem;font-size:.78rem;padding:.55rem .7rem"><i class="fas fa-circle-info" style="margin-top:.15rem"></i><span>Google Pay says "bank limit"? That isn't your balance. Google Pay sometimes blocks payments opened from websites. Use PhonePe/Paytm, or pay manually below.</span></p>
                         <p id="pay-qr-hint" style="font-size:.8rem;color:var(--muted);text-align:center">Or scan with any UPI app:</p>
                         <div id="pay-qr" class="pay-qr" role="img" aria-label="UPI payment QR code"></div>
+                        <button type="button" id="pay-save-qr" onclick="window.saveUpiQr()" class="btn btn-sm btn-ghost btn-block" style="margin-bottom:.6rem"><i class="fas fa-download"></i>Save QR image (scan it from your gallery)</button>
                         <div class="pay-upi-row"><span style="color:var(--muted)">UPI ID</span><code id="pay-upi-id"></code><button type="button" onclick="window.copyUpiId()" class="btn btn-sm btn-ghost" style="min-height:32px">Copy</button></div>
-                        <p style="font-size:.75rem;color:var(--muted);margin-top:.4rem">Paying manually? Send exactly the amount above and write <strong id="pay-note"></strong> in the note.</p>
+                        <div class="pay-upi-row" style="margin-top:.4rem"><span style="color:var(--muted)">Amount</span><code id="pay-amount-copy"></code><button type="button" onclick="window.copyPayAmount()" class="btn btn-sm btn-ghost" style="min-height:32px">Copy</button></div>
+                        <p style="font-size:.75rem;color:var(--muted);margin-top:.45rem"><strong>Pay manually:</strong> open your UPI app → Pay to UPI ID → paste the ID → enter the exact amount → write <strong id="pay-note"></strong> in the note.</p>
                     </li>
                     <li>
                         <p class="pay-step-title">UTR နံပါတ်ထည့်ပါ <span class="en-inline">Enter the UTR</span></p>
@@ -1754,6 +1757,10 @@
                 const openApp = document.getElementById('pay-open-app');
                 openApp.href = link;
                 openApp.classList.toggle('hide', !onPhone);
+                document.getElementById('pay-gpay-note').classList.toggle('hide', !onPhone);
+                document.getElementById('pay-save-qr').classList.toggle('hide', !onPhone);
+                document.getElementById('pay-amount-copy').innerText = Number(order.total).toFixed(2);
+                window.payingLink = link;
                 document.getElementById('pay-qr-hint').innerText = onPhone ? 'Or scan from another phone:' : 'Scan with any UPI app on your phone:';
                 document.getElementById('pay-upi-id').innerText = settings.upiId;
                 document.getElementById('pay-note').innerText = order.dbId;
@@ -1768,6 +1775,28 @@
                 }
             }
             document.getElementById('pay-modal').classList.remove('hide');
+        };
+        window.copyPayAmount = async () => {
+            const amount = document.getElementById('pay-amount-copy').innerText;
+            try { await navigator.clipboard.writeText(amount); window.showToast(`Amount ₹${amount} copied.`, 'success'); }
+            catch { window.showToast('Could not copy. Type the amount shown.', 'error'); }
+        };
+        // Saves the payment QR as an image, so the customer can use "scan from gallery" in their UPI app.
+        window.saveUpiQr = () => {
+            if (!window.payingLink) return;
+            try {
+                const qr = qrcode(0, 'M');
+                qr.addData(window.payingLink);
+                qr.make();
+                const link = document.createElement('a');
+                link.href = qr.createDataURL(10, 24);
+                link.download = `zay-india-pay-${window.payingOrderId || 'order'}.gif`;
+                document.body.appendChild(link); link.click(); link.remove();
+                window.showToast('QR saved. In your UPI app, tap Scan → choose from gallery.', 'success');
+            } catch (error) {
+                console.error('Saving QR failed', error);
+                window.showToast('Could not save the QR. Pay manually with the UPI ID instead.', 'error');
+            }
         };
         window.closePayment = () => { document.getElementById('pay-modal').classList.add('hide'); window.payingOrderId = null; };
         window.copyUpiId = async () => {
