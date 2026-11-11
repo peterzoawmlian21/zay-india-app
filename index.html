@@ -174,6 +174,10 @@
                 <div id="upi-payment-followup" class="hide mb-4">
                     <label for="upi-transaction-id" class="block text-xs font-bold text-slate-600 mb-2">After payment, enter the UPI transaction reference (UTR). Payment will be verified manually.</label>
                     <input id="upi-transaction-id" type="text" autocomplete="off" placeholder="UPI transaction reference / UTR" class="w-full bg-white p-3 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 font-medium text-sm">
+                    <button type="button" onclick="window.contactAdminWhatsApp()" class="mt-3 w-full bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 transition">
+                        <i class="fab fa-whatsapp mr-2"></i>Send payment screenshot to admin
+                    </button>
+                    <p class="text-[11px] text-slate-500 mt-2">WhatsApp will open with your order details. Attach your payment screenshot in the chat before sending.</p>
                 </div>
                 <p class="text-xs text-slate-500 mb-4">If your bank reports a payment limit, try another bank/UPI account or choose COD. UPI payments are not confirmed automatically.</p>
                 <button id="btn-confirm-order" onclick="window.placeOrder()" class="w-full bg-slate-900 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all flex flex-col items-center">
@@ -213,7 +217,7 @@
                 <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden overflow-x-auto">
                     <table class="min-w-full text-left text-sm whitespace-nowrap">
                         <thead class="bg-slate-50 border-b border-slate-200">
-                            <tr><th class="px-6 py-4 font-bold text-slate-500">ID</th><th class="px-6 py-4 font-bold text-slate-500">Customer</th><th class="px-6 py-4 font-bold text-slate-500">Items</th><th class="px-6 py-4 font-bold text-slate-500">Total</th><th class="px-6 py-4 font-bold text-slate-500">Payment</th><th class="px-6 py-4 font-bold text-slate-500">Address</th><th class="px-6 py-4 font-bold text-slate-500">Status</th></tr>
+                            <tr><th class="px-6 py-4 font-bold text-slate-500">ID</th><th class="px-6 py-4 font-bold text-slate-500">Customer</th><th class="px-6 py-4 font-bold text-slate-500">Items</th><th class="px-6 py-4 font-bold text-slate-500">Total</th><th class="px-6 py-4 font-bold text-slate-500">Payment</th><th class="px-6 py-4 font-bold text-slate-500">Address</th><th class="px-6 py-4 font-bold text-slate-500">Decision / Status</th><th class="px-6 py-4 font-bold text-slate-500">Invoice</th></tr>
                         </thead>
                         <tbody id="admin-orders-table" class="divide-y divide-slate-100"></tbody>
                     </table>
@@ -243,11 +247,11 @@
     <div id="product-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4 hide">
         <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl">
             <h2 class="text-xl font-black text-slate-800 mb-4" id="product-modal-title">ပစ္စည်းအသစ် ထည့်မည်</h2>
-            <form onsubmit="window.saveProduct(event)" class="space-y-4">
+            <form id="product-form" onsubmit="window.saveProduct(event)" class="space-y-4">
                 <input type="hidden" id="prod-id">
                 <input type="text" id="prod-name" placeholder="ပစ္စည်းအမည် (Product Name)" class="w-full bg-slate-50 p-3 border rounded-xl font-bold" required>
                 <div class="flex gap-4">
-                    <input type="number" id="prod-price" placeholder="ဈေးနှုန်း (Price in ₹)" class="w-full bg-slate-50 p-3 border rounded-xl font-bold" required>
+                    <input type="number" id="prod-price" placeholder="ဈေးနှုန်း (Price in ₹)" class="w-full bg-slate-50 p-3 border rounded-xl font-bold" required min="0.01" step="0.01">
                     <input type="number" id="prod-stock" placeholder="လက်ကျန် (Stock Qty)" class="w-full bg-slate-50 p-3 border rounded-xl font-bold" required min="0">
                 </div>
                 <div>
@@ -260,8 +264,9 @@
                 </div>
                 <div class="flex gap-3 pt-4">
                     <button type="button" onclick="document.getElementById('product-modal').classList.add('hide')" class="w-1/3 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl">Cancel</button>
-                    <button type="submit" class="flex-1 bg-slate-900 text-white font-bold py-3 rounded-xl">Save Product</button>
+                    <button type="button" id="save-product-button" onclick="window.saveProduct(event)" class="flex-1 bg-slate-900 text-white font-bold py-3 rounded-xl">Save Product</button>
                 </div>
+                <p id="product-save-feedback" class="text-sm font-semibold text-red-600" role="status" aria-live="polite"></p>
             </form>
         </div>
     </div>
@@ -304,6 +309,8 @@
         window.users = []; window.products = []; window.orders = [];
         window.currentUser = null; window.cart = {}; window.selectedPayment = 'UPI';
         window.upiPaymentLaunched = false;
+        window.productImageProcessing = false;
+        window.orderActionsInProgress = new Set();
 
         // Toast 
         window.showToast = function(msg, type='info') {
@@ -319,6 +326,17 @@
         // Realtime Fetching
         const initDatabase = () => {
             let loadedFlags = { users: false, products: false, orders: false };
+            const normalizeCollection = (value, collectionName) => {
+                if (value == null) return [];
+                if (Array.isArray(value)) return value.filter(item => item && typeof item === 'object' && !Array.isArray(item));
+                if (typeof value === 'object') {
+                    return Object.entries(value)
+                        .filter(([, item]) => item && typeof item === 'object' && !Array.isArray(item))
+                        .map(([key, item]) => ({ ...item, dbId: item.dbId || key }));
+                }
+                console.error(`Invalid Firebase ${collectionName} data; expected an array or object.`, value);
+                return [];
+            };
             const checkInitialLoad = () => {
                 if(loadedFlags.users && loadedFlags.products && loadedFlags.orders) {
                     document.getElementById('app-loading').classList.add('hide');
@@ -327,11 +345,11 @@
                     else { document.getElementById('auth-view').classList.remove('hide'); }
                 }
             };
-            db.ref('users').on('value', (s) => { window.users = s.val() || []; if(!loadedFlags.users) { loadedFlags.users = true; checkInitialLoad(); } });
-            db.ref('products').on('value', (s) => { window.products = s.val() || []; if(!loadedFlags.products) { loadedFlags.products = true; checkInitialLoad(); } if (window.currentUser?.role === 'admin') window.renderAdminProducts(); if (window.currentUser?.role === 'customer') window.renderProducts(); });
+            db.ref('users').on('value', (s) => { window.users = normalizeCollection(s.val(), 'users'); if(!loadedFlags.users) { loadedFlags.users = true; checkInitialLoad(); } });
+            db.ref('products').on('value', (s) => { window.products = normalizeCollection(s.val(), 'products'); if(!loadedFlags.products) { loadedFlags.products = true; checkInitialLoad(); } if (window.currentUser?.role === 'admin') window.renderAdminProducts(); if (window.currentUser?.role === 'customer') window.renderProducts(); });
             let prevLen = -1;
             db.ref('orders').on('value', (s) => {
-                window.orders = s.val() || []; if(!loadedFlags.orders) { loadedFlags.orders = true; checkInitialLoad(); }
+                window.orders = normalizeCollection(s.val(), 'orders'); if(!loadedFlags.orders) { loadedFlags.orders = true; checkInitialLoad(); }
                 if (window.currentUser?.role === 'admin' && prevLen !== -1 && window.orders.length > prevLen) {
                     try{ const ctx=new(window.AudioContext||window.webkitAudioContext)();const osc=ctx.createOscillator();osc.type='sine';osc.frequency.setValueAtTime(800,ctx.currentTime);osc.connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+0.3); }catch(er){} 
                     window.showToast("အော်ဒါသစ် ဝင်လာပါပြီ", "info");
@@ -348,7 +366,8 @@
             initDatabase(); 
         };
 
-        const dbAPI = { saveUsers: (u) => db.ref('users').set(u), saveProducts: (p) => db.ref('products').set(p), saveOrders: (o) => db.ref('orders').set(o) };
+        const dbAPI = { saveUsers: (u) => db.ref('users').set(u), saveProducts: (p) => db.ref('products').set(p), saveOrders: (o) => db.ref('orders').set(o), saveInventoryAndOrders: (products, orders) => db.ref().update({ products, orders }) };
+        const ADMIN_WHATSAPP_NUMBER = '916909235738';
 
         window.toggleAuth = (v) => { document.getElementById('login-form').classList.toggle('hide', v!=='login'); document.getElementById('register-form').classList.toggle('hide', v!=='register'); };
         
@@ -405,6 +424,41 @@
         window.closeCheckout = () => { const m = document.getElementById('checkout-modal'), s = document.getElementById('checkout-sheet'); m.classList.add('opacity-0'); s.classList.add('translate-y-full'); setTimeout(() => m.classList.add('hide'), 300); };
         window.selectPayment = (m) => { window.selectedPayment = m; document.getElementById('btn-pay-upi').className = m==='UPI' ? "border-2 border-blue-500 bg-blue-50 text-blue-700 font-bold py-3 rounded-2xl transition" : "border border-slate-200 text-slate-500 font-bold py-3 rounded-2xl transition bg-white"; document.getElementById('btn-pay-cod').className = m==='COD' ? "border-2 border-orange-500 bg-orange-50 text-orange-700 font-bold py-3 rounded-2xl transition flex flex-col items-center leading-tight" : "border border-slate-200 text-slate-500 font-bold py-3 rounded-2xl transition bg-white flex flex-col items-center leading-tight"; };
 
+        window.contactAdminWhatsApp = (orderId = null) => {
+            if (!window.currentUser || window.currentUser.role !== 'customer') return window.showToast('Please sign in as a customer to contact the admin.', 'error');
+            const order = orderId ? window.orders.find(item => item.dbId === orderId) : null;
+            if (orderId && (!order || order.phone !== window.currentUser.phone || order.payment !== 'UPI' || order.status === 'rejected')) {
+                return window.showToast('Payment support is only available for your active UPI orders.', 'error');
+            }
+
+            const items = order
+                ? order.items
+                : Object.keys(window.cart).map(id => {
+                    const product = window.products.find(item => item.dbId === id);
+                    return product ? `${window.cart[id]}x ${product.name}` : null;
+                }).filter(Boolean).join(', ');
+            const amount = order
+                ? order.total
+                : Object.keys(window.cart).reduce((sum, id) => {
+                    const product = window.products.find(item => item.dbId === id);
+                    return sum + (product ? product.price * window.cart[id] : 0);
+                }, 0);
+            if (!items || amount <= 0) return window.showToast('Add items to your cart before contacting the admin.', 'error');
+
+            const message = [
+                'Hello, I have completed my UPI payment for my Zay India order.',
+                order ? `Order ID: ${order.dbId}` : 'I am completing checkout now.',
+                `Customer: ${window.currentUser.name}`,
+                `Phone: ${window.currentUser.phone}`,
+                `Items: ${items}`,
+                `Amount: ₹${amount}`,
+                order?.txn ? `UPI reference: ${order.txn}` : '',
+                'I will attach my payment screenshot here for verification.'
+            ].filter(Boolean).join('\n');
+            const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP_NUMBER}?${new URLSearchParams({ text: message })}`;
+            window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+        };
+
         // 3. GPay/UPI Logic
         window.placeOrder = () => {
             if (window.selectedPayment !== 'UPI') return window.finalizeOrder('COD');
@@ -438,10 +492,9 @@
         window.finalizeOrder = (txnId) => {
             if (Object.keys(window.cart).length === 0) return window.showToast('Your cart is empty. Please add items and try again.', 'error');
             let total = 0, itemsStr = Object.keys(window.cart).map(id => { let p = window.products.find(x => x.dbId === id); total += p.price * window.cart[id]; return `${window.cart[id]}x ${p.name}`; }).join(', ');
-            Object.keys(window.cart).forEach(id => { let pIndex = window.products.findIndex(x => x.dbId === id); if (pIndex > -1) { window.products[pIndex].stockQty -= window.cart[id]; if(window.products[pIndex].stockQty < 0) window.products[pIndex].stockQty = 0; } });
 
-            const newOrder = { dbId: 'ORD-' + Date.now(), user: window.currentUser.name, phone: window.currentUser.phone, address: window.currentUser.address, items: itemsStr, total: total, payment: window.selectedPayment, txn: txnId, status: 'pending', time: new Date().toLocaleTimeString() };
-            window.orders.unshift(newOrder); dbAPI.saveProducts(window.products); dbAPI.saveOrders(window.orders);
+            const newOrder = { dbId: 'ORD-' + Date.now(), user: window.currentUser.name, phone: window.currentUser.phone, address: window.currentUser.address, items: itemsStr, lineItems: Object.keys(window.cart).map(id => { const product = window.products.find(p => p.dbId === id); return { productId: id, name: product.name, quantity: window.cart[id], unitPrice: product.price, subtotal: product.price * window.cart[id] }; }), total: total, payment: window.selectedPayment, txn: txnId, status: 'pending', inventoryDeducted: false, time: new Date().toLocaleTimeString(), createdAt: new Date().toISOString() };
+            window.orders.unshift(newOrder); dbAPI.saveOrders(window.orders);
             window.cart = {}; window.upiPaymentLaunched = false; document.getElementById('upi-payment-followup').classList.add('hide'); document.getElementById('upi-transaction-id').value = ''; document.getElementById('confirm-order-label').innerText = 'အတည်ပြုမည်'; document.getElementById('confirm-order-subtitle').innerText = 'Confirm Order'; window.closeCheckout(); window.updateCart('',0); window.switchCustomerTab('orders'); window.showToast(window.selectedPayment === 'UPI' ? 'Order submitted. UPI payment must be verified manually.' : 'အော်ဒါတင်ခြင်း အောင်မြင်ပါသည်!', 'success');
 
             // 4. EmailJS Notification
@@ -457,18 +510,339 @@
             }
         };
 
+        window.downloadInvoice = (orderId) => {
+            const order = window.orders.find(o => o.dbId === orderId);
+            if (!order) return window.showToast('Order not found. Please refresh and try again.', 'error');
+            if (!['confirmed', 'ontheway', 'delivered'].includes(order.status)) {
+                return window.showToast(order.status === 'rejected' ? 'This order was rejected. No invoice is available.' : 'The invoice will be available after the admin confirms this order.', 'error');
+            }
+            if (!window.currentUser || (window.currentUser.role !== 'admin' && (window.currentUser.role !== 'customer' || order.phone !== window.currentUser.phone))) {
+                return window.showToast('You are not allowed to download this invoice.', 'error');
+            }
+
+            const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+            const lineItems = Array.isArray(order.lineItems) && order.lineItems.length
+                ? order.lineItems
+                : [{ name: order.items || 'Order items', quantity: '', unitPrice: null, subtotal: null }];
+            const itemRows = lineItems.map(item => `<tr><td>${escapeHtml(item.name)}</td><td class="number">${escapeHtml(item.quantity || '—')}</td><td class="number">${item.unitPrice == null ? '—' : `₹${Number(item.unitPrice).toFixed(2)}`}</td><td class="number">${item.subtotal == null ? '—' : `₹${Number(item.subtotal).toFixed(2)}`}</td></tr>`).join('');
+            const invoiceDate = order.createdAt ? new Date(order.createdAt).toLocaleString() : (order.time || '—');
+            const invoiceHtml = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Invoice ${escapeHtml(order.dbId)}</title>
+<style>
+    body { font-family: Arial, "Segoe UI", sans-serif; color: #1e293b; margin: 0; padding: 40px; }
+    main { max-width: 760px; margin: 0 auto; }
+    header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #ea580c; padding-bottom: 20px; }
+    h1 { color: #ea580c; margin: 0 0 6px; } h2 { margin: 28px 0 10px; font-size: 16px; }
+    .muted { color: #64748b; font-size: 13px; } .meta { text-align: right; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 12px 10px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+    th { background: #f8fafc; font-size: 12px; text-transform: uppercase; color: #64748b; }
+    .number { text-align: right; white-space: nowrap; }
+    .summary { margin: 20px 0 0 auto; width: min(100%, 300px); border-top: 2px solid #e2e8f0; padding-top: 14px; }
+    .summary p { display: flex; justify-content: space-between; font-weight: bold; }
+    .total { color: #ea580c; font-size: 20px; }
+    .details { line-height: 1.7; white-space: pre-wrap; }
+    @media print { body { padding: 0; } }
+</style>
+</head>
+<body>
+<main>
+    <header><div><h1>Zay India</h1><div class="muted">Myanmar Food</div></div><div class="meta"><h2>INVOICE</h2><strong>${escapeHtml(order.dbId)}</strong><div class="muted">${escapeHtml(invoiceDate)}</div></div></header>
+    <h2>Bill to</h2><div class="details">${escapeHtml(order.user)}<br>${escapeHtml(order.phone)}<br>${escapeHtml(order.address)}</div>
+    <table><thead><tr><th>Item</th><th class="number">Qty</th><th class="number">Unit price</th><th class="number">Amount</th></tr></thead><tbody>${itemRows}</tbody></table>
+    <div class="summary"><p><span>Payment</span><span>${escapeHtml(order.payment)}${order.txn && order.payment !== 'COD' ? ` (${escapeHtml(order.txn)})` : ''}</span></p><p><span>Status</span><span>${escapeHtml(order.status)}</span></p><p class="total"><span>Total</span><span>₹${Number(order.total || 0).toFixed(2)}</span></p></div>
+</main>
+</body>
+</html>`;
+            const file = new Blob([invoiceHtml], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(file);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `invoice-${String(order.dbId).replace(/[^a-z0-9_-]/gi, '-')}.html`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            window.showToast('Invoice downloaded.', 'success');
+        };
+
         window.switchCustomerTab = (t) => { document.getElementById('tab-home').classList.toggle('hide', t!=='home'); document.getElementById('tab-orders').classList.toggle('hide', t!=='orders'); document.getElementById('nav-home').className = `flex flex-col items-center p-2 w-1/3 ${t==='home'?'text-orange-600':'text-slate-400'}`; document.getElementById('nav-orders').className = `flex flex-col items-center p-2 w-1/3 ${t==='orders'?'text-orange-600':'text-slate-400'}`; if(t==='home') window.renderProducts(); else window.renderCustomerOrders(); };
-        window.renderCustomerOrders = () => { const list = document.getElementById('customer-orders-list'); let myOrders = window.orders.filter(o => o.phone === window.currentUser.phone); if(myOrders.length === 0) return list.innerHTML = `<p class="text-slate-500 font-semibold text-center mt-5">မှာယူထားသော မှတ်တမ်းမရှိသေးပါ။</p>`; list.innerHTML = myOrders.map(o => { let badge = o.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : (o.status === 'ontheway' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'); let stTxt = o.status === 'pending' ? 'Pending' : (o.status === 'ontheway' ? 'On the way' : 'Delivered'); return `<div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100"><div class="flex justify-between items-center mb-3 border-b border-slate-100 pb-3"><span class="font-black text-slate-800">${o.dbId}</span><span class="px-2 py-1 rounded text-[10px] font-bold ${badge}">${stTxt}</span></div><p class="text-sm font-semibold text-slate-600 mb-3">${o.items}</p><div class="flex justify-between items-end"><div><p class="text-[10px] font-bold text-slate-400">${o.time}</p><p class="text-xs font-bold ${o.payment==='UPI'?'text-blue-600':'text-orange-600'}">${o.payment} ${o.txn && o.payment!=='COD' ? `(${o.txn})`:''}</p></div><span class="font-black text-orange-600">₹${o.total}</span></div></div>`; }).join(''); };
+        window.renderCustomerOrders = () => {
+            const list = document.getElementById('customer-orders-list');
+            const myOrders = window.orders.filter(order => order.phone === window.currentUser.phone);
+            if (myOrders.length === 0) return list.innerHTML = `<p class="text-slate-500 font-semibold text-center mt-5">မှာယူထားသော မှတ်တမ်းမရှိသေးပါ။</p>`;
+            list.innerHTML = myOrders.map(order => {
+                const states = {
+                    pending: { label: 'Pending admin confirmation', badge: 'bg-yellow-100 text-yellow-700' },
+                    confirmed: { label: 'Confirmed', badge: 'bg-green-100 text-green-700' },
+                    ontheway: { label: 'On the way', badge: 'bg-blue-100 text-blue-700' },
+                    delivered: { label: 'Delivered', badge: 'bg-green-100 text-green-700' },
+                    rejected: { label: 'Rejected', badge: 'bg-red-100 text-red-700' }
+                };
+                const state = states[order.status] || states.pending;
+                const invoiceAction = ['confirmed', 'ontheway', 'delivered'].includes(order.status)
+                    ? `<button onclick="window.downloadInvoice('${order.dbId}')" class="mt-4 w-full bg-slate-900 text-white font-bold py-2.5 rounded-xl hover:bg-slate-800 transition"><i class="fas fa-download mr-2"></i>Download invoice</button>`
+                    : `<p class="mt-4 text-center text-xs font-semibold ${order.status === 'rejected' ? 'text-red-600' : 'text-slate-500'}">${order.status === 'rejected' ? 'This order was rejected. No invoice is available.' : 'Invoice available after admin confirmation.'}</p>`;
+                const paymentSupport = order.payment === 'UPI' && order.status !== 'rejected'
+                    ? `<button onclick="window.contactAdminWhatsApp('${order.dbId}')" class="mt-3 w-full bg-green-600 text-white font-bold py-2.5 rounded-xl hover:bg-green-700 transition"><i class="fab fa-whatsapp mr-2"></i>Send payment screenshot</button>`
+                    : '';
+                return `<div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100"><div class="flex justify-between items-center mb-3 border-b border-slate-100 pb-3"><span class="font-black text-slate-800">${order.dbId}</span><span class="px-2 py-1 rounded text-[10px] font-bold ${state.badge}">${state.label}</span></div><p class="text-sm font-semibold text-slate-600 mb-3">${order.items}</p><div class="flex justify-between items-end"><div><p class="text-[10px] font-bold text-slate-400">${order.time}</p><p class="text-xs font-bold ${order.payment==='UPI'?'text-blue-600':'text-orange-600'}">${order.payment} ${order.txn && order.payment!=='COD' ? `(${order.txn})`:''}</p></div><span class="font-black text-orange-600">₹${order.total}</span></div>${paymentSupport}${invoiceAction}</div>`;
+            }).join('');
+        };
 
         window.switchAdminTab = (t) => { document.getElementById('admin-tab-orders').classList.toggle('hide', t!=='orders'); document.getElementById('admin-tab-products').classList.toggle('hide', t!=='products'); if(t==='orders') window.renderAdminOrders(); else window.renderAdminProducts(); };
-        window.renderAdminOrders = () => { document.getElementById('admin-orders-table').innerHTML = window.orders.map((o) => `<tr class="hover:bg-slate-50 transition"><td class="px-6 py-4 font-black text-slate-800">${o.dbId}</td><td class="px-6 py-4"><p class="font-bold text-slate-700">${o.user}</p><p class="text-xs text-slate-500">${o.phone}</p></td><td class="px-6 py-4 text-xs font-semibold text-slate-600 whitespace-normal min-w-[200px]">${o.items}</td><td class="px-6 py-4 text-right font-black text-orange-600">₹${o.total}</td><td class="px-6 py-4 text-xs font-bold ${o.payment==='UPI'?'text-blue-600':'text-slate-500'}">${o.payment}<br>${o.txn?o.txn:''}</td><td class="px-6 py-4 text-xs font-medium text-slate-600 max-w-[250px] whitespace-normal">${o.address}</td><td class="px-6 py-4"><select onchange="window.updateStatus('${o.dbId}', this.value)" class="text-xs font-bold p-2 rounded-lg border outline-none"><option value="pending" ${o.status === 'pending' ? 'selected' : ''}>Pending</option><option value="ontheway" ${o.status === 'ontheway' ? 'selected' : ''}>On the way</option><option value="delivered" ${o.status === 'delivered' ? 'selected' : ''}>Delivered</option></select></td></tr>`).join(''); };
-        window.updateStatus = (id, val) => { let idx = window.orders.findIndex(x => x.dbId === id); if(idx > -1) { window.orders[idx].status = val; dbAPI.saveOrders(window.orders); window.showToast("Status updated", "success"); } };
-        window.previewImage = (e) => { const file = e.target.files[0]; if (!file) return; const r = new FileReader(); r.onload = (e) => { const img = new Image(); img.onload = () => { const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); let w = img.width, h = img.height, MAX = 500; if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } } else { if (h > MAX) { w *= MAX / h; h = MAX; } } canvas.width = w; canvas.height = h; ctx.drawImage(img, 0, 0, w, h); const dataUrl = canvas.toDataURL('image/jpeg', 0.7); document.getElementById('prod-img-base64').value = dataUrl; document.getElementById('img-preview').src = dataUrl; document.getElementById('img-preview-container').classList.remove('hide'); }; img.src = e.target.result; }; r.readAsDataURL(file); };
+        window.renderAdminOrders = () => { document.getElementById('admin-orders-table').innerHTML = window.orders.map((order) => {
+            const invoiceAvailable = ['confirmed', 'ontheway', 'delivered'].includes(order.status);
+            const orderActions = order.status === 'pending'
+                ? `<div class="flex gap-2"><button ${window.orderActionsInProgress.has(order.dbId) ? 'disabled' : ''} onclick="window.confirmOrder('${order.dbId}')" class="bg-green-600 text-white px-3 py-2 rounded-lg font-bold hover:bg-green-700 disabled:opacity-50">Confirm</button><button ${window.orderActionsInProgress.has(order.dbId) ? 'disabled' : ''} onclick="window.rejectOrder('${order.dbId}')" class="bg-red-50 text-red-700 px-3 py-2 rounded-lg font-bold hover:bg-red-100 disabled:opacity-50">Reject</button></div>`
+                : order.status === 'confirmed' || order.status === 'ontheway'
+                    ? `<select onchange="window.updateStatus('${order.dbId}', this.value)" class="text-xs font-bold p-2 rounded-lg border outline-none"><option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>Confirmed</option><option value="ontheway" ${order.status === 'ontheway' ? 'selected' : ''}>On the way</option><option value="delivered">Delivered</option></select>`
+                    : `<span class="text-xs font-bold ${order.status === 'rejected' ? 'text-red-600' : 'text-green-700'}">${order.status === 'rejected' ? 'Rejected' : 'Delivered'}</span>`;
+            return `<tr class="hover:bg-slate-50 transition"><td class="px-6 py-4 font-black text-slate-800">${order.dbId}</td><td class="px-6 py-4"><p class="font-bold text-slate-700">${order.user}</p><p class="text-xs text-slate-500">${order.phone}</p></td><td class="px-6 py-4 text-xs font-semibold text-slate-600 whitespace-normal min-w-[200px]">${order.items}</td><td class="px-6 py-4 text-right font-black text-orange-600">₹${order.total}</td><td class="px-6 py-4 text-xs font-bold ${order.payment==='UPI'?'text-blue-600':'text-slate-500'}">${order.payment}<br>${order.txn?order.txn:''}</td><td class="px-6 py-4 text-xs font-medium text-slate-600 max-w-[250px] whitespace-normal">${order.address}</td><td class="px-6 py-4">${orderActions}</td><td class="px-6 py-4">${invoiceAvailable ? `<button onclick="window.downloadInvoice('${order.dbId}')" class="bg-orange-50 text-orange-700 px-3 py-2 rounded-lg font-bold hover:bg-orange-100 transition"><i class="fas fa-download mr-1"></i>Download</button>` : '<span class="text-xs font-semibold text-slate-400">Unavailable</span>'}</td></tr>`;
+        }).join(''); };
+        window.getOrderInventoryItems = (order) => {
+            let items = Array.isArray(order.lineItems) ? order.lineItems : [];
+            if (!items.length && typeof order.items === 'string') {
+                items = order.items.split(',').map(entry => {
+                    const match = entry.trim().match(/^(\d+)\s*x\s+(.+)$/i);
+                    return match ? { name: match[2].trim(), quantity: Number(match[1]) } : null;
+                }).filter(Boolean);
+            }
+            if (!items.length) return null;
+            return items.map(item => {
+                const product = window.products.find(candidate => candidate.dbId === item.productId || candidate.name === item.name);
+                const quantity = Number(item.quantity);
+                return product && Number.isInteger(quantity) && quantity > 0 ? { product, quantity } : null;
+            });
+        };
+        window.confirmOrder = async (id) => {
+            const orderIndex = window.orders.findIndex(order => order.dbId === id);
+            if (orderIndex < 0 || window.orders[orderIndex].status !== 'pending') return window.showToast('This order is no longer pending.', 'error');
+            if (window.orderActionsInProgress.has(id)) return;
+            window.orderActionsInProgress.add(id);
+            const order = window.orders[orderIndex];
+            window.renderAdminOrders();
+            try {
+                const products = window.products.map(product => ({ ...product }));
+                const inventoryItems = window.getOrderInventoryItems(order);
+                if (!inventoryItems || inventoryItems.some(item => !item)) return window.showToast('Could not match this order’s items to current products. Inventory was not changed.', 'error');
+
+                const alreadyDeducted = order.inventoryDeducted === undefined;
+                if (!alreadyDeducted) {
+                    for (const { product: orderProduct, quantity } of inventoryItems) {
+                        const product = products.find(item => item.dbId === orderProduct.dbId);
+                        if (!product || Number(product.stockQty) < quantity) return window.showToast(`Not enough stock to confirm ${orderProduct.name}.`, 'error');
+                        product.stockQty = Number(product.stockQty) - quantity;
+                    }
+                }
+                const orders = window.orders.map((item, index) => index === orderIndex ? { ...item, status: 'confirmed', inventoryDeducted: true } : item);
+                await dbAPI.saveInventoryAndOrders(products, orders);
+                window.products = products;
+                window.orders = orders;
+                window.renderAdminProducts();
+                window.renderAdminOrders();
+                window.showToast('Order confirmed and inventory updated. Invoice is now available.', 'success');
+            } catch (error) {
+                console.error('Order confirmation failed', error);
+                window.showToast(`Could not confirm order: ${error.message || 'Please try again.'}`, 'error');
+            } finally {
+                window.orderActionsInProgress.delete(id);
+                window.renderAdminOrders();
+            }
+        };
+        window.rejectOrder = async (id) => {
+            const orderIndex = window.orders.findIndex(order => order.dbId === id);
+            if (orderIndex < 0 || window.orders[orderIndex].status !== 'pending') return window.showToast('This order is no longer pending.', 'error');
+            if (window.orderActionsInProgress.has(id)) return;
+            window.orderActionsInProgress.add(id);
+            const order = window.orders[orderIndex];
+            window.renderAdminOrders();
+            try {
+                const products = window.products.map(product => ({ ...product }));
+                if (order.inventoryDeducted === undefined) {
+                    const inventoryItems = window.getOrderInventoryItems(order);
+                    if (!inventoryItems || inventoryItems.some(item => !item)) return window.showToast('Could not restore this order’s previous inventory deduction. Order was not rejected.', 'error');
+                    for (const { product: orderProduct, quantity } of inventoryItems) {
+                        const product = products.find(item => item.dbId === orderProduct.dbId);
+                        product.stockQty = Number(product.stockQty) + quantity;
+                    }
+                }
+                const orders = window.orders.map((item, index) => index === orderIndex ? { ...item, status: 'rejected', inventoryDeducted: false } : item);
+                await dbAPI.saveInventoryAndOrders(products, orders);
+                window.products = products;
+                window.orders = orders;
+                window.renderAdminProducts();
+                window.renderAdminOrders();
+                window.showToast('Order rejected. Inventory is unchanged and no invoice is available.', 'success');
+            } catch (error) {
+                console.error('Order rejection failed', error);
+                window.showToast(`Could not reject order: ${error.message || 'Please try again.'}`, 'error');
+            } finally {
+                window.orderActionsInProgress.delete(id);
+                window.renderAdminOrders();
+            }
+        };
+        window.updateStatus = async (id, val) => {
+            const index = window.orders.findIndex(order => order.dbId === id);
+            if (index < 0 || !['ontheway', 'delivered'].includes(val) || !['confirmed', 'ontheway'].includes(window.orders[index].status)) return window.showToast('Unable to update order status.', 'error');
+            const orders = window.orders.map((order, orderIndex) => orderIndex === index ? { ...order, status: val } : order);
+            try {
+                await dbAPI.saveOrders(orders);
+                window.orders = orders;
+                window.renderAdminOrders();
+                window.showToast('Status updated.', 'success');
+            } catch (error) {
+                console.error('Order status update failed', error);
+                window.showToast(`Could not update order status: ${error.message || 'Please try again.'}`, 'error');
+            }
+        };
+        window.previewImage = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const button = document.getElementById('save-product-button');
+            const setProcessing = (processing) => {
+                window.productImageProcessing = processing;
+                button.disabled = processing;
+                button.innerText = processing ? 'Preparing image...' : 'Save Product';
+            };
+            setProcessing(true);
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const image = new Image();
+                image.onload = () => {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        if (!context) throw new Error('Unable to prepare the selected image.');
+                        let width = image.width, height = image.height;
+                        const maxDimension = 500;
+                        if (width > height && width > maxDimension) {
+                            height *= maxDimension / width;
+                            width = maxDimension;
+                        } else if (height >= width && height > maxDimension) {
+                            width *= maxDimension / height;
+                            height = maxDimension;
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+                        context.drawImage(image, 0, 0, width, height);
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                        document.getElementById('prod-img-base64').value = dataUrl;
+                        document.getElementById('img-preview').src = dataUrl;
+                        document.getElementById('img-preview-container').classList.remove('hide');
+                    } catch (error) {
+                        console.error('Product image processing failed', error);
+                        window.showToast(error.message || 'Could not process the selected image.', 'error');
+                    } finally {
+                        setProcessing(false);
+                    }
+                };
+                image.onerror = () => {
+                    setProcessing(false);
+                    window.showToast('Could not read the selected image. Please choose another file.', 'error');
+                };
+                image.src = event.target.result;
+            };
+            reader.onerror = () => {
+                setProcessing(false);
+                window.showToast('Could not read the selected file. Please try again.', 'error');
+            };
+            reader.readAsDataURL(file);
+        };
         window.renderAdminProducts = () => { document.getElementById('admin-products-table').innerHTML = window.products.map((p) => `<tr class="hover:bg-slate-50 transition"><td class="px-6 py-4"><img src="${p.img}" class="w-10 h-10 rounded-lg object-cover ${p.stockQty <= 0 ? 'grayscale opacity-50' : ''}"></td><td class="px-6 py-4 font-bold text-slate-800">${p.name}</td><td class="px-6 py-4 font-black text-orange-600">₹${p.price}</td><td class="px-6 py-4 text-center"><div class="flex items-center justify-center"><span class="px-3 py-1 text-[11px] font-bold rounded-full ${p.stockQty > 0 ? 'bg-slate-100 text-slate-700' : 'bg-red-100 text-red-600 border border-red-200'}">${p.stockQty > 0 ? p.stockQty + ' ခု' : 'ကုန်ပြီ'}</span><button onclick="window.openRestockModal('${p.dbId}')" class="ml-2 bg-green-100 text-green-700 px-2.5 py-1 rounded text-xs font-bold hover:bg-green-200 transition">+ အသစ်ရောက်</button></div></td><td class="px-6 py-4 text-right"><button onclick="window.openProductModal('${p.dbId}')" class="text-blue-500 hover:scale-110 mx-2"><i class="fas fa-edit"></i></button><button onclick="window.deleteProduct('${p.dbId}')" class="text-red-500 hover:scale-110"><i class="fas fa-trash"></i></button></td></tr>`).join(''); };
         window.openRestockModal = (id) => { let p = window.products.find(x => x.dbId === id); if(!p) return; document.getElementById('restock-prod-id').value = id; document.getElementById('restock-prod-name').innerText = p.name + ` (လက်ရှိ: ${p.stockQty} ခု)`; document.getElementById('restock-qty').value = ''; document.getElementById('restock-modal').classList.remove('hide'); };
         window.confirmRestock = (e) => { e.preventDefault(); let id = document.getElementById('restock-prod-id').value; let addQty = parseInt(document.getElementById('restock-qty').value); let idx = window.products.findIndex(x => x.dbId === id); if(idx > -1 && addQty > 0) { window.products[idx].stockQty += addQty; dbAPI.saveProducts(window.products); window.showToast(`${addQty} ခု ထပ်ပေါင်းထည့်ပြီးပါပြီ`, "success"); document.getElementById('restock-modal').classList.add('hide'); } };
-        window.openProductModal = (id = null) => { document.getElementById('prod-img-file').value = ''; if(id !== null) { let p = window.products.find(x => x.dbId === id); document.getElementById('product-modal-title').innerText = "Edit Product"; document.getElementById('prod-id').value = id; document.getElementById('prod-name').value = p.name; document.getElementById('prod-price').value = p.price; document.getElementById('prod-stock').value = p.stockQty; document.getElementById('prod-img-base64').value = p.img; document.getElementById('img-preview').src = p.img; document.getElementById('img-preview-container').classList.remove('hide'); } else { document.getElementById('product-modal-title').innerText = "Add New Product"; document.getElementById('prod-id').value = ''; document.getElementById('prod-name').value = ''; document.getElementById('prod-price').value = ''; document.getElementById('prod-stock').value = ''; document.getElementById('prod-img-base64').value = ''; document.getElementById('img-preview').src = ''; document.getElementById('img-preview-container').classList.add('hide'); } document.getElementById('product-modal').classList.remove('hide'); };
-        window.saveProduct = (e) => { e.preventDefault(); let id = document.getElementById('prod-id').value; let img = document.getElementById('prod-img-base64').value; let newName = document.getElementById('prod-name').value.trim(); if(!img) return window.showToast("Please choose an image", "error"); if(!id) { let exists = window.products.some(p => p.name.toLowerCase() === newName.toLowerCase()); if(exists) return window.showToast("ဒီပစ္စည်း ရှိပြီးသားပါ။", "error"); } let p = { name: newName, price: parseInt(document.getElementById('prod-price').value), stockQty: parseInt(document.getElementById('prod-stock').value), img: img }; if(id) { let idx = window.products.findIndex(x => x.dbId === id); if(idx > -1) window.products[idx] = { ...window.products[idx], ...p }; } else { p.dbId = 'PROD-' + Date.now(); window.products.unshift(p); } dbAPI.saveProducts(window.products); document.getElementById('product-modal').classList.add('hide'); window.showToast("Saved!", "success"); };
+        window.openProductModal = (id = null) => {
+            window.productImageProcessing = false;
+            document.getElementById('save-product-button').disabled = false;
+            document.getElementById('save-product-button').innerText = 'Save Product';
+            document.getElementById('product-save-feedback').innerText = '';
+            document.getElementById('prod-img-file').value = '';
+            if (id !== null) {
+                const product = window.products.find(item => item.dbId === id);
+                if (!product) return window.showToast('Product not found. Please refresh and try again.', 'error');
+                document.getElementById('product-modal-title').innerText = 'Edit Product';
+                document.getElementById('prod-id').value = id;
+                document.getElementById('prod-name').value = product.name;
+                document.getElementById('prod-price').value = product.price;
+                document.getElementById('prod-stock').value = product.stockQty;
+                document.getElementById('prod-img-base64').value = product.img;
+                document.getElementById('img-preview').src = product.img;
+                document.getElementById('img-preview-container').classList.remove('hide');
+            } else {
+                document.getElementById('product-modal-title').innerText = 'Add New Product';
+                document.getElementById('prod-id').value = '';
+                document.getElementById('prod-name').value = '';
+                document.getElementById('prod-price').value = '';
+                document.getElementById('prod-stock').value = '';
+                document.getElementById('prod-img-base64').value = '';
+                document.getElementById('img-preview').src = '';
+                document.getElementById('img-preview-container').classList.add('hide');
+            }
+            document.getElementById('product-modal').classList.remove('hide');
+        };
+        window.saveProduct = async (e) => {
+            e.preventDefault();
+            const form = document.getElementById('product-form');
+            const feedback = document.getElementById('product-save-feedback');
+            feedback.innerText = '';
+            if (!form.reportValidity()) return;
+            if (window.productImageProcessing) return window.showToast('Please wait for the image to finish processing.', 'info');
+
+            const id = document.getElementById('prod-id').value;
+            const image = document.getElementById('prod-img-base64').value;
+            const name = document.getElementById('prod-name').value.trim();
+            const price = Number(document.getElementById('prod-price').value);
+            const stockQty = Number(document.getElementById('prod-stock').value);
+            const button = document.getElementById('save-product-button');
+
+            if (!image) {
+                feedback.innerText = 'Please choose and wait for a product image before saving.';
+                return window.showToast(feedback.innerText, 'error');
+            }
+            if (!name || !Number.isFinite(price) || price <= 0 || !Number.isInteger(stockQty) || stockQty < 0) {
+                feedback.innerText = 'Enter a product name, a price greater than zero, and a whole-number stock quantity.';
+                return window.showToast(feedback.innerText, 'error');
+            }
+            if (!id && window.products.some(product => product.name.toLowerCase() === name.toLowerCase())) {
+                feedback.innerText = 'ဒီပစ္စည်း ရှိပြီးသားပါ။';
+                return window.showToast(feedback.innerText, 'error');
+            }
+
+            const products = window.products.slice();
+            const product = { name, price, stockQty, img: image };
+            if (id) {
+                const index = products.findIndex(item => item.dbId === id);
+                if (index < 0) {
+                    feedback.innerText = 'Product not found. Please refresh and try again.';
+                    return window.showToast(feedback.innerText, 'error');
+                }
+                products[index] = { ...products[index], ...product };
+            } else {
+                products.unshift({ ...product, dbId: 'PROD-' + Date.now() });
+            }
+
+            button.disabled = true;
+            button.innerText = 'Saving...';
+            try {
+                await dbAPI.saveProducts(products);
+                window.products = products;
+                window.renderAdminProducts();
+                document.getElementById('product-modal').classList.add('hide');
+                window.showToast('Product saved successfully.', 'success');
+            } catch (error) {
+                console.error('Product save failed', error);
+                feedback.innerText = `Could not save product: ${error.message || 'Please check your connection and try again.'}`;
+                window.showToast(feedback.innerText, 'error');
+            } finally {
+                button.disabled = false;
+                button.innerText = 'Save Product';
+            }
+        };
         window.deleteProduct = (id) => { window.products = window.products.filter(p => p.dbId !== id); dbAPI.saveProducts(window.products); window.showToast("ဖျက်ပစ်လိုက်ပါပြီ", "success"); };
     </script>
 </body>
