@@ -6,7 +6,7 @@
     <!-- Disable Google Translate Popup completely -->
     <meta name="google" content="notranslate">
     
-    <title>Zay India - Myanmar Food</title>
+    <title>Zay India</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -19,616 +19,627 @@
     <!-- EmailJS SDK -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&family=Noto+Sans+Myanmar:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; margin: 0; padding: 0; }
-        .hide { display: none !important; }
-        
-        /* Mobile App Container */
-        .mobile-container { max-width: 480px; margin: 0 auto; background: #ffffff; min-height: 100vh; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
-        
-        /* Toast Alert */
-        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-        .toast { min-width: 250px; padding: 15px 20px; border-radius: 12px; color: #fff; opacity: 0; transform: translateY(-20px); transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); font-weight: bold; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-        .toast.show { opacity: 1; transform: translateY(0); }
-        .toast-success { background-color: #10b981; }
-        .toast-error { background-color: #ef4444; }
-        .toast-info { background-color: #3b82f6; }
-        
-        /* Hide Scrollbar */
-        ::-webkit-scrollbar { width: 0px; height: 0px; background: transparent; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
-
-        /* Loading */
-        #app-loading { position: fixed; inset: 0; background: #ffffff; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #ea580c; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
+        /* ---------- Tokens ---------- */
         :root {
             color-scheme: light;
-            --brand: #ea580c;
-            --brand-dark: #c2410c;
-            --ink: #172033;
-            --glass-border: rgba(255, 255, 255, 0.72);
+            --bg: #F3F4F6;
+            --surface: #FFFFFF;
+            --well: #F2F3F5;
+            --ink: #1B2130;
+            --muted: #667085;
+            --faint: #98A2B3;
+            --line: #E4E7EC;
+            --brand: #EA580C;
+            --brand-ink: #C2410C;
+            --brand-soft: #FFF1E7;
+            --ok: #15803D;
+            --ok-ink: #166534;
+            --ok-soft: #ECFDF3;
+            --danger: #DC2626;
+            --danger-soft: #FEF2F2;
+            --warn-ink: #B45309;
+            --warn-soft: #FFFBEB;
+            --info-ink: #1D4ED8;
+            --info-soft: #EFF6FF;
+            --r-sheet: 22px;
+            --r-card: 16px;
+            --r-ctl: 12px;
+            --font: 'Onest', 'Noto Sans Myanmar', system-ui, sans-serif;
         }
-        body {
-            color: var(--ink);
-            background:
-                radial-gradient(ellipse at 10% 5%, rgba(251, 146, 60, 0.18), transparent 34rem),
-                radial-gradient(ellipse at 90% 85%, rgba(249, 115, 22, 0.12), transparent 30rem),
-                #f5f7fb;
+
+        /* ---------- Base ---------- */
+        html, body { margin: 0; padding: 0; }
+        body { font-family: var(--font); background: var(--bg); color: var(--ink); -webkit-font-smoothing: antialiased; }
+        button, input, textarea, select { font: inherit; color: inherit; }
+        :lang(my), .my { line-height: 1.6; }
+        .hide { display: none !important; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .pb-safe { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+        :focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+        .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+        /* Burmese label with an English hint underneath / beside */
+        .bi { display: inline-flex; flex-direction: column; line-height: 1.25; }
+        .en { font-size: 0.75em; font-weight: 500; color: var(--muted); }
+        .en-inline { font-size: 0.8em; font-weight: 500; color: var(--muted); margin-left: 0.35em; }
+
+        /* ---------- Wordmark: the one bold element ---------- */
+        .wordmark { display: flex; align-items: baseline; gap: 0.5rem; }
+        .wordmark-my { font-family: 'Noto Sans Myanmar', sans-serif; font-weight: 700; color: var(--brand); line-height: 1; letter-spacing: -0.01em; }
+        .wordmark-en { font-weight: 800; letter-spacing: -0.02em; color: var(--ink); }
+
+        /* ---------- Controls ---------- */
+        .field {
+            width: 100%; min-height: 48px; padding: 0.75rem 0.9rem;
+            background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-ctl);
+            font-weight: 500; outline: none; transition: border-color 150ms ease, box-shadow 150ms ease;
         }
-        button, input, textarea { font: inherit; }
-        button { transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease, border-color 160ms ease; }
-        button:not(:disabled):active { transform: scale(0.98); }
-        input, textarea {
-            transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+        .field::placeholder { color: var(--faint); font-weight: 400; }
+        .field:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15); }
+        .field[readonly] { background: var(--well); color: var(--muted); }
+        textarea.field { resize: vertical; }
+        .field-label { display: block; margin: 0 0 0.35rem 0.1rem; font-size: 0.82rem; font-weight: 600; color: var(--ink); }
+        .field-label .en-inline { font-size: 0.9em; }
+        .field-hint { margin-top: 0.35rem; font-size: 0.75rem; color: var(--muted); }
+
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+            min-height: 48px; padding: 0.7rem 1.1rem; border-radius: var(--r-ctl);
+            border: 1px solid transparent; font-weight: 700; cursor: pointer;
+            transition: background-color 150ms ease, border-color 150ms ease, transform 120ms ease;
         }
-        input:focus, textarea:focus {
-            border-color: rgba(234, 88, 12, 0.65) !important;
-            box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.12);
+        .btn:not(:disabled):active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-block { width: 100%; }
+        .btn-sm { min-height: 38px; padding: 0.45rem 0.8rem; font-size: 0.85rem; border-radius: 10px; }
+        .btn-primary { background: var(--brand); color: #fff; }
+        .btn-primary:not(:disabled):hover { background: var(--brand-ink); }
+        .btn-dark { background: var(--ink); color: #fff; }
+        .btn-dark:not(:disabled):hover { background: #2B3346; }
+        .btn-ghost { background: var(--surface); border-color: var(--line); color: var(--ink); }
+        .btn-ghost:not(:disabled):hover { background: var(--well); }
+        .btn-soft { background: var(--brand-soft); color: var(--brand-ink); }
+        .btn-soft:not(:disabled):hover { background: #FFE4D1; }
+        .btn-whatsapp { background: var(--ok); color: #fff; }
+        .btn-whatsapp:not(:disabled):hover { background: var(--ok-ink); }
+        .btn-danger-soft { background: var(--danger-soft); color: var(--danger); }
+        .btn-danger-soft:not(:disabled):hover { background: #FEE2E2; }
+        .btn-link { background: none; border: 0; padding: 0; min-height: 0; color: var(--brand-ink); font-weight: 600; cursor: pointer; }
+        .icon-btn {
+            width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center;
+            border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer;
         }
-        .mobile-container {
-            background: rgba(255, 255, 255, 0.78);
-            border-inline: 1px solid rgba(255, 255, 255, 0.8);
-            box-shadow: 0 24px 80px rgba(30, 41, 59, 0.09);
-            backdrop-filter: blur(18px);
+        .icon-btn:hover { background: var(--well); }
+
+        .badge { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
+        .badge-pending { background: var(--warn-soft); color: var(--warn-ink); }
+        .badge-ok { background: var(--ok-soft); color: var(--ok-ink); }
+        .badge-info { background: var(--info-soft); color: var(--info-ink); }
+        .badge-danger { background: var(--danger-soft); color: var(--danger); }
+        .badge-brand { background: var(--brand-soft); color: var(--brand-ink); }
+        .badge-muted { background: var(--well); color: var(--muted); }
+
+        .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-card); }
+        .error-text { font-size: 0.85rem; font-weight: 600; color: var(--danger); }
+        .error-text:empty { display: none; }
+
+        /* ---------- Loading + toasts ---------- */
+        #app-loading { position: fixed; inset: 0; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; background: var(--surface); }
+        .spinner { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--brand); animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #toast-container { position: fixed; top: max(14px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 8px; width: min(440px, calc(100% - 32px)); pointer-events: none; }
+        .toast { padding: 0.8rem 1rem; border-radius: var(--r-ctl); background: var(--ink); color: #fff; font-size: 0.9rem; opacity: 0; transform: translateY(-8px); transition: opacity 200ms ease, transform 200ms ease; box-shadow: 0 10px 30px rgba(16, 24, 40, 0.18); }
+        .toast.show { opacity: 1; transform: none; }
+        .toast i { margin-top: 0.15rem; }
+        .toast-success i { color: #4ADE80; }
+        .toast-error { background: #7F1D1D; }
+        .toast-error i { color: #FCA5A5; }
+        .toast-info i { color: #FDBA74; }
+
+        /* ---------- App shell (customer + auth) ---------- */
+        .app { max-width: 480px; margin: 0 auto; min-height: 100vh; min-height: 100dvh; background: var(--bg); display: flex; flex-direction: column; position: relative; }
+        @media (min-width: 520px) { .app { border-inline: 1px solid var(--line); } }
+
+        /* Auth */
+        #auth-view { justify-content: center; padding: 2rem 1.25rem; background: var(--surface); }
+        .auth-hero { margin-bottom: 1.75rem; }
+        .auth-hero .wordmark-my { font-size: 4.25rem; }
+        .auth-hero .wordmark-en { font-size: 1.6rem; }
+        .auth-hero p { margin-top: 0.75rem; color: var(--muted); font-size: 0.95rem; max-width: 30ch; }
+        .segmented { display: grid; grid-template-columns: 1fr 1fr; padding: 4px; background: var(--well); border-radius: 14px; margin-bottom: 1.25rem; }
+        .segmented button { min-height: 44px; border: 0; border-radius: 10px; background: transparent; font-weight: 600; color: var(--muted); cursor: pointer; }
+        .segmented button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(16, 24, 40, 0.1); }
+        .auth-form { display: flex; flex-direction: column; gap: 0.9rem; }
+        .divider { display: flex; align-items: center; gap: 0.75rem; color: var(--faint); font-size: 0.8rem; }
+        .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+        /* Customer view */
+        #customer-view { height: 100vh; height: 100dvh; overflow: hidden; }
+        .shop-header { flex-shrink: 0; background: var(--surface); border-bottom: 1px solid var(--line); padding: max(14px, env(safe-area-inset-top)) 1rem 0.85rem; }
+        .shop-header-top { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+        .shop-header .wordmark-my { font-size: 1.9rem; }
+        .shop-header .wordmark-en { font-size: 1.05rem; }
+        .address-chip {
+            margin-top: 0.75rem; width: 100%; display: flex; align-items: center; gap: 0.6rem; text-align: left;
+            padding: 0.55rem 0.75rem; border-radius: var(--r-ctl); background: var(--well); border: 0; cursor: pointer;
         }
-        #auth-view {
-            background: rgba(255, 255, 255, 0.62) !important;
-            justify-content: center;
+        .address-chip:hover { background: #EBEDF0; }
+        .address-chip i.fa-location-dot { color: var(--brand); }
+        .address-chip .label { font-size: 0.7rem; color: var(--muted); }
+        .address-chip .value { font-size: 0.88rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .tab-panel { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #D0D5DD transparent; padding: 1rem 1rem calc(9rem + env(safe-area-inset-bottom)); }
+        .section-title { font-size: 1.15rem; font-weight: 700; }
+        .search-wrap { position: relative; margin-top: 0.75rem; }
+        .search-wrap > i { position: absolute; left: 0.95rem; top: 50%; transform: translateY(-50%); color: var(--faint); }
+        .search-wrap .field { padding-left: 2.6rem; padding-right: 2.75rem; }
+        #clear-product-search { position: absolute; right: 0.4rem; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); cursor: pointer; }
+
+        #product-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; margin-top: 1rem; }
+        .product { display: flex; flex-direction: column; overflow: hidden; }
+        .product-open { display: block; width: 100%; padding: 0; border: 0; background: none; text-align: left; cursor: pointer; }
+        .product-img { aspect-ratio: 1 / 1; background: var(--well); display: flex; align-items: center; justify-content: center; }
+        .product-img img { width: 100%; height: 100%; object-fit: contain; padding: 0.6rem; }
+        .product.is-out .product-img img { filter: grayscale(1); opacity: 0.5; }
+        .product-body { padding: 0.65rem 0.75rem 0; }
+        .product-name { font-size: 0.9rem; font-weight: 600; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.4em; }
+        .product-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; margin-top: 0.35rem; }
+        .price { font-weight: 800; font-size: 1.05rem; letter-spacing: -0.01em; }
+        .stock { font-size: 0.72rem; color: var(--muted); }
+        .product-action { padding: 0.65rem 0.75rem 0.75rem; margin-top: auto; }
+
+        .stepper { display: flex; align-items: center; justify-content: space-between; min-height: 40px; border-radius: 10px; background: var(--brand); color: #fff; }
+        .stepper button { width: 44px; min-height: 40px; border: 0; background: transparent; color: #fff; font-size: 1.1rem; font-weight: 700; cursor: pointer; }
+        .stepper button:disabled { opacity: 0.4; }
+        .stepper span { font-weight: 700; }
+        .stepper.stepper-lg { min-height: 52px; border-radius: var(--r-ctl); }
+        .stepper.stepper-lg button { width: 56px; min-height: 52px; font-size: 1.3rem; }
+        .stepper.stepper-lg span { font-size: 1.1rem; }
+
+        .empty { padding: 2.5rem 1rem; text-align: center; color: var(--muted); }
+        .empty i { font-size: 1.5rem; color: var(--faint); margin-bottom: 0.6rem; }
+
+        /* Bottom: cart bar + tab bar */
+        .bottom-dock { position: fixed; z-index: 40; left: 50%; bottom: 0; transform: translateX(-50%); width: min(100%, 480px); }
+        #nav-cart {
+            margin: 0 0.75rem 0.6rem; width: calc(100% - 1.5rem); display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+            min-height: 56px; padding: 0.5rem 0.6rem 0.5rem 1rem; border: 0; border-radius: var(--r-card);
+            background: var(--brand); color: #fff; cursor: pointer; box-shadow: 0 10px 24px rgba(234, 88, 12, 0.3);
         }
-        #auth-view > div:first-child { margin-bottom: 2rem; }
-        #auth-view > div:first-child > div:first-child {
-            background: linear-gradient(145deg, #fb923c, #c2410c);
-            border: 1px solid rgba(255, 255, 255, 0.55);
-            box-shadow: 0 18px 36px rgba(194, 65, 12, 0.25);
-            animation: auth-logo-float 3s ease-in-out infinite;
+        #nav-cart:hover { background: var(--brand-ink); }
+        #nav-cart .cart-summary { display: flex; flex-direction: column; text-align: left; line-height: 1.2; }
+        #nav-cart .cart-summary small { font-size: 0.75rem; opacity: 0.85; }
+        #nav-cart .cart-summary strong { font-size: 1.05rem; }
+        #nav-cart .cart-cta { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.55rem 0.85rem; border-radius: 10px; background: rgba(255, 255, 255, 0.18); font-weight: 700; font-size: 0.9rem; }
+        #cart-count { min-width: 22px; height: 22px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #fff; color: var(--brand-ink); font-size: 0.75rem; font-weight: 800; }
+        .tabbar { display: grid; grid-template-columns: 1fr 1fr; background: var(--surface); border-top: 1px solid var(--line); padding: 0.35rem 0.5rem max(0.35rem, env(safe-area-inset-bottom)); }
+        .tabbar button { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; min-height: 52px; border: 0; background: none; color: var(--faint); font-size: 0.72rem; font-weight: 600; cursor: pointer; border-radius: 10px; }
+        .tabbar button i { font-size: 1.1rem; }
+        .tabbar button.is-active { color: var(--brand); }
+
+        /* Orders (customer) */
+        .order-group + .order-group { margin-top: 1.25rem; }
+        .order-group-title { font-size: 0.8rem; font-weight: 600; color: var(--muted); margin: 0 0 0.5rem 0.15rem; }
+        .order-card { padding: 0.9rem; }
+        .order-card + .order-card { margin-top: 0.6rem; }
+        .order-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+        .order-id { font-size: 0.8rem; font-weight: 600; color: var(--muted); }
+        .order-items { margin: 0.6rem 0; font-size: 0.92rem; font-weight: 600; }
+        .order-foot { display: flex; align-items: baseline; justify-content: space-between; font-size: 0.78rem; color: var(--muted); }
+        .order-actions { display: grid; gap: 0.5rem; margin-top: 0.8rem; }
+        .order-note { margin-top: 0.8rem; font-size: 0.78rem; color: var(--muted); text-align: center; }
+        .order-note.is-danger { color: var(--danger); }
+
+        /* ---------- Sheets & modals ---------- */
+        .overlay { position: fixed; inset: 0; background: rgba(16, 24, 40, 0.45); display: flex; align-items: center; justify-content: center; padding: 1rem; }
+        .overlay-sheet { flex-direction: column; justify-content: flex-end; padding: 0; transition: opacity 250ms ease; }
+        .modal { width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto; background: var(--surface); border-radius: var(--r-sheet); padding: 1.4rem; box-shadow: 0 24px 60px rgba(16, 24, 40, 0.25); }
+        .modal-title { font-size: 1.2rem; font-weight: 700; }
+        .modal-sub { margin-top: 0.3rem; font-size: 0.88rem; color: var(--muted); }
+        .modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+        .modal-actions { display: flex; gap: 0.6rem; margin-top: 0.4rem; }
+        .modal-actions .btn { flex: 1; }
+        .sheet { width: 100%; max-width: 480px; margin: 0 auto; background: var(--surface); border-radius: var(--r-sheet) var(--r-sheet) 0 0; display: flex; flex-direction: column; transition: transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .sheet-handle { width: 40px; height: 4px; border-radius: 999px; background: var(--line); margin: 0.6rem auto 0; }
+        .sheet-foot { border-top: 1px solid var(--line); padding: 0.9rem 1rem; }
+        .note { display: flex; gap: 0.6rem; padding: 0.8rem 0.9rem; border-radius: var(--r-ctl); font-size: 0.85rem; }
+        .note-ok { background: var(--ok-soft); color: var(--ok-ink); }
+        .note-muted { background: var(--well); color: var(--muted); }
+        .cart-line { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 0; }
+        .cart-line + .cart-line { border-top: 1px solid var(--line); }
+        .cart-line img { width: 48px; height: 48px; border-radius: 10px; background: var(--well); object-fit: contain; padding: 4px; flex-shrink: 0; }
+        .mini-stepper { display: flex; align-items: center; gap: 0.35rem; }
+        .mini-stepper button { width: 30px; height: 30px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-weight: 700; cursor: pointer; }
+        .mini-stepper button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .more-item { min-width: 128px; max-width: 128px; padding: 0; text-align: left; cursor: pointer; overflow: hidden; }
+        .more-item .product-img img { padding: 0.45rem; }
+
+        /* ---------- Admin ---------- */
+        #admin-view { min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); }
+        .admin-side { background: var(--surface); border-bottom: 1px solid var(--line); flex-shrink: 0; }
+        .admin-brand { display: flex; align-items: center; justify-content: space-between; padding: 0.9rem 1rem; }
+        .admin-brand .wordmark-my { font-size: 1.6rem; }
+        .admin-brand .wordmark-en { font-size: 1rem; }
+        .admin-brand small { display: block; font-size: 0.72rem; color: var(--muted); font-weight: 600; }
+        .admin-nav { display: flex; gap: 0.25rem; padding: 0 0.75rem 0.6rem; overflow-x: auto; scrollbar-width: none; }
+        .admin-nav::-webkit-scrollbar { display: none; }
+        @media (max-width: 899px) { .admin-nav .en-inline { display: none; } .admin-nav button { flex: 1; justify-content: center; } }
+        .admin-nav button { display: flex; align-items: center; gap: 0.6rem; white-space: nowrap; min-height: 42px; padding: 0.5rem 0.85rem; border: 0; border-radius: 10px; background: none; color: var(--muted); font-weight: 600; cursor: pointer; }
+        .admin-nav button:hover { background: var(--well); color: var(--ink); }
+        .admin-nav button.is-active { background: var(--brand-soft); color: var(--brand-ink); }
+        .admin-nav button i { width: 1.1rem; text-align: center; }
+        .admin-logout-wide { display: none; }
+        .admin-main { flex: 1; min-width: 0; padding: 1.25rem 1rem 2rem; }
+        .admin-page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
+        .admin-page-head h1 { font-size: 1.45rem; font-weight: 800; letter-spacing: -0.01em; }
+        .admin-page-head p { margin-top: 0.2rem; font-size: 0.85rem; color: var(--muted); max-width: 70ch; }
+        .admin-section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.65rem; }
+        .admin-section-head h2 { font-size: 1rem; font-weight: 700; }
+        @media (min-width: 900px) {
+            #admin-view { flex-direction: row; }
+            .admin-side { width: 240px; min-height: 100vh; position: sticky; top: 0; border-bottom: 0; border-right: 1px solid var(--line); display: flex; flex-direction: column; }
+            .admin-brand { padding: 1.25rem 1.1rem 1rem; }
+            .admin-brand .admin-logout-narrow { display: none; }
+            .admin-nav { flex-direction: column; padding: 0 0.75rem; flex: 1; overflow: visible; }
+            .admin-logout-wide { display: block; padding: 0.75rem; border-top: 1px solid var(--line); }
+            .admin-main { padding: 2rem 2.25rem; height: 100vh; overflow-y: auto; }
         }
-        @keyframes auth-logo-float {
-            0%, 100% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-8px) rotate(-3deg); }
-        }
-        #login-form, #register-form {
-            padding: 1.4rem;
-            border: 1px solid var(--glass-border);
-            border-radius: 1.75rem;
-            background: rgba(255, 255, 255, 0.76);
-            box-shadow: 0 18px 50px rgba(30, 41, 59, 0.08);
-            backdrop-filter: blur(18px);
-        }
-        #customer-view {
-            background: rgba(248, 250, 252, 0.82);
-        }
-        #customer-view {
-            height: 100vh;
-            height: 100dvh;
-            min-height: 0;
-            overflow: hidden;
-            padding-bottom: 0;
-        }
-        #customer-view > div:first-child {
-            background: linear-gradient(130deg, rgba(234, 88, 12, 0.96), rgba(194, 65, 12, 0.94)) !important;
-            border: 1px solid rgba(255, 255, 255, 0.22);
-            border-top: 0;
-            box-shadow: 0 14px 32px rgba(154, 52, 18, 0.2);
-            backdrop-filter: blur(20px);
-            flex-shrink: 0;
-        }
-        #customer-view > div:first-child > div:last-child {
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            background: rgba(255, 255, 255, 0.14);
-            backdrop-filter: blur(12px);
-        }
-        #tab-home, #tab-orders {
-            min-height: 0;
-            padding-bottom: calc(6rem + env(safe-area-inset-bottom));
-            overscroll-behavior: contain;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(148, 163, 184, 0.65) transparent;
-            background: transparent !important;
-        }
-        #tab-home::-webkit-scrollbar, #tab-orders::-webkit-scrollbar { width: 5px; }
-        #tab-home::-webkit-scrollbar-thumb, #tab-orders::-webkit-scrollbar-thumb { border-radius: 999px; background: rgba(148, 163, 184, 0.55); }
-        #tab-home::-webkit-scrollbar-track, #tab-orders::-webkit-scrollbar-track { background: transparent; }
-        #product-search {
-            border-color: rgba(148, 163, 184, 0.24);
-            background: rgba(255, 255, 255, 0.82);
-            box-shadow: 0 8px 22px rgba(30, 41, 59, 0.05);
-            backdrop-filter: blur(12px);
-        }
-        #product-list > div {
-            border-color: rgba(226, 232, 240, 0.85);
-            border-radius: 1.35rem;
-            background: rgba(255, 255, 255, 0.88);
-            box-shadow: 0 10px 24px rgba(30, 41, 59, 0.055);
-            transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
-        }
-        #product-list > div:hover {
-            transform: translateY(-3px);
-            border-color: rgba(251, 146, 60, 0.42);
-            box-shadow: 0 18px 32px rgba(30, 41, 59, 0.1);
-        }
-        #product-list > div img { transition: transform 260ms ease; }
-        #product-list > div:hover img { transform: scale(1.035); }
-        #product-list > div button:not(:disabled) {
-            border-color: rgba(249, 115, 22, 0.16);
-            box-shadow: inset 0 1px rgba(255, 255, 255, 0.8);
-        }
-        #customer-view > div.fixed.bottom-0 {
-            border: 1px solid rgba(255, 255, 255, 0.88);
-            background: rgba(255, 255, 255, 0.82);
-            box-shadow: 0 -12px 36px rgba(30, 41, 59, 0.09);
-            backdrop-filter: blur(22px);
-        }
-        #customer-view > div.fixed.bottom-0 > button:nth-child(2) > div {
-            background: linear-gradient(145deg, #1e293b, #0f172a);
-            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.24);
-        }
-        #admin-view { background: #f4f6fa !important; }
-        #admin-view > div:first-child {
-            background: linear-gradient(180deg, #172033, #0f172a) !important;
-            box-shadow: 12px 0 40px rgba(15, 23, 42, 0.12);
-        }
-        #admin-view > div:first-child > div:first-child {
-            border-color: rgba(255, 255, 255, 0.1);
-        }
-        #admin-view > div:first-child button {
-            transition: background-color 160ms ease, color 160ms ease, transform 160ms ease;
-        }
-        #admin-view .bg-white.rounded-3xl {
-            border-color: rgba(226, 232, 240, 0.85);
-            box-shadow: 0 12px 32px rgba(30, 41, 59, 0.055);
-        }
-        #admin-view table thead { background: rgba(248, 250, 252, 0.92); }
-        #admin-view tbody tr { transition: background-color 150ms ease; }
-        #admin-view tbody tr:hover { background: rgba(255, 247, 237, 0.68); }
-        #toast-container { right: max(16px, env(safe-area-inset-right)); }
-        .toast { border: 1px solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(16px); }
-        [role="dialog"] {
-            border: 1px solid rgba(255, 255, 255, 0.7);
-            box-shadow: 0 28px 80px rgba(15, 23, 42, 0.24);
-        }
-        #customer-view > div:first-child { padding-top: 1rem; padding-bottom: 0.8rem; }
-        #customer-view > div:first-child > div:first-child { margin-bottom: 0.6rem; }
-        #customer-view > div:first-child > div:first-child > div { gap: 0.4rem; }
-        #customer-view > div:first-child > div:first-child button { min-height: 40px; padding: 0.5rem 0.7rem; }
-        #customer-view > div:first-child > div:last-child { padding: 0.55rem 0.7rem; }
-        #customer-view > div:first-child > div:last-child > div:first-child { width: 2rem; height: 2rem; }
-        #tab-home, #tab-orders { padding: 1rem; }
-        #customer-view > #tab-home, #customer-view > #tab-orders { padding-bottom: calc(6rem + env(safe-area-inset-bottom)); }
-        #product-search { min-height: 44px; padding-top: 0.65rem; padding-bottom: 0.65rem; }
-        #product-list { gap: 0.65rem; margin-top: 0.85rem; }
-        #product-list > div { border-radius: 1.1rem; }
-        #product-list > div > div:first-child > div:first-child {
-            height: auto;
-            aspect-ratio: 1.2;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            background: linear-gradient(145deg, #f8fafc, #fff7ed);
-        }
-        #product-list > div > div:first-child > div:first-child img {
-            width: 100%;
-            height: 100%;
-            padding: 0.55rem;
-            object-fit: contain !important;
-        }
-        #detail-main-content > div:first-child {
-            background: linear-gradient(145deg, #f8fafc, #fff7ed);
-        }
-        #detail-main-content > div:first-child img {
-            padding: 1rem;
-            object-fit: contain !important;
-        }
-        #product-list > div > div:first-child > div:nth-child(2) { padding: 0.65rem 0.7rem 0.25rem; }
-        #product-list > div > div:first-child > div:nth-child(2) > div { margin-bottom: 0.45rem; }
-        #product-list > div > div:last-child { padding: 0 0.65rem 0.65rem; }
-        #product-list button { min-height: 38px; }
-        #customer-view > div.fixed.bottom-0 {
-            position: fixed;
-            z-index: 40;
-            left: 50%;
-            right: auto;
-            bottom: 0;
-            width: min(100%, 480px);
-            min-height: 68px;
-            transform: translateX(-50%);
-            padding: 0.35rem 0.5rem max(0.35rem, env(safe-area-inset-bottom));
-        }
-        #customer-view > div.fixed.bottom-0 > button { padding: 0.35rem; }
-        #customer-view > div.fixed.bottom-0 > button:nth-child(2) { margin-top: -0.75rem; }
-        #customer-view > div.fixed.bottom-0 > button:nth-child(2) > div { width: 3rem; height: 3rem; }
-        #customer-view > div.fixed.bottom-0 > button i { font-size: 1rem; }
-        #customer-view > div.fixed.bottom-0 > button span { margin-top: 0.2rem; }
-        #customer-orders-list > section > div { padding: 0.8rem; border-radius: 1rem; }
-        #customer-orders-list > section > div button { min-height: 40px; padding-top: 0.55rem; padding-bottom: 0.55rem; }
-        #btn-confirm-order { min-height: 48px; padding-top: 0.7rem; padding-bottom: 0.7rem; }
-        #admin-view > div:first-child > div:first-child { padding: 1.1rem; }
-        #admin-view > div:first-child > ul { padding: 0.75rem; }
-        #admin-view > div:first-child > ul button,
-        #admin-view > div:first-child > div:last-child button { min-height: 42px; padding-top: 0.6rem; padding-bottom: 0.6rem; }
-        #admin-view > div:last-child { padding: 1.1rem; }
-        #admin-view th, #admin-view td { padding: 0.7rem 0.8rem; }
-        #admin-view #admin-tab-orders > div:first-child,
-        #admin-view #admin-tab-products > div:first-child,
-        #admin-view #admin-tab-accounts > div:first-child { margin-bottom: 1rem; }
-        #admin-pending-orders { gap: 0.75rem; }
-        #admin-pending-orders article { padding: 0.8rem; }
-        #admin-pending-orders article button,
-        #admin-view tbody button,
-        #admin-view tbody select { min-height: 38px; padding-top: 0.45rem; padding-bottom: 0.45rem; }
-        #auth-view { padding-top: 1.25rem; padding-bottom: 1.25rem; }
-        #auth-view > div:first-child { margin-bottom: 1.15rem; }
-        #auth-view > div:first-child > div:first-child { width: 4rem; height: 4rem; margin-bottom: 0.65rem; border-radius: 1.2rem; font-size: 1.8rem; }
-        #login-form, #register-form { padding: 1rem; }
-        #login-form { gap: 0.7rem; }
-        #login-form input, #register-form input, #register-form textarea { min-height: 42px; padding: 0.65rem 0.8rem; }
-        #login-form > button[type="submit"],
-        #login-form > p > button,
-        #register-form > button[type="submit"] { min-height: 44px; padding-top: 0.6rem; padding-bottom: 0.6rem; }
-        @media (max-width: 520px) {
-            .mobile-container { border-inline: 0; }
-            #auth-view { padding-inline: 0.85rem; }
-            #login-form, #register-form { padding: 0.9rem; }
-            #tab-home, #tab-orders { padding: 0.8rem; }
-            #customer-view > #tab-home, #customer-view > #tab-orders { padding-bottom: calc(6rem + env(safe-area-inset-bottom)); }
-            #product-list { gap: 0.6rem; }
-            #product-list > div { border-radius: 1rem; }
-            #product-list > div > div:first-child > div:first-child { aspect-ratio: 1.05; }
-            #customer-view > div.fixed.bottom-0 { width: 100%; }
-            #admin-view > div:last-child { padding: 0.85rem; }
-            #admin-view th, #admin-view td { padding: 0.6rem; }
-        }
+        .table-wrap { overflow-x: auto; scrollbar-width: thin; scrollbar-color: #D0D5DD transparent; }
+        .table .cell-name { min-width: 150px; }
+        .table { width: 100%; border-collapse: collapse; font-size: 0.88rem; text-align: left; }
+        .table thead th { padding: 0.7rem 1rem; font-size: 0.78rem; font-weight: 600; color: var(--muted); background: #F9FAFB; border-bottom: 1px solid var(--line); white-space: nowrap; }
+        .table td { padding: 0.8rem 1rem; border-bottom: 1px solid var(--line); vertical-align: middle; }
+        .table tbody tr:last-child td { border-bottom: 0; }
+        .table tbody tr:hover td { background: #FCFCFD; }
+        .table .group-row th { padding: 0.55rem 1rem; font-size: 0.8rem; font-weight: 700; color: var(--ink); background: var(--well); border-bottom: 1px solid var(--line); text-align: left; }
+        .table .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+        .thumb { width: 44px; height: 44px; border-radius: 10px; background: var(--well); object-fit: contain; padding: 3px; }
+        .pending-grid { display: grid; gap: 0.75rem; }
+        @media (min-width: 1200px) { .pending-grid { grid-template-columns: 1fr 1fr; } }
+        .pending-card { padding: 1rem; border-left: 3px solid var(--brand); }
+        .status-select { min-height: 36px; padding: 0.3rem 0.6rem; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); font-size: 0.82rem; font-weight: 600; }
+
         @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+            *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
         }
     </style>
 </head>
-<body class="text-slate-800">
+<body>
 
     <!-- Loading Screen -->
     <div id="app-loading">
-        <div class="spinner mb-4"></div>
-        <p class="font-bold text-slate-500">Connecting to Database...</p>
+        <div class="wordmark"><span class="wordmark-my" style="font-size:2.5rem">ဈေး</span></div>
+        <div class="spinner" role="status" aria-label="Loading"></div>
     </div>
 
     <!-- Notifications -->
-    <div id="toast-container"></div>
+    <div id="toast-container" aria-live="polite"></div>
 
     <!-- ========================================== -->
     <!-- 1. LOGIN & REGISTRATION -->
     <!-- ========================================== -->
-    <div id="auth-view" class="mobile-container justify-center p-6 bg-slate-50 hide">
-        <div class="text-center mb-8">
-            <div class="w-20 h-20 bg-orange-600 rounded-3xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-orange-600/30 text-white text-4xl">
-                <i class="fas fa-store"></i>
-            </div>
-            <h1 class="text-3xl font-black text-slate-800 tracking-tight">Zay India</h1>
-            <p class="text-sm font-bold text-orange-600 mt-2 bg-orange-100 inline-block px-3 py-1 rounded-full">Graphic Era univeristy မြန်မာများအတွက်</p>
+    <div id="auth-view" class="app hide">
+        <header class="auth-hero">
+            <div class="wordmark"><span class="wordmark-my" lang="my">ဈေး</span><span class="wordmark-en">Zay India</span></div>
+            <p lang="my">Graphic Era မြန်မာကျောင်းသားများအတွက် မြန်မာစားသောက်ကုန်ဆိုင်</p>
+        </header>
+
+        <div class="segmented" role="tablist" aria-label="Account">
+            <button type="button" role="tab" id="auth-tab-login" aria-selected="true" onclick="window.toggleAuth('login')">ဝင်မည် <span class="en-inline">Log in</span></button>
+            <button type="button" role="tab" id="auth-tab-register" aria-selected="false" onclick="window.toggleAuth('register')">အကောင့်သစ် <span class="en-inline">Sign up</span></button>
         </div>
-        
+
         <!-- Login -->
-        <form id="login-form" class="w-full space-y-4" onsubmit="window.handleLogin(event)">
-            <div class="text-center mb-4">
-                <h2 class="text-xl font-black text-slate-800">အကောင့် ဝင်မည်</h2>
-                <p class="text-xs font-bold text-slate-500">အကောင့်ရှိပြီးသား ဝယ်သူများအတွက် (Login)</p>
+        <form id="login-form" class="auth-form" onsubmit="window.handleLogin(event)">
+            <div>
+                <label for="login-phone" class="field-label">ဖုန်းနံပါတ် <span class="en-inline">Phone number</span></label>
+                <input type="text" id="login-phone" inputmode="tel" autocomplete="username" placeholder="+91 98765 43210" class="field" required>
+                <p class="field-hint">Admin: use your email address.</p>
             </div>
             <div>
-                <label class="text-xs font-bold text-slate-500 ml-1">ဖုန်းနံပါတ် (Phone Number) <span class="font-medium text-slate-400">— admin: email</span></label>
-                <input type="text" id="login-phone" placeholder="+91 xxxxxxxxxx" class="w-full bg-white p-4 border border-slate-200 rounded-2xl focus:outline-none focus:border-orange-500 font-medium" required>
+                <label for="login-pass" class="field-label">စကားဝှက် <span class="en-inline">Password</span></label>
+                <input type="password" id="login-pass" autocomplete="current-password" placeholder="••••••••" class="field" required>
             </div>
-            <div>
-                <label class="text-xs font-bold text-slate-500 ml-1">စကားဝှက် (Password)</label>
-                <input type="password" id="login-pass" placeholder="••••••••" class="w-full bg-white p-4 border border-slate-200 rounded-2xl focus:outline-none focus:border-orange-500 font-medium" required>
-            </div>
-            <button type="button" onclick="window.contactAdminForPassword()" class="w-full text-right text-sm font-bold text-orange-600 hover:text-orange-700">Forgot password?</button>
-            <button type="submit" class="w-full bg-orange-600 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-orange-700 active:scale-95 transition-all">
-                အကောင့်ထဲသို့ ဝင်မည်
-            </button>
-            <button type="button" onclick="window.signInWithGoogle()" class="w-full bg-white border border-slate-200 text-slate-700 font-bold py-3.5 rounded-2xl shadow-sm hover:bg-slate-50 active:scale-95 transition-all">
-                <i class="fab fa-google mr-2 text-red-500"></i>Continue with Google
-            </button>
-            <div class="relative flex py-5 items-center">
-                <div class="flex-grow border-t border-slate-200"></div><span class="flex-shrink-0 mx-4 text-slate-400 text-xs font-bold">OR</span><div class="flex-grow border-t border-slate-200"></div>
-            </div>
-            <p class="text-center text-sm font-semibold text-slate-600">အကောင့်သစ် ဖွင့်လိုပါသလား? <br>
-                <button type="button" class="mt-3 w-full bg-slate-800 text-white font-bold py-3.5 rounded-2xl shadow-md hover:bg-slate-900 active:scale-95 transition-all" onclick="window.toggleAuth('register')">
-                    အကောင့်သစ်ဖွင့်မည် (Register)
-                </button>
-            </p>
+            <button type="button" onclick="window.contactAdminForPassword()" class="btn-link" style="align-self:flex-end;font-size:0.88rem">စကားဝှက်မေ့နေပါသလား? <span class="en-inline">Forgot password</span></button>
+            <button type="submit" class="btn btn-primary btn-block">ဝင်မည် <span style="font-weight:500;opacity:.85">Log in</span></button>
+            <div class="divider">or</div>
+            <button type="button" onclick="window.signInWithGoogle()" class="btn btn-ghost btn-block"><i class="fab fa-google" style="color:#EA4335"></i>Continue with Google</button>
         </form>
 
         <!-- Register -->
-        <form id="register-form" class="w-full space-y-4 hide" onsubmit="window.handleRegister(event)">
-            <div class="text-center mb-2">
-                <h2 class="text-xl font-black text-slate-800">အကောင့်သစ်ဖွင့်ရန်</h2>
-                <p class="text-xs font-bold text-slate-500">Create New Account</p>
+        <form id="register-form" class="auth-form hide" onsubmit="window.handleRegister(event)">
+            <div>
+                <label for="reg-name" class="field-label">အမည် <span class="en-inline">Name</span></label>
+                <input type="text" id="reg-name" autocomplete="name" class="field" required>
             </div>
-            <div class="h-80 overflow-y-auto pr-1 space-y-3 pb-4 no-scrollbar">
-                <input type="text" id="reg-name" placeholder="အမည် (Name)" class="w-full bg-white p-3 border border-slate-200 rounded-xl focus:border-orange-500 font-medium text-sm" required>
-                <input type="text" id="reg-phone" placeholder="ဖုန်း (+91...)" class="w-full bg-white p-3 border border-slate-200 rounded-xl focus:border-orange-500 font-medium text-sm" required>
-                <input type="email" id="reg-email" placeholder="အီးမေးလ် (Email)" autocomplete="email" class="w-full bg-white p-3 border border-slate-200 rounded-xl focus:border-orange-500 font-medium text-sm" required>
-                <input type="password" id="reg-pass" placeholder="စကားဝှက် (Password)" class="w-full bg-white p-3 border border-slate-200 rounded-xl focus:border-orange-500 font-medium text-sm" required>
-                <textarea id="reg-address" placeholder="အိမ်လိပ်စာ အပြည့်အစုံ (Full Address)" class="w-full bg-white p-3 border border-slate-200 rounded-xl focus:border-orange-500 font-medium text-sm" rows="3" required></textarea>
-                <p class="text-[10px] text-slate-400">လိပ်စာအတိအကျ ရေးပေးပါရန်</p>
+            <div>
+                <label for="reg-phone" class="field-label">ဖုန်းနံပါတ် <span class="en-inline">Phone number</span></label>
+                <input type="text" id="reg-phone" inputmode="tel" autocomplete="tel" placeholder="+91 98765 43210" class="field" required>
+                <p class="field-hint">You'll log in with this number.</p>
             </div>
-            <button type="submit" class="w-full bg-slate-800 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-slate-900 active:scale-95 transition-all">စာရင်းသွင်းမည် (Register)</button>
-            <button type="button" onclick="window.signInWithGoogle()" class="w-full bg-white border border-slate-200 text-slate-700 font-bold py-3.5 rounded-2xl shadow-sm hover:bg-slate-50 active:scale-95 transition-all">
-                <i class="fab fa-google mr-2 text-red-500"></i>Sign up with Google
-            </button>
-            <p class="text-center mt-3 text-sm font-semibold text-slate-600 cursor-pointer hover:underline" onclick="window.toggleAuth('login')"><i class="fas fa-arrow-left mr-1"></i> နောက်သို့ပြန်သွားမည် (Back to Login)</p>
+            <div>
+                <label for="reg-email" class="field-label">အီးမေးလ် <span class="en-inline">Email</span></label>
+                <input type="email" id="reg-email" autocomplete="email" class="field" required>
+            </div>
+            <div>
+                <label for="reg-pass" class="field-label">စကားဝှက် <span class="en-inline">Password</span></label>
+                <input type="password" id="reg-pass" autocomplete="new-password" minlength="8" placeholder="At least 8 characters" class="field" required>
+            </div>
+            <div>
+                <label for="reg-address" class="field-label">ပို့ဆောင်ရမည့်လိပ်စာ <span class="en-inline">Delivery address</span></label>
+                <textarea id="reg-address" rows="3" autocomplete="street-address" placeholder="Hostel / room / street" class="field" required></textarea>
+                <p class="field-hint" lang="my">လိပ်စာအတိအကျ ရေးပေးပါ။</p>
+            </div>
+            <button type="submit" class="btn btn-dark btn-block">အကောင့်ဖွင့်မည် <span style="font-weight:500;opacity:.85">Create account</span></button>
+            <div class="divider">or</div>
+            <button type="button" onclick="window.signInWithGoogle()" class="btn btn-ghost btn-block"><i class="fab fa-google" style="color:#EA4335"></i>Sign up with Google</button>
         </form>
     </div>
 
     <!-- ========================================== -->
     <!-- 2. CUSTOMER VIEW -->
     <!-- ========================================== -->
-    <div id="customer-view" class="mobile-container hide pb-24">
-        <!-- Header -->
-        <div class="bg-orange-600 text-white pt-6 pb-4 px-5 rounded-b-3xl shadow-md z-10 sticky top-0">
-            <div class="flex justify-between items-center mb-3">
-                <h2 class="font-black text-xl tracking-tight">Zay India 🇲🇲</h2>
-                <div class="flex gap-2">
-                    <button type="button" onclick="window.openCustomerProfile()" class="rounded-full bg-white/20 px-3 py-2 text-xs font-bold hover:bg-white/30"><i class="fas fa-user-edit mr-1"></i>My profile</button>
-                    <button onclick="window.logout()" title="Logout" class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition text-sm"><i class="fas fa-sign-out-alt"></i></button>
+    <div id="customer-view" class="app hide">
+        <header class="shop-header">
+            <div class="shop-header-top">
+                <div class="wordmark"><span class="wordmark-my" lang="my">ဈေး</span><span class="wordmark-en">Zay India</span></div>
+                <div style="display:flex;gap:0.4rem">
+                    <button type="button" onclick="window.openCustomerProfile()" class="icon-btn" aria-label="My profile" title="My profile"><i class="fas fa-user"></i></button>
+                    <button type="button" onclick="window.logout()" class="icon-btn" aria-label="Log out" title="Log out"><i class="fas fa-arrow-right-from-bracket"></i></button>
                 </div>
             </div>
-            <div class="bg-white/10 rounded-2xl p-3 flex items-center">
-                <div class="w-8 h-8 bg-white text-orange-600 rounded-full flex items-center justify-center mr-3"><i class="fas fa-map-marker-alt"></i></div>
-                <div class="flex-1 overflow-hidden">
-                    <p class="text-[10px] text-orange-200 font-bold uppercase mb-0.5">ပို့ဆောင်မည့် နေရာ</p>
-                    <p class="font-bold text-sm truncate" id="customer-header-address">Loading Address...</p>
-                </div>
+            <button type="button" class="address-chip" onclick="window.openCustomerProfile()" aria-label="Change delivery address">
+                <i class="fas fa-location-dot"></i>
+                <span style="min-width:0;flex:1">
+                    <span class="label" style="display:block">ပို့ရန်လိပ်စာ · Deliver to</span>
+                    <span class="value" id="customer-header-address" style="display:block">…</span>
+                </span>
+                <i class="fas fa-chevron-right" style="color:var(--faint);font-size:0.75rem"></i>
+            </button>
+        </header>
+
+        <main id="tab-home" class="tab-panel">
+            <h2 class="section-title">ပစ္စည်းများ <span class="en-inline">Shop</span></h2>
+            <div class="search-wrap">
+                <label for="product-search" class="sr-only">Search products</label>
+                <i class="fas fa-magnifying-glass"></i>
+                <input id="product-search" type="search" autocomplete="off" oninput="window.renderProducts()" placeholder="ရှာမည် · Search items" class="field">
+                <button id="clear-product-search" type="button" onclick="window.clearProductSearch()" aria-label="Clear search" class="hide"><i class="fas fa-xmark"></i></button>
             </div>
-        </div>
+            <div id="product-list"></div>
+        </main>
 
-        <div id="tab-home" class="flex-1 p-5 overflow-y-auto">
-            <h3 class="font-black text-lg text-slate-800 mb-1">ရရှိနိုင်သော ပစ္စည်းများ</h3>
-            <label for="product-search" class="sr-only">Search products</label>
-            <div class="relative mt-3">
-                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                <input id="product-search" type="search" autocomplete="off" oninput="window.renderProducts()" placeholder="Search items..." class="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-12 text-sm font-semibold shadow-sm outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100">
-                <button id="clear-product-search" type="button" onclick="window.clearProductSearch()" aria-label="Clear product search" class="hide absolute right-3 top-1/2 -translate-y-1/2 rounded-lg px-2 py-1 text-slate-400 hover:bg-slate-100"><i class="fas fa-times"></i></button>
-            </div>
-            <div id="product-list" class="grid grid-cols-2 gap-4 mt-4"></div>
-        </div>
+        <main id="tab-orders" class="tab-panel hide">
+            <h2 class="section-title">မှာယူမှုများ <span class="en-inline">Your orders</span></h2>
+            <div id="customer-orders-list" style="margin-top:1rem"></div>
+        </main>
 
-        <div id="tab-orders" class="flex-1 p-5 overflow-y-auto hide bg-slate-50">
-            <h3 class="font-black text-lg text-slate-800 mb-1">မှာယူထားသော မှတ်တမ်း</h3>
-            <div id="customer-orders-list" class="space-y-4 mt-4"></div>
-        </div>
-
-        <div id="customer-profile-modal" class="fixed inset-0 z-[70] hide items-center justify-center bg-slate-900/50 p-4">
-            <section role="dialog" aria-modal="true" aria-labelledby="customer-profile-title" class="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl">
-                <div class="mb-5 flex items-center justify-between">
-                    <div><h2 id="customer-profile-title" class="text-xl font-black text-slate-900">My profile</h2><p class="mt-1 text-xs text-slate-500">Update your contact and delivery details.</p></div>
-                    <button type="button" onclick="window.closeCustomerProfile()" aria-label="Close profile" class="h-9 w-9 rounded-full bg-slate-100 text-slate-600"><i class="fas fa-times"></i></button>
+        <!-- Profile -->
+        <div id="customer-profile-modal" class="overlay z-[70] hide">
+            <section role="dialog" aria-modal="true" aria-labelledby="customer-profile-title" class="modal">
+                <div class="modal-head">
+                    <div><h2 id="customer-profile-title" class="modal-title">ကျွန်ုပ်၏အချက်အလက် <span class="en-inline">Profile</span></h2><p class="modal-sub">Your contact and delivery details.</p></div>
+                    <button type="button" onclick="window.closeCustomerProfile()" aria-label="Close profile" class="icon-btn"><i class="fas fa-xmark"></i></button>
                 </div>
-                <form id="customer-profile-form" onsubmit="window.saveCustomerProfile(event)" class="space-y-4">
-                    <div><label for="profile-name" class="mb-1 block text-xs font-bold text-slate-600">Name</label><input id="profile-name" type="text" autocomplete="name" required class="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 font-medium focus:border-orange-500 focus:outline-none"></div>
-                    <div><label for="profile-phone" class="mb-1 block text-xs font-bold text-slate-600">Phone number (used to log in)</label><input id="profile-phone" type="tel" autocomplete="tel" readonly class="w-full rounded-xl border border-slate-200 bg-slate-100 p-3 font-medium text-slate-500 focus:outline-none"></div>
-                    <div><label for="profile-email" class="mb-1 block text-xs font-bold text-slate-600">Email address</label><input id="profile-email" type="email" autocomplete="email" required class="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 font-medium focus:border-orange-500 focus:outline-none"></div>
-                    <div><label for="profile-address" class="mb-1 block text-xs font-bold text-slate-600">Delivery address</label><textarea id="profile-address" rows="3" autocomplete="street-address" required class="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 font-medium focus:border-orange-500 focus:outline-none"></textarea></div>
-                    <p class="rounded-xl bg-slate-50 p-3 text-xs text-slate-500">Password is not changed here. Your phone number is your login and cannot be changed here; contact the admin if it needs to change.</p>
-                    <p id="customer-profile-feedback" class="text-sm font-semibold text-red-600" role="status" aria-live="polite"></p>
-                    <div class="flex gap-3"><button type="button" onclick="window.closeCustomerProfile()" class="flex-1 rounded-xl bg-slate-100 py-3 font-bold text-slate-600">Cancel</button><button id="save-customer-profile-button" type="submit" class="flex-1 rounded-xl bg-orange-600 py-3 font-bold text-white disabled:opacity-50">Save changes</button></div>
+                <form id="customer-profile-form" onsubmit="window.saveCustomerProfile(event)" style="display:flex;flex-direction:column;gap:0.9rem">
+                    <div><label for="profile-name" class="field-label">အမည် <span class="en-inline">Name</span></label><input id="profile-name" type="text" autocomplete="name" required class="field"></div>
+                    <div><label for="profile-phone" class="field-label">ဖုန်းနံပါတ် <span class="en-inline">Phone</span></label><input id="profile-phone" type="tel" autocomplete="tel" readonly class="field"><p class="field-hint">Your phone number is your login. Ask the admin if it needs to change.</p></div>
+                    <div><label for="profile-email" class="field-label">အီးမေးလ် <span class="en-inline">Email</span></label><input id="profile-email" type="email" autocomplete="email" required class="field"></div>
+                    <div><label for="profile-address" class="field-label">ပို့ဆောင်ရမည့်လိပ်စာ <span class="en-inline">Delivery address</span></label><textarea id="profile-address" rows="3" autocomplete="street-address" required class="field"></textarea></div>
+                    <p id="customer-profile-feedback" class="error-text" role="status" aria-live="polite"></p>
+                    <div class="modal-actions"><button type="button" onclick="window.closeCustomerProfile()" class="btn btn-ghost">Cancel</button><button id="save-customer-profile-button" type="submit" class="btn btn-primary">Save changes</button></div>
                 </form>
             </section>
         </div>
 
-        <!-- Product Detail Modal -->
-        <div id="product-detail-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex flex-col justify-end hide opacity-0 transition-opacity duration-300">
-            <div class="bg-white w-full max-w-[480px] mx-auto rounded-t-3xl h-[85vh] flex flex-col transform translate-y-full transition-transform duration-300 relative" id="product-detail-sheet">
-                <button onclick="window.closeProductDetail()" class="absolute top-4 right-4 w-8 h-8 bg-slate-900/20 backdrop-blur-md rounded-full text-white hover:bg-slate-900/40 z-10 flex items-center justify-center shadow-lg"><i class="fas fa-times"></i></button>
-                <div class="overflow-y-auto flex-1 pb-4 no-scrollbar">
+        <!-- Product detail -->
+        <div id="product-detail-modal" class="overlay overlay-sheet z-[60] hide opacity-0" onclick="if(event.target===this)window.closeProductDetail()">
+            <div class="sheet translate-y-full" id="product-detail-sheet" role="dialog" aria-modal="true" aria-label="Product details" style="height:88vh;max-height:88dvh">
+                <div style="position:relative">
+                    <div class="sheet-handle"></div>
+                    <button onclick="window.closeProductDetail()" class="icon-btn" aria-label="Close" style="position:absolute;top:0.6rem;right:0.75rem;z-index:2"><i class="fas fa-xmark"></i></button>
+                </div>
+                <div class="no-scrollbar" style="flex:1;overflow-y:auto;padding-bottom:1rem">
                     <div id="detail-main-content"></div>
-                    <div class="px-5 mt-6 mb-2 border-t border-slate-100 pt-6">
-                        <h3 class="font-black text-lg text-slate-800 mb-4">အခြားပစ္စည်းများ <br><span class="text-sm font-semibold text-slate-400 font-normal">More Items</span></h3>
-                        <div id="detail-other-products" class="flex overflow-x-auto gap-4 pb-4 no-scrollbar"></div>
+                    <div style="padding:1.25rem 1rem 0;border-top:1px solid var(--line);margin-top:1rem">
+                        <h3 class="section-title" style="font-size:1rem">အခြားပစ္စည်းများ <span class="en-inline">More items</span></h3>
+                        <div id="detail-other-products" class="no-scrollbar" style="display:flex;gap:0.65rem;overflow-x:auto;padding:0.75rem 0 0.25rem"></div>
                     </div>
                 </div>
-                <div id="detail-sticky-cart" class="p-4 bg-white border-t border-slate-100 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] pb-safe"></div>
+                <div id="detail-sticky-cart" class="sheet-foot pb-safe"></div>
             </div>
         </div>
 
-        <!-- Checkout Modal -->
-        <div id="checkout-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex flex-col justify-end hide opacity-0 transition-opacity duration-300">
-            <div class="bg-white w-full max-w-[480px] mx-auto rounded-t-3xl px-5 pt-5 pb-safe h-[92vh] max-h-[92dvh] flex flex-col overflow-hidden transform translate-y-full transition-transform duration-300" id="checkout-sheet">
-                <div class="flex justify-between items-center mb-4 shrink-0">
-                    <div><h2 class="text-xl font-black text-slate-800">သင့်ခြင်းတောင်း <span class="text-sm font-bold text-slate-400">(Your Cart)</span></h2><p class="text-xs text-slate-500 mt-1">Review your items before contacting the admin</p></div>
-                    <button onclick="window.closeCheckout()" class="w-8 h-8 bg-slate-100 rounded-full text-slate-500"><i class="fas fa-times"></i></button>
+        <!-- Cart / checkout -->
+        <div id="checkout-modal" class="overlay overlay-sheet z-50 hide opacity-0" onclick="if(event.target===this)window.closeCheckout()">
+            <div class="sheet translate-y-full" id="checkout-sheet" role="dialog" aria-modal="true" aria-labelledby="checkout-title" style="max-height:90vh;max-height:90dvh">
+                <div class="sheet-handle"></div>
+                <div class="modal-head" style="padding:0.75rem 1rem 0;margin:0">
+                    <div><h2 id="checkout-title" class="modal-title">ခြင်းတောင်း <span class="en-inline">Your cart</span></h2><p class="modal-sub">Check your items, then send the order to the admin on WhatsApp.</p></div>
+                    <button onclick="window.closeCheckout()" class="icon-btn" aria-label="Close cart"><i class="fas fa-xmark"></i></button>
                 </div>
-                <div id="checkout-content" class="flex-1 min-h-0 overflow-y-auto no-scrollbar">
-                    <div class="bg-slate-50 rounded-2xl p-4 mb-4 border border-slate-100">
-                        <div id="checkout-items-list" class="space-y-3 text-sm font-semibold text-slate-700"></div>
-                    </div>
-                    <p class="mb-4 rounded-2xl border border-green-200 bg-green-50 p-4 text-sm font-semibold text-green-800"><i class="fab fa-whatsapp mr-2"></i>Confirm your items to save the order and open WhatsApp with the order details. You can discuss payment directly with the admin.</p>
+                <div id="checkout-content" class="no-scrollbar" style="flex:1;min-height:0;overflow-y:auto;padding:0.5rem 1rem 1rem">
+                    <div id="checkout-items-list"></div>
+                    <div class="note note-ok" style="margin-top:0.75rem"><i class="fab fa-whatsapp" style="margin-top:0.15rem"></i><span>Placing the order saves it and opens WhatsApp with the details. Arrange payment with the admin there.</span></div>
                 </div>
-                <div class="shrink-0 border-t border-slate-100 bg-white pt-3">
-                    <div class="flex justify-between items-center mb-3"><span class="font-bold text-slate-600">Total</span><span class="font-black text-xl text-orange-600">₹<span id="checkout-total">0</span></span></div>
-                    <button id="btn-confirm-order" onclick="window.placeOrder()" class="w-full bg-green-600 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center">
-                        <i class="fab fa-whatsapp mr-2 text-xl"></i><span id="confirm-order-label">Confirm items & contact admin</span>
+                <div class="sheet-foot pb-safe">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.75rem"><span style="font-weight:600;color:var(--muted)">စုစုပေါင်း <span class="en-inline">Total</span></span><span class="price" style="font-size:1.35rem">₹<span id="checkout-total">0</span></span></div>
+                    <button id="btn-confirm-order" onclick="window.placeOrder()" class="btn btn-whatsapp btn-block" style="min-height:54px">
+                        <i class="fab fa-whatsapp" style="font-size:1.25rem"></i><span id="confirm-order-label">Place order on WhatsApp</span>
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- Bottom Nav -->
-        <div class="fixed bottom-0 w-full max-w-[480px] bg-white border-t border-slate-100 flex justify-around p-2 pb-safe shadow-[0_-10px_40px_rgba(0,0,0,0.03)] z-40 rounded-t-3xl">
-            <button onclick="window.switchCustomerTab('home')" id="nav-home" class="flex flex-col items-center p-2 text-orange-600 w-1/3"><i class="fas fa-store text-xl mb-1"></i><span class="text-[10px] font-bold">ဆိုင်ခန်း (Shop)</span></button>
-            <button id="nav-cart" aria-label="Open shopping cart" onclick="window.openCheckout()" class="flex flex-col items-center w-1/3 relative -mt-6">
-                <div class="w-14 h-14 bg-slate-900 text-white rounded-full flex items-center justify-center shadow-lg border-4 border-white"><i class="fas fa-shopping-bag text-xl"></i>
-                    <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white hide">0</span>
-                </div>
-                <span class="text-[10px] font-bold text-slate-500 mt-1">Cart</span>
+        <!-- Bottom dock: cart bar + tabs -->
+        <nav class="bottom-dock" aria-label="Shop navigation">
+            <button id="nav-cart" type="button" class="hide" aria-label="Open cart" onclick="window.openCheckout()">
+                <span class="cart-summary"><small><span id="cart-count">0</span> ခု · items</small><strong>₹<span id="cart-total-bar">0</span></strong></span>
+                <span class="cart-cta">ခြင်းတောင်း <i class="fas fa-chevron-right" style="font-size:0.75rem"></i></span>
             </button>
-            <button onclick="window.switchCustomerTab('orders')" id="nav-orders" class="flex flex-col items-center p-2 text-slate-400 w-1/3"><i class="fas fa-receipt text-xl mb-1"></i><span class="text-[10px] font-bold">မှတ်တမ်း (Orders)</span></button>
-        </div>
+            <div class="tabbar">
+                <button type="button" onclick="window.switchCustomerTab('home')" id="nav-home" class="is-active"><i class="fas fa-store"></i><span>ဆိုင် · Shop</span></button>
+                <button type="button" onclick="window.switchCustomerTab('orders')" id="nav-orders"><i class="fas fa-receipt"></i><span>မှာယူမှု · Orders</span></button>
+            </div>
+        </nav>
     </div>
 
     <!-- ========================================== -->
     <!-- 3. ADMIN VIEW -->
     <!-- ========================================== -->
-    <div id="admin-view" class="hide min-h-screen bg-slate-50 flex flex-col md:flex-row">
-        <div class="w-full md:w-64 bg-slate-900 text-slate-300 flex flex-col shrink-0">
-            <div class="p-6 border-b border-slate-800"><h2 class="text-2xl font-black text-white flex items-center"><i class="fas fa-shield-alt text-orange-500 mr-3"></i> Admin</h2></div>
-            <ul class="space-y-1 p-4 flex-1">
-                <li><button onclick="window.switchAdminTab('orders')" id="admin-nav-orders" class="w-full flex items-center px-4 py-3 rounded-xl bg-orange-600/10 text-orange-500 font-bold"><i class="fas fa-shopping-bag w-6"></i> အော်ဒါစာရင်း</button></li>
-                <li><button onclick="window.switchAdminTab('products')" id="admin-nav-products" class="w-full flex items-center px-4 py-3 rounded-xl hover:bg-slate-800 font-semibold"><i class="fas fa-box w-6"></i> ကုန်ပစ္စည်းများ</button></li>
-                <li><button onclick="window.switchAdminTab('accounts')" id="admin-nav-accounts" class="w-full flex items-center px-4 py-3 rounded-xl hover:bg-slate-800 font-semibold"><i class="fas fa-users w-6"></i> Accounts</button></li>
-            </ul>
-            <div class="p-4 border-t border-slate-800"><button onclick="window.logout()" class="w-full flex items-center px-4 py-3 rounded-xl text-red-400 font-bold"><i class="fas fa-sign-out-alt w-6"></i> ထွက်မည် (Logout)</button></div>
-        </div>
-        
-        <div class="flex-1 p-6 overflow-y-auto h-screen">
-            <div id="admin-tab-orders" class="block">
-                <div class="flex justify-between items-center mb-6"><h1 class="text-2xl font-black text-slate-900">အော်ဒါစီမံခန့်ခွဲမှု</h1></div>
-                <section class="mb-6" aria-labelledby="pending-orders-heading">
-                    <div class="mb-3 flex items-center justify-between">
-                        <h2 id="pending-orders-heading" class="text-lg font-black text-slate-900">Pending orders — confirm or reject</h2>
-                        <span id="pending-orders-count" class="rounded-full bg-orange-100 px-3 py-1 text-xs font-black text-orange-700">0 pending</span>
+    <div id="admin-view" class="hide">
+        <aside class="admin-side">
+            <div class="admin-brand">
+                <div>
+                    <div class="wordmark"><span class="wordmark-my" lang="my">ဈေး</span><span class="wordmark-en">Zay India</span></div>
+                    <small>Admin</small>
+                </div>
+                <button onclick="window.logout()" class="icon-btn admin-logout-narrow" aria-label="Log out" title="Log out"><i class="fas fa-arrow-right-from-bracket"></i></button>
+            </div>
+            <nav class="admin-nav" aria-label="Admin sections">
+                <button type="button" onclick="window.switchAdminTab('orders')" id="admin-nav-orders" class="is-active"><i class="fas fa-receipt"></i>အော်ဒါများ <span class="en-inline">Orders</span></button>
+                <button type="button" onclick="window.switchAdminTab('products')" id="admin-nav-products"><i class="fas fa-box"></i>ပစ္စည်းများ <span class="en-inline">Products</span></button>
+                <button type="button" onclick="window.switchAdminTab('accounts')" id="admin-nav-accounts"><i class="fas fa-users"></i>ဝယ်သူများ <span class="en-inline">Customers</span></button>
+            </nav>
+            <div class="admin-logout-wide"><button onclick="window.logout()" class="btn btn-ghost btn-block"><i class="fas fa-arrow-right-from-bracket"></i>ထွက်မည် <span class="en-inline">Log out</span></button></div>
+        </aside>
+
+        <main class="admin-main">
+            <div id="admin-tab-orders">
+                <div class="admin-page-head"><div><h1>အော်ဒါများ <span class="en-inline">Orders</span></h1><p>Confirm new orders to deduct stock and unlock the invoice.</p></div></div>
+                <section style="margin-bottom:1.75rem" aria-labelledby="pending-orders-heading">
+                    <div class="admin-section-head">
+                        <h2 id="pending-orders-heading">စောင့်ဆိုင်းနေသော <span class="en-inline">Waiting for you</span></h2>
+                        <span id="pending-orders-count" class="badge badge-brand">0 pending</span>
                     </div>
-                    <div id="admin-pending-orders" class="grid grid-cols-1 gap-4 xl:grid-cols-2"></div>
+                    <div id="admin-pending-orders"></div>
                 </section>
-                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden overflow-x-auto">
-                    <table class="min-w-full text-left text-sm whitespace-nowrap">
-                        <thead class="bg-slate-50 border-b border-slate-200">
-                            <tr><th class="px-6 py-4 font-bold text-slate-500">ID</th><th class="px-6 py-4 font-bold text-slate-500">Customer</th><th class="px-6 py-4 font-bold text-slate-500">Items</th><th class="px-6 py-4 font-bold text-slate-500">Total</th><th class="px-6 py-4 font-bold text-slate-500">Address</th><th class="px-6 py-4 font-bold text-slate-500">Order actions</th><th class="px-6 py-4 font-bold text-slate-500">Invoice</th></tr>
-                        </thead>
-                        <tbody id="admin-orders-table" class="divide-y divide-slate-100"></tbody>
+                <div class="admin-section-head"><h2>အားလုံး <span class="en-inline">All orders</span></h2></div>
+                <div class="card table-wrap">
+                    <table class="table">
+                        <thead><tr><th>Order</th><th>Customer</th><th>Items</th><th class="num">Total</th><th>Address</th><th>Status</th><th>Invoice</th></tr></thead>
+                        <tbody id="admin-orders-table"></tbody>
                     </table>
                 </div>
             </div>
 
             <div id="admin-tab-products" class="hide">
-                <div class="flex justify-between items-center mb-6">
-                    <h1 class="text-2xl font-black text-slate-900">ကုန်ပစ္စည်းများ (Products)</h1>
-                    <button onclick="window.openProductModal()" class="bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg"><i class="fas fa-plus mr-1"></i> အသစ်ထည့်မည်</button>
+                <div class="admin-page-head">
+                    <div><h1>ပစ္စည်းများ <span class="en-inline">Products</span></h1><p>Prices and stock shown to customers.</p></div>
+                    <button onclick="window.openProductModal()" class="btn btn-primary"><i class="fas fa-plus"></i>ပစ္စည်းအသစ် <span style="font-weight:500;opacity:.85">Add product</span></button>
                 </div>
-                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden overflow-x-auto">
-                    <table class="min-w-full text-left text-sm">
-                        <thead class="bg-slate-50 border-b border-slate-200">
-                            <tr>
-                                <th class="px-6 py-4 font-bold text-slate-500 w-16">Image</th><th class="px-6 py-4 font-bold text-slate-500">Name</th><th class="px-6 py-4 font-bold text-slate-500">Price</th><th class="px-6 py-4 font-bold text-slate-500 text-center">Stock Qty</th><th class="px-6 py-4 font-bold text-slate-500 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="admin-products-table" class="divide-y divide-slate-100"></tbody>
+                <div class="card table-wrap">
+                    <table class="table">
+                        <thead><tr><th style="width:64px">Photo</th><th>Name</th><th class="num">Price</th><th>Stock</th><th class="num">Actions</th></tr></thead>
+                        <tbody id="admin-products-table"></tbody>
                     </table>
                 </div>
             </div>
 
             <div id="admin-tab-accounts" class="hide">
-                <div class="flex justify-between items-center mb-6">
-                    <div>
-                        <h1 class="text-2xl font-black text-slate-900">Account Management</h1>
-                        <p class="text-sm text-slate-500 mt-1">Customers inactive for 180 days after a recorded login can be deleted. Accounts without login history are kept. Passwords are never displayed.</p>
-                    </div>
+                <div class="admin-page-head">
+                    <div><h1>ဝယ်သူများ <span class="en-inline">Customers</span></h1><p>Customers with a recorded login more than 180 days ago can be deleted. Passwords are never shown.</p></div>
                 </div>
-                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden overflow-x-auto">
-                    <table class="min-w-full text-left text-sm">
-                        <thead class="bg-slate-50 border-b border-slate-200">
-                            <tr><th class="px-6 py-4 font-bold text-slate-500">Name</th><th class="px-6 py-4 font-bold text-slate-500">Phone</th><th class="px-6 py-4 font-bold text-slate-500">Email</th><th class="px-6 py-4 font-bold text-slate-500">Address</th><th class="px-6 py-4 font-bold text-slate-500">Last Login</th><th class="px-6 py-4 font-bold text-slate-500">Actions</th></tr>
-                        </thead>
-                        <tbody id="admin-accounts-table" class="divide-y divide-slate-100"></tbody>
+                <div class="card table-wrap">
+                    <table class="table">
+                        <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Address</th><th>Last login</th><th>Actions</th></tr></thead>
+                        <tbody id="admin-accounts-table"></tbody>
                     </table>
                 </div>
-                <div id="reset-password-modal" class="fixed inset-0 bg-slate-900/50 z-[70] flex items-center justify-center p-4 hide">
-                    <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl">
-                        <div class="flex justify-between items-start mb-3">
-                            <div>
-                                <h2 class="text-xl font-black text-slate-800">Temporary password generated</h2>
-                                <p id="reset-password-user" class="text-sm text-slate-500 mt-1"></p>
-                            </div>
-                            <button type="button" onclick="window.closeResetPasswordModal()" aria-label="Close" class="w-8 h-8 bg-slate-100 rounded-full text-slate-500"><i class="fas fa-times"></i></button>
+                <div id="reset-password-modal" class="overlay z-[70] hide">
+                    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="reset-password-title">
+                        <div class="modal-head">
+                            <div><h2 id="reset-password-title" class="modal-title">Temporary password</h2><p id="reset-password-user" class="modal-sub"></p></div>
+                            <button type="button" onclick="window.closeResetPasswordModal()" aria-label="Close" class="icon-btn"><i class="fas fa-xmark"></i></button>
                         </div>
-                        <p class="text-sm text-slate-600 mb-3">Share this temporary password with the account owner through a trusted channel. It will not be shown again.</p>
-                        <div class="flex gap-2">
-                            <input id="reset-password-value" type="text" readonly class="min-w-0 flex-1 bg-slate-50 p-3 border rounded-xl font-mono font-bold">
-                            <button type="button" onclick="window.copyResetPassword()" class="bg-slate-900 text-white px-4 rounded-xl font-bold"><i class="fas fa-copy mr-1"></i>Copy</button>
+                        <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.75rem">Send this to the customer on WhatsApp. It won't be shown again, and they'll be asked to set a new password after logging in.</p>
+                        <div style="display:flex;gap:0.5rem">
+                            <input id="reset-password-value" type="text" readonly class="field" style="font-family:ui-monospace,Consolas,monospace;font-weight:700;letter-spacing:0.04em">
+                            <button type="button" onclick="window.copyResetPassword()" class="btn btn-dark"><i class="fas fa-copy"></i>Copy</button>
                         </div>
-                        <button type="button" onclick="window.closeResetPasswordModal()" class="mt-4 w-full bg-slate-100 text-slate-700 font-bold py-3 rounded-xl">Done</button>
+                        <button type="button" onclick="window.closeResetPasswordModal()" class="btn btn-ghost btn-block" style="margin-top:1rem">Done</button>
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 
     <!-- Shown once after the first Google sign-in: Google gives name + email, but orders need phone + address -->
-    <div id="google-profile-modal" class="fixed inset-0 bg-slate-900/50 z-[80] flex items-center justify-center p-4 hide">
-        <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <h2 class="text-xl font-black text-slate-800 mb-2">Complete your profile</h2>
-            <p class="text-sm text-slate-500 mb-4">Signed in with Google as <span id="google-profile-account" class="font-bold text-slate-700"></span>. Add your phone number and delivery address to start ordering.</p>
-            <form onsubmit="window.completeGoogleProfile(event)" class="space-y-3">
-                <input id="google-profile-name" type="text" autocomplete="name" placeholder="အမည် (Name)" class="w-full bg-slate-50 p-3 border rounded-xl" required>
-                <input id="google-profile-phone" type="tel" autocomplete="tel" placeholder="ဖုန်း (+91...)" class="w-full bg-slate-50 p-3 border rounded-xl" required>
-                <textarea id="google-profile-address" rows="3" autocomplete="street-address" placeholder="အိမ်လိပ်စာ အပြည့်အစုံ (Full Address)" class="w-full bg-slate-50 p-3 border rounded-xl" required></textarea>
-                <p id="google-profile-error" class="text-sm text-red-600" role="status" aria-live="polite"></p>
-                <div class="flex gap-3">
-                    <button type="button" onclick="window.cancelGoogleProfile()" class="flex-1 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl">Cancel</button>
-                    <button id="google-profile-submit" type="submit" class="flex-1 bg-orange-600 text-white font-bold py-3 rounded-xl disabled:opacity-50">Save & continue</button>
+    <div id="google-profile-modal" class="overlay z-[80] hide">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="google-profile-title">
+            <h2 id="google-profile-title" class="modal-title">အချက်အလက်ဖြည့်ပါ <span class="en-inline">Finish signing up</span></h2>
+            <p class="modal-sub" style="margin-bottom:1rem">Signed in as <strong id="google-profile-account" style="color:var(--ink)"></strong>. Add your phone and delivery address to start ordering.</p>
+            <form onsubmit="window.completeGoogleProfile(event)" style="display:flex;flex-direction:column;gap:0.9rem">
+                <div><label for="google-profile-name" class="field-label">အမည် <span class="en-inline">Name</span></label><input id="google-profile-name" type="text" autocomplete="name" class="field" required></div>
+                <div><label for="google-profile-phone" class="field-label">ဖုန်းနံပါတ် <span class="en-inline">Phone number</span></label><input id="google-profile-phone" type="tel" autocomplete="tel" placeholder="+91 98765 43210" class="field" required></div>
+                <div><label for="google-profile-address" class="field-label">ပို့ဆောင်ရမည့်လိပ်စာ <span class="en-inline">Delivery address</span></label><textarea id="google-profile-address" rows="3" autocomplete="street-address" class="field" required></textarea></div>
+                <p id="google-profile-error" class="error-text" role="status" aria-live="polite"></p>
+                <div class="modal-actions">
+                    <button type="button" onclick="window.cancelGoogleProfile()" class="btn btn-ghost">Cancel</button>
+                    <button id="google-profile-submit" type="submit" class="btn btn-primary">Start shopping</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <div id="customer-password-change-modal" class="fixed inset-0 bg-slate-900/50 z-[80] flex items-center justify-center p-4 hide">
-        <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl">
-            <h2 class="text-xl font-black text-slate-800 mb-2">Set a new password</h2>
-            <p class="text-sm text-slate-500 mb-4">Your password was reset by the admin. Choose a new password to continue.</p>
-            <form onsubmit="window.changeTemporaryPassword(event)" class="space-y-3">
-                <input id="new-account-password" type="password" autocomplete="new-password" minlength="8" placeholder="New password (at least 8 characters)" class="w-full bg-slate-50 p-3 border rounded-xl" required>
-                <input id="confirm-account-password" type="password" autocomplete="new-password" minlength="8" placeholder="Confirm new password" class="w-full bg-slate-50 p-3 border rounded-xl" required>
-                <button type="submit" class="w-full bg-orange-600 text-white font-bold py-3 rounded-xl">Update password</button>
-                <p id="password-change-error" class="text-sm text-red-600" role="status" aria-live="polite"></p>
+    <div id="customer-password-change-modal" class="overlay z-[80] hide">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="password-change-title">
+            <h2 id="password-change-title" class="modal-title">စကားဝှက်အသစ် <span class="en-inline">Set a new password</span></h2>
+            <p class="modal-sub" style="margin-bottom:1rem">The admin reset your password. Choose a new one to continue.</p>
+            <form onsubmit="window.changeTemporaryPassword(event)" style="display:flex;flex-direction:column;gap:0.9rem">
+                <div><label for="new-account-password" class="field-label">New password</label><input id="new-account-password" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters" class="field" required></div>
+                <div><label for="confirm-account-password" class="field-label">Confirm new password</label><input id="confirm-account-password" type="password" autocomplete="new-password" minlength="8" class="field" required></div>
+                <p id="password-change-error" class="error-text" role="status" aria-live="polite"></p>
+                <button type="submit" class="btn btn-primary btn-block">Update password</button>
             </form>
         </div>
     </div>
 
-    <!-- Product Editor Modal -->
-    <div id="product-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4 hide">
-        <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl">
-            <h2 class="text-xl font-black text-slate-800 mb-4" id="product-modal-title">ပစ္စည်းအသစ် ထည့်မည်</h2>
-            <form id="product-form" onsubmit="window.saveProduct(event)" class="space-y-4">
+    <!-- Product editor -->
+    <div id="product-modal" class="overlay z-[60] hide">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="product-modal-title">
+            <h2 class="modal-title" id="product-modal-title" style="margin-bottom:1rem">Add product</h2>
+            <form id="product-form" onsubmit="window.saveProduct(event)" style="display:flex;flex-direction:column;gap:0.9rem">
                 <input type="hidden" id="prod-id">
-                <input type="text" id="prod-name" placeholder="ပစ္စည်းအမည် (Product Name)" class="w-full bg-slate-50 p-3 border rounded-xl font-bold" required>
-                <div class="flex gap-4">
-                    <input type="number" id="prod-price" placeholder="ဈေးနှုန်း (Price in ₹)" class="w-full bg-slate-50 p-3 border rounded-xl font-bold" required min="0.01" step="0.01">
-                    <input type="number" id="prod-stock" placeholder="လက်ကျန် (Stock Qty)" class="w-full bg-slate-50 p-3 border rounded-xl font-bold" required min="0">
+                <div><label for="prod-name" class="field-label">အမည် <span class="en-inline">Name</span></label><input type="text" id="prod-name" class="field" required></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+                    <div><label for="prod-price" class="field-label">ဈေးနှုန်း <span class="en-inline">Price ₹</span></label><input type="number" id="prod-price" class="field" required min="0.01" step="0.01" inputmode="decimal"></div>
+                    <div><label for="prod-stock" class="field-label">လက်ကျန် <span class="en-inline">Stock</span></label><input type="number" id="prod-stock" class="field" required min="0" inputmode="numeric"></div>
                 </div>
                 <div>
-                    <label class="text-xs font-bold text-slate-500 ml-1 mb-1 block">ပုံထည့်ရန် (Choose Image)</label>
-                    <input type="file" id="prod-img-file" accept="image/*" class="w-full bg-slate-50 p-3 border border-slate-200 rounded-xl text-sm cursor-pointer" onchange="window.previewImage(event)">
+                    <label for="prod-img-file" class="field-label">ပုံ <span class="en-inline">Photo</span></label>
+                    <input type="file" id="prod-img-file" accept="image/*" class="field" style="padding:0.6rem;font-size:0.85rem" onchange="window.previewImage(event)">
                     <input type="hidden" id="prod-img-base64">
-                    <div id="img-preview-container" class="mt-3 hide flex justify-center bg-slate-100 rounded-xl p-2 border border-slate-200">
-                        <img id="img-preview" src="" class="h-32 object-contain rounded-lg">
+                    <div id="img-preview-container" class="hide" style="margin-top:0.6rem;display:flex;justify-content:center;background:var(--well);border-radius:var(--r-ctl);padding:0.6rem">
+                        <img id="img-preview" src="" alt="Product photo preview" style="height:128px;object-fit:contain">
                     </div>
                 </div>
-                <div class="flex gap-3 pt-4">
-                    <button type="button" onclick="document.getElementById('product-modal').classList.add('hide')" class="w-1/3 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl">Cancel</button>
-                    <button type="button" id="save-product-button" onclick="window.saveProduct(event)" class="flex-1 bg-slate-900 text-white font-bold py-3 rounded-xl">Save Product</button>
+                <p id="product-save-feedback" class="error-text" role="status" aria-live="polite"></p>
+                <div class="modal-actions">
+                    <button type="button" onclick="document.getElementById('product-modal').classList.add('hide')" class="btn btn-ghost">Cancel</button>
+                    <button type="button" id="save-product-button" onclick="window.saveProduct(event)" class="btn btn-primary">Save product</button>
                 </div>
-                <p id="product-save-feedback" class="text-sm font-semibold text-red-600" role="status" aria-live="polite"></p>
             </form>
         </div>
     </div>
 
-    <!-- Quick Restock Modal -->
-    <div id="restock-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4 hide">
-        <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl">
-            <h2 class="text-xl font-black text-slate-800 mb-2">ပစ္စည်း ထပ်ဖြည့်မည်</h2>
-            <p class="text-sm font-bold text-slate-500 mb-4" id="restock-prod-name">Product Name</p>
-            <form onsubmit="window.confirmRestock(event)" class="space-y-4">
+    <!-- Restock -->
+    <div id="restock-modal" class="overlay z-[60] hide">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="restock-title" style="max-width:380px">
+            <h2 id="restock-title" class="modal-title">ပစ္စည်းထပ်ဖြည့်မည် <span class="en-inline">Add stock</span></h2>
+            <p class="modal-sub" id="restock-prod-name" style="margin-bottom:1rem">Product</p>
+            <form onsubmit="window.confirmRestock(event)" style="display:flex;flex-direction:column;gap:0.9rem">
                 <input type="hidden" id="restock-prod-id">
-                <div>
-                    <label class="text-xs font-bold text-slate-500 ml-1">အသစ်ရောက်လာသော အရေအတွက် (+)</label>
-                    <input type="number" id="restock-qty" placeholder="ဥပမာ - 10" class="w-full bg-slate-50 p-3 border rounded-xl font-bold mt-1" required min="1">
-                </div>
-                <div class="flex gap-3 pt-4">
-                    <button type="button" onclick="document.getElementById('restock-modal').classList.add('hide')" class="w-1/2 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl">Cancel</button>
-                    <button type="submit" class="w-1/2 bg-green-600 text-white font-bold py-3 rounded-xl">ပေါင်းထည့်မည်</button>
+                <div><label for="restock-qty" class="field-label">အသစ်ရောက်သည့်အရေအတွက် <span class="en-inline">Quantity received</span></label><input type="number" id="restock-qty" placeholder="10" class="field" required min="1" inputmode="numeric"></div>
+                <div class="modal-actions">
+                    <button type="button" onclick="document.getElementById('restock-modal').classList.add('hide')" class="btn btn-ghost">Cancel</button>
+                    <button type="submit" class="btn btn-whatsapp">Add stock</button>
                 </div>
             </form>
         </div>
@@ -672,7 +683,7 @@
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
             toast.className = `toast toast-${type}`;
-            toast.innerHTML = `<div class="flex items-start"><i class="fas ${type==='success'?'fa-check-circle':type==='error'?'fa-exclamation-triangle':'fa-info-circle'} mt-1 mr-2"></i> <div class="font-bold text-sm">${msg}</div></div>`;
+            toast.innerHTML = `<div style="display:flex;gap:.6rem;align-items:flex-start"><i class="fas ${type==='success'?'fa-circle-check':type==='error'?'fa-circle-exclamation':'fa-circle-info'}"></i><div style="font-weight:600">${msg}</div></div>`;
             container.appendChild(toast);
             setTimeout(() => toast.classList.add('show'), 10);
             setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3000);
@@ -977,7 +988,12 @@
                 }));
         };
 
-        window.toggleAuth = (v) => { document.getElementById('login-form').classList.toggle('hide', v!=='login'); document.getElementById('register-form').classList.toggle('hide', v!=='register'); };
+        window.toggleAuth = (v) => {
+            document.getElementById('login-form').classList.toggle('hide', v !== 'login');
+            document.getElementById('register-form').classList.toggle('hide', v !== 'register');
+            document.getElementById('auth-tab-login').setAttribute('aria-selected', String(v === 'login'));
+            document.getElementById('auth-tab-register').setAttribute('aria-selected', String(v === 'register'));
+        };
         
         window.handleRegister = async (e) => {
             e.preventDefault();
@@ -1133,18 +1149,31 @@
 
         window.routeApp = () => { document.getElementById('auth-view').classList.add('hide'); if (window.currentUser.role === 'admin') { document.getElementById('admin-view').classList.remove('hide'); window.switchAdminTab('orders'); } else { document.getElementById('customer-view').classList.remove('hide'); document.getElementById('customer-header-address').innerText = window.currentUser.address; window.switchCustomerTab('home'); } };
 
+        const formatPrice = value => { const n = Number(value) || 0; return Number.isInteger(n) ? String(n) : n.toFixed(2); };
+        // Add button / stepper used on product cards (compact) and in the product sheet (large).
+        window.cartControl = (p, qty, large) => {
+            if (p.stockQty <= 0) return `<button type="button" disabled class="btn btn-ghost btn-block ${large ? '' : 'btn-sm'}">ကုန်သွားပြီ · Sold out</button>`;
+            if (qty === 0) return `<button type="button" onclick="window.updateCart('${p.dbId}', 1)" class="btn ${large ? 'btn-primary' : 'btn-soft btn-sm'} btn-block"><i class="fas fa-plus"></i>ထည့်မည် · Add</button>`;
+            return `<div class="stepper ${large ? 'stepper-lg' : ''}"><button type="button" aria-label="Remove one" onclick="window.updateCart('${p.dbId}', -1)">−</button><span aria-live="polite">${qty}${large ? ' in cart' : ''}</span><button type="button" aria-label="Add one" ${qty >= p.stockQty ? 'disabled' : ''} onclick="window.updateCart('${p.dbId}', 1)">+</button></div>`;
+        };
+        window.refreshCartBar = () => {
+            let count = 0, total = 0;
+            Object.entries(window.cart).forEach(([id, qty]) => { count += qty; const p = window.products.find(x => x.dbId === id); if (p) total += Number(p.price) * qty; });
+            document.getElementById('cart-count').innerText = count;
+            document.getElementById('cart-total-bar').innerText = formatPrice(total);
+            document.getElementById('nav-cart').classList.toggle('hide', count === 0);
+        };
         window.renderProducts = () => {
+            window.refreshCartBar();
             const list = document.getElementById('product-list');
-            const search = document.getElementById('product-search');
-            const query = search.value.trim().toLowerCase();
+            const query = document.getElementById('product-search').value.trim().toLowerCase();
             document.getElementById('clear-product-search').classList.toggle('hide', !query);
-            if(window.products.length === 0) return list.innerHTML = `<div class="col-span-2 py-10 text-center text-slate-400 font-bold bg-white rounded-2xl border border-slate-100"><p>လောလောဆယ် ပစ္စည်းများ မရှိသေးပါ။</p></div>`;
-            const products = window.products.filter(product => product.name.toLowerCase().includes(query));
-            if (products.length === 0) return list.innerHTML = `<div class="col-span-2 py-10 text-center text-slate-400 font-bold bg-white rounded-2xl border border-slate-100"><i class="fas fa-search mb-2 text-xl"></i><p>No items match your search.</p></div>`;
+            if (window.products.length === 0) return list.innerHTML = `<div class="empty" style="grid-column:1/-1"><i class="fas fa-basket-shopping"></i><p lang="my">ပစ္စည်းများ မကြာမီ ရောက်ပါမည်။</p><p>No items yet. Check back soon.</p></div>`;
+            const products = window.products.filter(product => String(product.name || '').toLowerCase().includes(query));
+            if (products.length === 0) return list.innerHTML = `<div class="empty" style="grid-column:1/-1"><i class="fas fa-magnifying-glass"></i><p>Nothing matches “${escapeHtml(query)}”.</p><button type="button" class="btn btn-soft btn-sm" style="margin-top:.75rem" onclick="window.clearProductSearch()">Clear search</button></div>`;
             list.innerHTML = products.map(p => {
-                const qty = window.cart[p.dbId] || 0; const isOut = p.stockQty <= 0;
-                let btn = isOut ? `<button disabled class="w-full bg-slate-100 text-slate-400 font-bold py-2 rounded-xl text-xs cursor-not-allowed">ကုန်နေပါသည်</button>` : (qty === 0 ? `<button onclick="event.stopPropagation(); window.updateCart('${p.dbId}', 1)" class="w-full border-2 border-orange-100 text-orange-600 bg-orange-50 font-bold py-2 rounded-xl text-xs hover:bg-orange-100 transition">Add to Cart</button>` : `<div class="flex justify-between items-center bg-orange-600 text-white rounded-xl" onclick="event.stopPropagation()"><button onclick="window.updateCart('${p.dbId}', -1)" class="px-4 py-2 font-black">-</button><span class="font-bold text-sm">${qty}</span><button onclick="window.updateCart('${p.dbId}', 1)" class="px-4 py-2 font-black">+</button></div>`);
-                return `<div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col ${isOut ? 'opacity-60 grayscale' : ''}"><div class="cursor-pointer" onclick="window.openProductDetail('${p.dbId}')"><div class="h-32 bg-slate-100 relative"><img src="${p.img}" class="w-full h-full object-cover"></div><div class="p-3 flex-1 flex flex-col"><h4 class="font-bold text-sm text-slate-800 mb-1 leading-tight line-clamp-1">${p.name}</h4><div class="flex justify-between items-center mb-3"><span class="font-black text-orange-600 text-sm">₹${p.price}</span>${!isOut ? `<span class="text-[10px] font-bold text-slate-400">လက်ကျန်: ${p.stockQty}</span>` : ''}</div></div></div><div class="px-3 pb-3 mt-auto">${btn}</div></div>`;
+                const isOut = p.stockQty <= 0;
+                return `<article class="card product ${isOut ? 'is-out' : ''}"><button type="button" class="product-open" onclick="window.openProductDetail('${p.dbId}')" aria-label="View ${escapeHtml(p.name)}"><div class="product-img"><img src="${p.img}" alt="" loading="lazy"></div><div class="product-body"><h3 class="product-name">${escapeHtml(p.name)}</h3><div class="product-meta"><span class="price">₹${formatPrice(p.price)}</span><span class="stock">${isOut ? 'ကုန်သွားပြီ' : `${p.stockQty} left`}</span></div></div></button><div class="product-action">${window.cartControl(p, window.cart[p.dbId] || 0, false)}</div></article>`;
             }).join('');
         };
 
@@ -1156,23 +1185,28 @@
 
         window.updateCart = (id, change) => {
             const product = window.products.find(x => x.dbId === id);
-            if (!product && change > 0) return window.showToast('This item is no longer available. Refresh the catalogue and try again.', 'error');
+            if (!product && change > 0) return window.showToast('This item is no longer sold. Refresh the shop and try again.', 'error');
             const currentQty = window.cart[id] || 0;
-            if (product && change > 0 && currentQty >= product.stockQty) return window.showToast(`လက်ကျန်အရေအတွက် ထက် ပိုမှာ၍မရပါ`, "error");
-            window.cart[id] = currentQty + change; if(window.cart[id] <= 0) delete window.cart[id];
+            if (product && change > 0 && currentQty >= product.stockQty) return window.showToast(`လက်ကျန် ${product.stockQty} ခုသာ ရှိပါသည်။ Only ${product.stockQty} left.`, 'error');
+            window.cart[id] = currentQty + change; if (window.cart[id] <= 0) delete window.cart[id];
             window.renderProducts();
-            let totalQty = Object.values(window.cart).reduce((a, b) => a + b, 0); let badge = document.getElementById('cart-count'); badge.innerText = totalQty; badge.classList.toggle('hide', totalQty === 0); if(totalQty === 0) window.closeCheckout();
+            const totalQty = Object.values(window.cart).reduce((a, b) => a + b, 0);
+            if (totalQty === 0) window.closeCheckout();
             else if (!document.getElementById('checkout-modal').classList.contains('hide')) window.renderCheckout();
+            if (product && !document.getElementById('product-detail-modal').classList.contains('hide')) {
+                document.getElementById('detail-sticky-cart').innerHTML = window.cartControl(product, window.cart[id] || 0, true);
+            }
         };
 
         window.openProductDetail = function(dbId) {
-            const p = window.products.find(x => x.dbId === dbId); if(!p) return;
-            document.getElementById('detail-main-content').innerHTML = `<div class="w-full h-[40vh] bg-slate-100 relative"><img src="${p.img}" class="w-full h-full object-cover"></div><div class="p-5 pb-2"><h2 class="text-2xl font-black text-slate-800 mb-1 leading-tight">${p.name}</h2><p class="text-xl font-black text-orange-600 mb-4">₹${p.price}</p><div class="text-xs font-semibold text-slate-500 mb-2">${p.stockQty > 0 ? `<span class="text-green-600 bg-green-50 px-2 py-1 rounded border border-green-100"><i class="fas fa-check-circle mr-1"></i>ပစ္စည်းရနိုင်ပါသည် (လက်ကျန်: ${p.stockQty})</span>` : '<span class="text-red-500 bg-red-50 px-2 py-1 rounded border border-red-100"><i class="fas fa-times-circle mr-1"></i>ကုန်နေပါသည်</span>'}</div></div>`;
-            const qty = window.cart[dbId] || 0; const isOut = p.stockQty <= 0;
-            document.getElementById('detail-sticky-cart').innerHTML = isOut ? `<button disabled class="w-full bg-slate-100 text-slate-400 font-bold py-3.5 rounded-2xl cursor-not-allowed">ကုန်နေပါသည် (Out of Stock)</button>` : (qty === 0 ? `<button onclick="window.updateCart('${dbId}', 1); window.openProductDetail('${dbId}')" class="w-full bg-orange-600 text-white font-black py-3.5 rounded-2xl shadow-lg hover:bg-orange-700 active:scale-95 transition-all text-base"><i class="fas fa-shopping-cart mr-2"></i> Add to Cart</button>` : `<div class="flex justify-between items-center bg-orange-600 text-white rounded-2xl p-1.5 shadow-lg"><button onclick="window.updateCart('${dbId}', -1); window.openProductDetail('${dbId}')" class="w-14 h-12 flex justify-center items-center font-black text-2xl hover:bg-white/20 rounded-xl transition">-</button><span class="font-black text-xl">${qty}</span><button onclick="window.updateCart('${dbId}', 1); window.openProductDetail('${dbId}')" class="w-14 h-12 flex justify-center items-center font-black text-2xl hover:bg-white/20 rounded-xl transition">+</button></div>`);
-            const otherProducts = window.products.filter(x => x.dbId !== dbId); const otherContainer = document.getElementById('detail-other-products');
-            otherContainer.innerHTML = otherProducts.length === 0 ? `<p class="text-slate-400 text-sm font-semibold">No other items yet</p>` : otherProducts.map(op => `<div onclick="window.openProductDetail('${op.dbId}')" class="min-w-[130px] max-w-[130px] bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col cursor-pointer active:scale-95 transition-transform ${op.stockQty <= 0 ? 'opacity-60 grayscale' : ''}"><div class="h-28 bg-slate-100"><img src="${op.img}" class="w-full h-full object-cover"></div><div class="p-3"><h4 class="font-bold text-[11px] text-slate-800 mb-1 leading-tight line-clamp-2">${op.name}</h4><p class="font-black text-orange-600 text-xs">₹${op.price}</p></div></div>`).join('');
-            const modal = document.getElementById('product-detail-modal'), sheet = document.getElementById('product-detail-sheet'); modal.classList.remove('hide'); setTimeout(() => { modal.classList.remove('opacity-0'); sheet.classList.remove('translate-y-full'); }, 10);
+            const p = window.products.find(x => x.dbId === dbId); if (!p) return;
+            const isOut = p.stockQty <= 0;
+            document.getElementById('detail-main-content').innerHTML = `<div class="product-img" style="aspect-ratio:4/3;margin:0.75rem 1rem 0;border-radius:var(--r-card)"><img src="${p.img}" alt="${escapeHtml(p.name)}" style="width:100%;height:100%;object-fit:contain;padding:1rem;${isOut ? 'filter:grayscale(1);opacity:.5' : ''}"></div><div style="padding:1rem 1rem 0"><h2 style="font-size:1.35rem;font-weight:700;line-height:1.3">${escapeHtml(p.name)}</h2><div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-top:.5rem"><span class="price" style="font-size:1.6rem">₹${formatPrice(p.price)}</span>${isOut ? '<span class="badge badge-danger">ကုန်သွားပြီ · Sold out</span>' : `<span class="badge badge-ok">လက်ကျန် ${p.stockQty} ခု · In stock</span>`}</div></div>`;
+            document.getElementById('detail-sticky-cart').innerHTML = window.cartControl(p, window.cart[dbId] || 0, true);
+            const others = window.products.filter(x => x.dbId !== dbId);
+            document.getElementById('detail-other-products').innerHTML = others.length === 0 ? `<p style="color:var(--muted);font-size:.88rem">No other items yet.</p>` : others.map(op => `<button type="button" onclick="window.openProductDetail('${op.dbId}')" class="card product more-item ${op.stockQty <= 0 ? 'is-out' : ''}"><div class="product-img"><img src="${op.img}" alt="" loading="lazy"></div><div style="padding:.5rem .6rem .65rem"><p class="product-name" style="font-size:.8rem">${escapeHtml(op.name)}</p><p class="price" style="font-size:.9rem;margin-top:.2rem">₹${formatPrice(op.price)}</p></div></button>`).join('');
+            const modal = document.getElementById('product-detail-modal'), sheet = document.getElementById('product-detail-sheet');
+            if (modal.classList.contains('hide')) { modal.classList.remove('hide'); setTimeout(() => { modal.classList.remove('opacity-0'); sheet.classList.remove('translate-y-full'); }, 10); }
         };
 
         window.closeProductDetail = function() { const modal = document.getElementById('product-detail-modal'), sheet = document.getElementById('product-detail-sheet'); modal.classList.add('opacity-0'); sheet.classList.add('translate-y-full'); setTimeout(() => modal.classList.add('hide'), 300); };
@@ -1183,12 +1217,13 @@
                 const product = window.products.find(item => item.dbId === id);
                 if (!product) {
                     hasUnavailableItems = true;
-                    return `<div class="flex items-center justify-between gap-3 border-b border-slate-200 pb-3 last:border-0 last:pb-0"><span class="text-sm font-bold text-red-600">This item is no longer available.</span><button type="button" aria-label="Remove unavailable item" onclick="window.updateCart('${id}', -${quantity})" class="rounded-lg bg-red-50 px-3 py-2 text-xs font-bold text-red-700">Remove</button></div>`;
+                    return `<div class="cart-line"><span style="flex:1;font-weight:600;color:var(--danger)">This item is no longer sold. Remove it to continue.</span><button type="button" onclick="window.updateCart('${id}', -${quantity})" class="btn btn-sm btn-danger-soft">Remove</button></div>`;
                 }
                 total += product.price * quantity;
-                return `<div class="flex items-center justify-between gap-3 border-b border-slate-200 pb-3 last:border-0 last:pb-0"><div class="min-w-0 flex-1"><p class="truncate font-bold text-slate-800">${product.name}</p><p class="mt-1 text-xs text-slate-500">₹${product.price} each</p></div><div class="flex shrink-0 items-center gap-2"><button type="button" aria-label="Remove one ${product.name}" onclick="window.updateCart('${id}', -1)" class="h-8 w-8 rounded-full border border-slate-200 bg-white font-black text-slate-600">−</button><span class="min-w-5 text-center font-black">${quantity}</span><button type="button" aria-label="Add one ${product.name}" onclick="window.updateCart('${id}', 1)" class="h-8 w-8 rounded-full border border-slate-200 bg-white font-black text-slate-600" ${quantity >= product.stockQty ? 'disabled' : ''}>+</button></div><span class="w-16 shrink-0 text-right font-black text-slate-700">₹${(product.price * quantity).toFixed(2)}</span></div>`;
+                const name = escapeHtml(product.name);
+                return `<div class="cart-line"><img src="${product.img}" alt=""><div style="flex:1;min-width:0"><p class="product-name" style="min-height:0">${name}</p><p style="font-size:.78rem;color:var(--muted)">₹${formatPrice(product.price)} each</p></div><div class="mini-stepper"><button type="button" aria-label="Remove one ${name}" onclick="window.updateCart('${id}', -1)">−</button><span style="min-width:1.4rem;text-align:center;font-weight:700">${quantity}</span><button type="button" aria-label="Add one ${name}" onclick="window.updateCart('${id}', 1)" ${quantity >= product.stockQty ? 'disabled' : ''}>+</button></div><span class="price" style="min-width:4.2rem;text-align:right;font-size:.95rem">₹${formatPrice(product.price * quantity)}</span></div>`;
             }).join('');
-            document.getElementById('checkout-total').innerText = total.toFixed(2);
+            document.getElementById('checkout-total').innerText = formatPrice(total);
             document.getElementById('btn-confirm-order').disabled = hasUnavailableItems;
         };
         window.openCheckout = () => {
@@ -1297,7 +1332,7 @@
             } finally {
                 window.orderSubmissionInProgress = false;
                 confirmButton.disabled = false;
-                document.getElementById('confirm-order-label').innerText = 'Confirm items & contact admin';
+                document.getElementById('confirm-order-label').innerText = 'Place order on WhatsApp';
             }
 
             //window.orders = orders;
@@ -1395,29 +1430,34 @@
             window.showToast('Invoice downloaded.', 'success');
         };
 
-        window.switchCustomerTab = (t) => { document.getElementById('tab-home').classList.toggle('hide', t!=='home'); document.getElementById('tab-orders').classList.toggle('hide', t!=='orders'); document.getElementById('nav-home').className = `flex flex-col items-center p-2 w-1/3 ${t==='home'?'text-orange-600':'text-slate-400'}`; document.getElementById('nav-orders').className = `flex flex-col items-center p-2 w-1/3 ${t==='orders'?'text-orange-600':'text-slate-400'}`; if(t==='home') window.renderProducts(); else window.renderCustomerOrders(); };
+        window.switchCustomerTab = (t) => {
+            document.getElementById('tab-home').classList.toggle('hide', t !== 'home');
+            document.getElementById('tab-orders').classList.toggle('hide', t !== 'orders');
+            document.getElementById('nav-home').classList.toggle('is-active', t === 'home');
+            document.getElementById('nav-orders').classList.toggle('is-active', t === 'orders');
+            if (t === 'home') window.renderProducts(); else window.renderCustomerOrders();
+        };
         window.renderCustomerOrders = () => {
             const list = document.getElementById('customer-orders-list');
             const myOrders = window.orders.filter(order => order.uid === window.currentUser.uid);
-            if (myOrders.length === 0) return list.innerHTML = `<p class="text-slate-500 font-semibold text-center mt-5">မှာယူထားသော မှတ်တမ်းမရှိသေးပါ။</p>`;
+            if (myOrders.length === 0) return list.innerHTML = `<div class="empty"><i class="fas fa-receipt"></i><p lang="my">မှာယူထားခြင်း မရှိသေးပါ။</p><p>Your orders will show up here.</p><button type="button" class="btn btn-soft btn-sm" style="margin-top:.9rem" onclick="window.switchCustomerTab('home')">Browse the shop</button></div>`;
+            const states = {
+                pending: { label: 'အတည်ပြုရန်စောင့်ဆဲ · Waiting', badge: 'badge-pending' },
+                confirmed: { label: 'အတည်ပြုပြီး · Confirmed', badge: 'badge-ok' },
+                ontheway: { label: 'လာနေပြီ · On the way', badge: 'badge-info' },
+                delivered: { label: 'ရောက်ပြီ · Delivered', badge: 'badge-ok' },
+                rejected: { label: 'ပယ်ချခံရ · Rejected', badge: 'badge-danger' }
+            };
             list.innerHTML = window.groupOrdersByDate(myOrders).map(group => `
-                <section class="space-y-3" aria-label="Orders from ${group.label}">
-                    <h4 class="sticky top-0 z-[1] rounded-xl border border-orange-100 bg-orange-50 px-4 py-2 text-sm font-black text-orange-800">${group.label}</h4>
+                <section class="order-group" aria-label="Orders from ${group.label}">
+                    <h3 class="order-group-title">${group.label}</h3>
                     ${group.orders.map(order => {
-                const states = {
-                    pending: { label: 'Pending admin confirmation', badge: 'bg-yellow-100 text-yellow-700' },
-                    confirmed: { label: 'Confirmed', badge: 'bg-green-100 text-green-700' },
-                    ontheway: { label: 'On the way', badge: 'bg-blue-100 text-blue-700' },
-                    delivered: { label: 'Delivered', badge: 'bg-green-100 text-green-700' },
-                    rejected: { label: 'Rejected', badge: 'bg-red-100 text-red-700' }
-                };
                 const state = states[order.status] || states.pending;
-                const invoiceAction = ['confirmed', 'ontheway', 'delivered'].includes(order.status)
-                    ? `<button onclick="window.downloadInvoice('${order.dbId}')" class="mt-4 w-full bg-slate-900 text-white font-bold py-2.5 rounded-xl hover:bg-slate-800 transition"><i class="fas fa-download mr-2"></i>Download invoice</button>`
-                    : `<p class="mt-4 text-center text-xs font-semibold ${order.status === 'rejected' ? 'text-red-600' : 'text-slate-500'}">${order.status === 'rejected' ? 'This order was rejected. No invoice is available.' : 'Invoice available after admin confirmation.'}</p>`;
-                const contactAdminAction = `<button onclick="window.contactAdminWhatsApp('${order.dbId}')" class="mt-3 w-full bg-green-600 text-white font-bold py-2.5 rounded-xl hover:bg-green-700 transition"><i class="fab fa-whatsapp mr-2"></i>Contact admin on WhatsApp</button>`;
-                const placedTime = order.createdAt ? new Date(order.createdAt).toLocaleTimeString() : order.time;
-                return `<div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100"><div class="flex justify-between items-center mb-3 border-b border-slate-100 pb-3"><span class="font-black text-slate-800">${order.dbId}</span><span class="px-2 py-1 rounded text-[10px] font-bold ${state.badge}">${state.label}</span></div><p class="text-sm font-semibold text-slate-600 mb-3">${order.items}</p><div class="flex justify-between items-end"><p class="text-[10px] font-bold text-slate-400">Placed ${placedTime || ''}</p><span class="font-black text-orange-600">₹${order.total}</span></div>${contactAdminAction}${invoiceAction}</div>`;
+                const canInvoice = ['confirmed', 'ontheway', 'delivered'].includes(order.status);
+                const placedTime = order.createdAt ? new Date(order.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : order.time;
+                const actions = `<div class="order-actions" style="grid-template-columns:${canInvoice ? '1fr 1fr' : '1fr'}"><button type="button" onclick="window.contactAdminWhatsApp('${order.dbId}')" class="btn btn-sm btn-ghost"><i class="fab fa-whatsapp" style="color:var(--ok)"></i>Message admin</button>${canInvoice ? `<button type="button" onclick="window.downloadInvoice('${order.dbId}')" class="btn btn-sm btn-ghost"><i class="fas fa-download"></i>Invoice</button>` : ''}</div>`;
+                const note = canInvoice ? '' : `<p class="order-note ${order.status === 'rejected' ? 'is-danger' : ''}">${order.status === 'rejected' ? 'This order was rejected. Message the admin if you have questions.' : 'The invoice will be ready once the admin confirms.'}</p>`;
+                return `<article class="card order-card"><div class="order-head"><span class="badge ${state.badge}">${state.label}</span><span class="price">₹${formatPrice(order.total)}</span></div><p class="order-items">${escapeHtml(order.items)}</p><div class="order-foot"><span>${escapeHtml(order.dbId)}</span><span>${placedTime ? `Placed ${placedTime}` : ''}</span></div>${actions}${note}</article>`;
                     }).join('')}
                 </section>
             `).join('');
@@ -1428,7 +1468,8 @@
             ['orders', 'products', 'accounts'].forEach(tab => {
                 document.getElementById(`admin-tab-${tab}`).classList.toggle('hide', t !== tab);
                 const nav = document.getElementById(`admin-nav-${tab}`);
-                nav.className = `w-full flex items-center px-4 py-3 rounded-xl ${t === tab ? 'bg-orange-600/10 text-orange-500 font-bold' : 'hover:bg-slate-800 font-semibold'}`;
+                nav.classList.toggle('is-active', t === tab);
+                if (t === tab) nav.setAttribute('aria-current', 'page'); else nav.removeAttribute('aria-current');
             });
             if (t === 'orders') window.renderAdminOrders();
             else if (t === 'products') window.renderAdminProducts();
@@ -1446,16 +1487,16 @@
                     const lastLogin = user.lastLoginAt ? Date.parse(user.lastLoginAt) : NaN;
                     const isInactive = Number.isFinite(lastLogin) && now - lastLogin >= inactiveThreshold;
                     const lastLoginLabel = Number.isFinite(lastLogin)
-                        ? `${escapeHtml(new Date(lastLogin).toLocaleString())}${isInactive ? ' (Inactive)' : ''}`
+                        ? `${escapeHtml(new Date(lastLogin).toLocaleString())}`
                         : 'Activity unknown';
                     // Accounts created before Firebase Auth have a plaintext `pass` field and no login.
                     const isLegacy = Object.prototype.hasOwnProperty.call(user, 'pass');
                     const actions = isLegacy
-                        ? `<span class="text-xs font-bold text-slate-500">Old account – must re-register</span><button type="button" data-delete-uid="${escapeHtml(user.dbId)}" class="delete-legacy-account bg-red-50 text-red-700 px-3 py-2 rounded-lg font-bold hover:bg-red-100">Delete</button>`
-                        : `<button type="button" data-reset-uid="${escapeHtml(user.dbId)}" class="reset-user-password bg-orange-50 text-orange-700 px-3 py-2 rounded-lg font-bold hover:bg-orange-100">Reset password</button>${isInactive ? `<button type="button" data-delete-uid="${escapeHtml(user.dbId)}" class="delete-inactive-account bg-red-50 text-red-700 px-3 py-2 rounded-lg font-bold hover:bg-red-100">Delete inactive</button>` : ''}`;
-                    return `<tr><td class="px-6 py-4 font-bold text-slate-800">${escapeHtml(user.name)}</td><td class="px-6 py-4">${escapeHtml(user.phone)}</td><td class="px-6 py-4">${escapeHtml(user.email || 'Not provided')}</td><td class="px-6 py-4 whitespace-normal min-w-[220px]">${escapeHtml(user.address)}</td><td class="px-6 py-4 whitespace-nowrap">${lastLoginLabel}</td><td class="px-6 py-4"><div class="flex items-center gap-2">${actions}</div></td></tr>`;
+                        ? `<span class="badge badge-muted">Old account, must re-register</span><button type="button" data-delete-uid="${escapeHtml(user.dbId)}" class="delete-legacy-account btn btn-sm btn-danger-soft">Delete</button>`
+                        : `<button type="button" data-reset-uid="${escapeHtml(user.dbId)}" class="reset-user-password btn btn-sm btn-ghost"><i class="fas fa-key"></i>Reset password</button>${isInactive ? `<button type="button" data-delete-uid="${escapeHtml(user.dbId)}" class="delete-inactive-account btn btn-sm btn-danger-soft">Delete inactive</button>` : ''}`;
+                    return `<tr><td style="font-weight:600">${escapeHtml(user.name)}</td><td style="white-space:nowrap">${escapeHtml(user.phone)}</td><td>${escapeHtml(user.email || 'Not provided')}</td><td style="min-width:200px;font-size:.82rem;color:var(--muted)">${escapeHtml(user.address)}</td><td style="white-space:nowrap;font-size:.82rem">${isInactive ? '<span class="badge badge-pending">Inactive</span> ' : ''}${lastLoginLabel}</td><td><div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap">${actions}</div></td></tr>`;
                 }).join('')
-                : '<tr><td colspan="6" class="px-6 py-8 text-center text-slate-500">No customer accounts found.</td></tr>';
+                : '<tr><td colspan="6"><div class="empty"><i class="fas fa-users"></i><p>No customer accounts yet.</p></div></td></tr>';
             table.querySelectorAll('.reset-user-password').forEach(button => {
                 button.addEventListener('click', () => window.resetUserPassword(button.dataset.resetUid));
             });
@@ -1536,27 +1577,26 @@
             document.getElementById('pending-orders-count').innerText = `${pendingOrders.length} pending`;
             document.getElementById('admin-pending-orders').innerHTML = pendingOrders.length
                 ? window.groupOrdersByDate(pendingOrders).map(group => `
-                    <section class="space-y-3 xl:col-span-2" aria-label="Pending orders from ${group.label}">
-                        <h3 class="rounded-xl border border-orange-100 bg-orange-50 px-4 py-2 text-sm font-black text-orange-800">${group.label}</h3>
-                        <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">${group.orders.map(order => {
+                    <section class="order-group" aria-label="Pending orders from ${group.label}">
+                        <h3 class="order-group-title">${group.label}</h3>
+                        <div class="pending-grid">${group.orders.map(order => {
                             const busy = window.orderActionsInProgress.has(order.dbId);
-                            return `<article class="rounded-2xl border border-orange-200 bg-white p-4 shadow-sm"><div class="mb-3 flex flex-wrap items-start justify-between gap-2"><div><p class="font-black text-slate-900">${escapeHtml(order.user || 'Customer')}</p><p class="text-xs font-semibold text-slate-500">${escapeHtml(order.dbId)} · ${escapeHtml(order.phone || '')}</p></div><p class="font-black text-orange-600">₹${Number(order.total || 0).toFixed(2)}</p></div><p class="mb-2 text-sm font-semibold text-slate-700">${escapeHtml(order.items || 'No item details')}</p><p class="mb-4 text-xs text-slate-500">${escapeHtml(order.address || 'No delivery address provided')}</p><div class="grid grid-cols-2 gap-3"><button type="button" ${busy ? 'disabled' : ''} onclick="window.confirmOrder('${order.dbId}')" class="rounded-xl bg-green-600 px-4 py-3 font-black text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"><i class="fas fa-check mr-2"></i>Confirm order</button><button type="button" ${busy ? 'disabled' : ''} onclick="window.rejectOrder('${order.dbId}')" class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 font-black text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"><i class="fas fa-times mr-2"></i>Reject order</button></div></article>`;
+                            return `<article class="card pending-card"><div class="order-head"><div><p style="font-weight:700">${escapeHtml(order.user || 'Customer')}</p><p class="order-id">${escapeHtml(order.phone || '')}</p></div><span class="price">₹${formatPrice(order.total)}</span></div><p class="order-items">${escapeHtml(order.items || 'No item details')}</p><p style="font-size:.82rem;color:var(--muted);display:flex;gap:.45rem"><i class="fas fa-location-dot" style="margin-top:.2rem"></i><span>${escapeHtml(order.address || 'No delivery address')}</span></p><p class="order-id" style="margin-top:.4rem">${escapeHtml(order.dbId)}</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.85rem"><button type="button" ${busy ? 'disabled' : ''} onclick="window.confirmOrder('${order.dbId}')" class="btn btn-whatsapp"><i class="fas fa-check"></i>Confirm</button><button type="button" ${busy ? 'disabled' : ''} onclick="window.rejectOrder('${order.dbId}')" class="btn btn-danger-soft"><i class="fas fa-xmark"></i>Reject</button></div></article>`;
                         }).join('')}</div>
                     </section>
                 `).join('')
-                : '<p class="rounded-2xl border border-slate-200 bg-white p-5 text-sm font-semibold text-slate-500">No pending orders need review.</p>';
-            document.getElementById('admin-orders-table').innerHTML = window.groupOrdersByDate(window.orders).map(group => `
-                <tr><th colspan="7" class="bg-slate-100 px-6 py-3 text-left text-sm font-black text-slate-700">${group.label}</th></tr>
+                : '<div class="card empty" style="padding:1.5rem"><i class="fas fa-circle-check" style="color:var(--ok)"></i><p>All caught up. New orders will appear here.</p></div>';
+            const statusBadge = { confirmed: '<span class="badge badge-ok">Confirmed</span>', ontheway: '<span class="badge badge-info">On the way</span>', delivered: '<span class="badge badge-ok">Delivered</span>', rejected: '<span class="badge badge-danger">Rejected</span>', pending: '<span class="badge badge-pending">Pending</span>' };
+            document.getElementById('admin-orders-table').innerHTML = window.orders.length ? window.groupOrdersByDate(window.orders).map(group => `
+                <tr class="group-row"><th colspan="7">${group.label}</th></tr>
                 ${group.orders.map(order => {
             const invoiceAvailable = ['confirmed', 'ontheway', 'delivered'].includes(order.status);
-            const orderActions = order.status === 'pending'
-                ? '<span class="text-xs font-bold text-orange-700">Use pending orders above</span>'
-                : order.status === 'confirmed' || order.status === 'ontheway'
-                    ? `<select onchange="window.updateStatus('${order.dbId}', this.value)" class="text-xs font-bold p-2 rounded-lg border outline-none"><option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>Confirmed</option><option value="ontheway" ${order.status === 'ontheway' ? 'selected' : ''}>On the way</option><option value="delivered">Delivered</option></select>`
-                    : `<span class="text-xs font-bold ${order.status === 'rejected' ? 'text-red-600' : 'text-green-700'}">${order.status === 'rejected' ? 'Rejected' : 'Delivered'}</span>`;
-            return `<tr class="hover:bg-slate-50 transition"><td class="px-6 py-4 font-black text-slate-800">${escapeHtml(order.dbId)}</td><td class="px-6 py-4"><p class="font-bold text-slate-700">${escapeHtml(order.user)}</p><p class="text-xs text-slate-500">${escapeHtml(order.phone)}</p></td><td class="px-6 py-4 text-xs font-semibold text-slate-600 whitespace-normal min-w-[200px]">${escapeHtml(order.items)}</td><td class="px-6 py-4 text-right font-black text-orange-600">₹${Number(order.total || 0).toFixed(2)}</td><td class="px-6 py-4 text-xs font-medium text-slate-600 max-w-[250px] whitespace-normal">${escapeHtml(order.address)}</td><td class="px-6 py-4">${orderActions}</td><td class="px-6 py-4">${invoiceAvailable ? `<button onclick="window.downloadInvoice('${order.dbId}')" class="bg-orange-50 text-orange-700 px-3 py-2 rounded-lg font-bold hover:bg-orange-100 transition"><i class="fas fa-download mr-1"></i>Download</button>` : '<span class="text-xs font-semibold text-slate-400">Unavailable</span>'}</td></tr>`;
+            const orderActions = order.status === 'confirmed' || order.status === 'ontheway'
+                ? `<select aria-label="Order status" onchange="window.updateStatus('${order.dbId}', this.value)" class="status-select"><option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>Confirmed</option><option value="ontheway" ${order.status === 'ontheway' ? 'selected' : ''}>On the way</option><option value="delivered">Delivered</option></select>`
+                : (statusBadge[order.status] || statusBadge.pending);
+            return `<tr><td style="font-size:.8rem;color:var(--muted);white-space:nowrap">${escapeHtml(order.dbId)}</td><td><p style="font-weight:600">${escapeHtml(order.user)}</p><p style="font-size:.78rem;color:var(--muted)">${escapeHtml(order.phone)}</p></td><td style="min-width:160px">${escapeHtml(order.items)}</td><td class="num" style="font-weight:700">₹${formatPrice(order.total)}</td><td style="min-width:150px;max-width:220px;font-size:.82rem;color:var(--muted)">${escapeHtml(order.address)}</td><td>${orderActions}</td><td>${invoiceAvailable ? `<button type="button" onclick="window.downloadInvoice('${order.dbId}')" class="btn btn-sm btn-ghost"><i class="fas fa-download"></i>Invoice</button>` : '<span style="font-size:.78rem;color:var(--faint)">Not yet</span>'}</td></tr>`;
                 }).join('')}
-            `).join('');
+            `).join('') : '<tr><td colspan="7"><div class="empty"><i class="fas fa-receipt"></i><p>No orders yet.</p></div></td></tr>';
         };
         window.getOrderInventoryItems = (order) => {
             let items = Array.isArray(order.lineItems) ? order.lineItems : [];
@@ -1649,7 +1689,7 @@
             const setProcessing = (processing) => {
                 window.productImageProcessing = processing;
                 button.disabled = processing;
-                button.innerText = processing ? 'Preparing image...' : 'Save Product';
+                button.innerText = processing ? 'Preparing photo…' : 'Save product';
             };
             setProcessing(true);
             const reader = new FileReader();
@@ -1695,8 +1735,15 @@
             };
             reader.readAsDataURL(file);
         };
-        window.renderAdminProducts = () => { document.getElementById('admin-products-table').innerHTML = window.products.map((p) => `<tr class="hover:bg-slate-50 transition"><td class="px-6 py-4"><img src="${p.img}" class="w-10 h-10 rounded-lg object-cover ${p.stockQty <= 0 ? 'grayscale opacity-50' : ''}"></td><td class="px-6 py-4 font-bold text-slate-800">${p.name}</td><td class="px-6 py-4 font-black text-orange-600">₹${p.price}</td><td class="px-6 py-4 text-center"><div class="flex items-center justify-center"><span class="px-3 py-1 text-[11px] font-bold rounded-full ${p.stockQty > 0 ? 'bg-slate-100 text-slate-700' : 'bg-red-100 text-red-600 border border-red-200'}">${p.stockQty > 0 ? p.stockQty + ' ခု' : 'ကုန်ပြီ'}</span><button onclick="window.openRestockModal('${p.dbId}')" class="ml-2 bg-green-100 text-green-700 px-2.5 py-1 rounded text-xs font-bold hover:bg-green-200 transition">+ အသစ်ရောက်</button></div></td><td class="px-6 py-4 text-right"><button onclick="window.openProductModal('${p.dbId}')" class="text-blue-500 hover:scale-110 mx-2"><i class="fas fa-edit"></i></button><button onclick="window.deleteProduct('${p.dbId}')" class="text-red-500 hover:scale-110"><i class="fas fa-trash"></i></button></td></tr>`).join(''); };
-        window.openRestockModal = (id) => { let p = window.products.find(x => x.dbId === id); if(!p) return; document.getElementById('restock-prod-id').value = id; document.getElementById('restock-prod-name').innerText = p.name + ` (လက်ရှိ: ${p.stockQty} ခု)`; document.getElementById('restock-qty').value = ''; document.getElementById('restock-modal').classList.remove('hide'); };
+        window.renderAdminProducts = () => {
+            const table = document.getElementById('admin-products-table');
+            if (!window.products.length) { table.innerHTML = '<tr><td colspan="5"><div class="empty"><i class="fas fa-box-open"></i><p>No products yet. Use Add product to create the first one.</p></div></td></tr>'; return; }
+            table.innerHTML = window.products.map(p => {
+                const out = Number(p.stockQty) <= 0;
+                return `<tr><td><img src="${p.img}" alt="" class="thumb" style="${out ? 'filter:grayscale(1);opacity:.5' : ''}"></td><td class="cell-name" style="font-weight:600">${escapeHtml(p.name)}</td><td class="num" style="font-weight:700">₹${formatPrice(p.price)}</td><td><div style="display:flex;align-items:center;gap:.5rem">${out ? '<span class="badge badge-danger">ကုန်သွားပြီ · Sold out</span>' : `<span class="badge badge-muted">${p.stockQty} ခု</span>`}<button type="button" onclick="window.openRestockModal('${p.dbId}')" class="btn btn-sm btn-soft"><i class="fas fa-plus"></i>Add stock</button></div></td><td class="num"><div style="display:inline-flex;gap:.35rem"><button type="button" onclick="window.openProductModal('${p.dbId}')" class="icon-btn" aria-label="Edit ${escapeHtml(p.name)}" title="Edit"><i class="fas fa-pen"></i></button><button type="button" onclick="window.deleteProduct('${p.dbId}')" class="icon-btn" style="color:var(--danger)" aria-label="Delete ${escapeHtml(p.name)}" title="Delete"><i class="fas fa-trash"></i></button></div></td></tr>`;
+            }).join('');
+        };
+        window.openRestockModal = (id) => { const p = window.products.find(x => x.dbId === id); if (!p) return; document.getElementById('restock-prod-id').value = id; document.getElementById('restock-prod-name').innerText = `${p.name}: လက်ရှိ ${p.stockQty} ခု (${p.stockQty} in stock)`; document.getElementById('restock-qty').value = ''; document.getElementById('restock-modal').classList.remove('hide'); };
         window.confirmRestock = async (e) => {
             e.preventDefault();
             if (window.currentUser?.role !== 'admin') return window.showToast('Admin access required.', 'error');
@@ -1715,13 +1762,13 @@
         window.openProductModal = (id = null) => {
             window.productImageProcessing = false;
             document.getElementById('save-product-button').disabled = false;
-            document.getElementById('save-product-button').innerText = 'Save Product';
+            document.getElementById('save-product-button').innerText = 'Save product';
             document.getElementById('product-save-feedback').innerText = '';
             document.getElementById('prod-img-file').value = '';
             if (id !== null) {
                 const product = window.products.find(item => item.dbId === id);
                 if (!product) return window.showToast('Product not found. Please refresh and try again.', 'error');
-                document.getElementById('product-modal-title').innerText = 'Edit Product';
+                document.getElementById('product-modal-title').innerText = 'Edit product';
                 document.getElementById('prod-id').value = id;
                 document.getElementById('prod-name').value = product.name;
                 document.getElementById('prod-price').value = product.price;
@@ -1730,7 +1777,7 @@
                 document.getElementById('img-preview').src = product.img;
                 document.getElementById('img-preview-container').classList.remove('hide');
             } else {
-                document.getElementById('product-modal-title').innerText = 'Add New Product';
+                document.getElementById('product-modal-title').innerText = 'Add product';
                 document.getElementById('prod-id').value = '';
                 document.getElementById('prod-name').value = '';
                 document.getElementById('prod-price').value = '';
@@ -1785,7 +1832,7 @@
                 window.showToast(feedback.innerText, 'error');
             } finally {
                 button.disabled = false;
-                button.innerText = 'Save Product';
+                button.innerText = 'Save product';
             }
         };
         window.deleteProduct = async (id) => {
