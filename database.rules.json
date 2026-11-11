@@ -17,8 +17,20 @@
         ".validate": "newData.hasChildren(['name', 'price', 'stockQty'])",
         "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200" },
         "price": { ".validate": "newData.isNumber() && newData.val() > 0" },
-        "stockQty": { ".validate": "newData.isNumber() && newData.val() >= 0" }
+        "stockQty": { ".validate": "newData.isNumber() && newData.val() >= 0" },
+        "category": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 40" }
       }
+    },
+
+    "settings": {
+      ".read": "auth != null",
+      ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+      "banner": {
+        "text": { ".validate": "newData.isString() && newData.val().length <= 200" },
+        "enabled": { ".validate": "newData.isBoolean()" },
+        "$other": { ".validate": false }
+      },
+      "$other": { ".validate": false }
     },
 
     "expenses": {

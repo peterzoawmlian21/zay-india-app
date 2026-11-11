@@ -245,7 +245,7 @@
         .modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
         .modal-actions { display: flex; gap: 0.6rem; margin-top: 0.4rem; }
         .modal-actions .btn { flex: 1; }
-        .sheet { width: 100%; max-width: 480px; margin: 0 auto; background: var(--surface); border-radius: var(--r-sheet) var(--r-sheet) 0 0; display: flex; flex-direction: column; transition: transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .sheet { width: 100%; max-width: 480px; margin: 0 auto; background: var(--surface); border-radius: var(--r-sheet) var(--r-sheet) 0 0; display: flex; flex-direction: column; transition: transform 380ms cubic-bezier(0.22, 1.2, 0.36, 1); }
         .sheet-handle { width: 40px; height: 4px; border-radius: 999px; background: var(--line); margin: 0.6rem auto 0; }
         .sheet-foot { border-top: 1px solid var(--line); padding: 0.9rem 1rem; }
         .note { display: flex; gap: 0.6rem; padding: 0.8rem 0.9rem; border-radius: var(--r-ctl); font-size: 0.85rem; }
@@ -324,6 +324,7 @@
         .fin-chart .tick { font-size: 11px; fill: var(--muted); font-family: var(--font); }
         .fin-chart .grid { stroke: var(--line); stroke-width: 1; }
         .fin-chart .hit { fill: transparent; cursor: default; }
+        .fin-chart.no-anim path.bar { animation: none !important; }
         .fin-chart .hit:hover, .fin-chart .hit.is-hover { fill: rgba(16, 24, 40, 0.04); }
         .fin-tooltip { position: absolute; z-index: 5; pointer-events: none; min-width: 160px; padding: .6rem .75rem; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); box-shadow: 0 8px 24px rgba(16, 24, 40, 0.14); font-size: .8rem; }
         .fin-tooltip strong { display: block; margin-bottom: .3rem; }
@@ -336,6 +337,54 @@
         .fin-columns { display: grid; gap: 1.5rem; }
         .fin-columns > section { min-width: 0; }
         @media (min-width: 1100px) { .fin-columns { grid-template-columns: 1fr 1fr; } }
+
+        /* ---------- Categories + banner ---------- */
+        .chips { display: flex; gap: .5rem; overflow-x: auto; margin: .75rem -1rem 0; padding: 0 1rem 2px; scrollbar-width: none; }
+        .chips::-webkit-scrollbar { display: none; }
+        .chip { flex-shrink: 0; min-height: 36px; padding: .4rem .95rem; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-weight: 600; font-size: .85rem; cursor: pointer; transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease; }
+        .chip:hover { border-color: #CBD2DC; }
+        .chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+        .chip small { margin-left: .3rem; font-weight: 500; opacity: .6; }
+        .shop-banner { position: relative; overflow: hidden; display: flex; gap: .7rem; align-items: flex-start; margin-bottom: 1rem; padding: 1rem 1.1rem; border-radius: var(--r-card); background: var(--brand); color: #fff; font-weight: 600; line-height: 1.45; }
+        .shop-banner > i { margin-top: .2rem; opacity: .9; }
+        .shop-banner p { position: relative; z-index: 1; max-width: 32ch; }
+        .shop-banner::after { content: 'ဈေး'; position: absolute; right: -.4rem; bottom: -1.9rem; font-family: 'Noto Sans Myanmar', sans-serif; font-weight: 700; font-size: 6rem; line-height: 1; color: rgba(255, 255, 255, .14); pointer-events: none; }
+
+        /* ---------- Skeletons ---------- */
+        .skeleton { border-radius: 8px; background: linear-gradient(90deg, #ECEEF2 25%, #F6F7F9 37%, #ECEEF2 63%); background-size: 400% 100%; animation: shimmer 1.3s ease-in-out infinite; }
+        .product-img.skeleton { border-radius: 0; }
+        @keyframes shimmer { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+
+        /* ---------- Order tracker ---------- */
+        .tracker { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); margin: .95rem 0 .15rem; }
+        .tracker-line { position: absolute; left: 12.5%; right: 12.5%; top: 9px; height: 3px; border-radius: 3px; background: var(--line); }
+        .tracker-fill { height: 100%; border-radius: 3px; background: var(--ok); transition: width 800ms cubic-bezier(.2, .9, .3, 1); }
+        .tracker-step { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: .3rem; font-size: .68rem; font-weight: 600; text-align: center; color: var(--faint); line-height: 1.25; }
+        .tracker-dot { width: 21px; height: 21px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: var(--surface); border: 2px solid var(--line); color: #fff; font-size: .6rem; transition: background-color 300ms ease 400ms, border-color 300ms ease 400ms; }
+        .tracker-step.done { color: var(--ink); }
+        .tracker-step.done .tracker-dot { background: var(--ok); border-color: var(--ok); }
+        .tracker-step.current .tracker-dot { box-shadow: 0 0 0 4px rgba(21, 128, 61, .18); }
+
+        /* ---------- Motion (only for people who haven't asked for less) ---------- */
+        @media (prefers-reduced-motion: no-preference) {
+            .pop-in { animation: popIn 300ms cubic-bezier(.3, 1.5, .5, 1); }
+            @keyframes popIn { from { transform: scale(.82); opacity: .3; } to { transform: none; opacity: 1; } }
+            #nav-cart:not(.hide) { animation: dockIn 420ms cubic-bezier(.2, 1.3, .4, 1); }
+            @keyframes dockIn { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+            #nav-cart.bump { animation: bump 420ms cubic-bezier(.3, 1.6, .5, 1); }
+            @keyframes bump { 0% { transform: scale(1); } 35% { transform: scale(1.045); } 100% { transform: scale(1); } }
+            #product-list.is-filtering .product { animation: fadeUp 260ms ease both; }
+            @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+            .slide-in { animation: slideIn 480ms cubic-bezier(.2, 1.1, .3, 1) both; }
+            @keyframes slideIn { from { opacity: 0; transform: translateY(-12px) scale(.98); } to { opacity: 1; transform: none; } }
+            .is-new { animation: slideIn 480ms cubic-bezier(.2, 1.1, .3, 1) both, glow 2.4s ease 480ms; }
+            @keyframes glow { 0%, 60% { box-shadow: 0 0 0 4px rgba(234, 88, 12, .28); } 100% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0); } }
+            .fin-chart path.bar { transform-box: fill-box; transform-origin: 50% 100%; animation: grow 560ms cubic-bezier(.2, .9, .3, 1) both; }
+            @keyframes grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+            .tracker-step.current:not(.final) .tracker-dot { animation: pulse 1.8s ease-in-out infinite; }
+            @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 4px rgba(21, 128, 61, .18); } 50% { box-shadow: 0 0 0 7px rgba(21, 128, 61, .06); } }
+            .tab-panel > * { animation: fadeUp 240ms ease both; }
+        }
 
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
@@ -437,6 +486,7 @@
         </header>
 
         <main id="tab-home" class="tab-panel">
+            <div id="shop-banner" class="shop-banner hide" role="note"><i class="fas fa-bullhorn"></i><p id="shop-banner-text"></p></div>
             <h2 class="section-title">ပစ္စည်းများ <span class="en-inline">Shop</span></h2>
             <div class="search-wrap">
                 <label for="product-search" class="sr-only">Search products</label>
@@ -444,7 +494,8 @@
                 <input id="product-search" type="search" autocomplete="off" oninput="window.renderProducts()" placeholder="ရှာမည် · Search items" class="field">
                 <button id="clear-product-search" type="button" onclick="window.clearProductSearch()" aria-label="Clear search" class="hide"><i class="fas fa-xmark"></i></button>
             </div>
-            <div id="product-list"></div>
+            <div id="category-chips" class="chips hide" role="group" aria-label="Filter by category"></div>
+            <div id="product-list" aria-live="polite"></div>
         </main>
 
         <main id="tab-orders" class="tab-panel hide">
@@ -567,6 +618,15 @@
                     <div><h1>ပစ္စည်းများ <span class="en-inline">Products</span></h1><p>Prices and stock shown to customers.</p></div>
                     <button onclick="window.openProductModal()" class="btn btn-primary"><i class="fas fa-plus"></i>ပစ္စည်းအသစ် <span style="font-weight:500;opacity:.85">Add product</span></button>
                 </div>
+                <section class="card" style="padding:1rem 1.1rem;margin-bottom:1.25rem" aria-labelledby="banner-heading">
+                    <div class="admin-section-head" style="margin-bottom:.5rem"><h2 id="banner-heading">ကြော်ငြာစာ <span class="en-inline">Shop banner</span></h2>
+                        <label style="display:flex;gap:.45rem;align-items:center;font-size:.85rem;font-weight:600"><input id="banner-enabled" type="checkbox" style="width:18px;height:18px;accent-color:var(--brand)">Show in shop</label></div>
+                    <div style="display:flex;gap:.6rem;flex-wrap:wrap">
+                        <label for="banner-text" class="sr-only">Banner text</label>
+                        <input id="banner-text" type="text" maxlength="200" class="field" style="flex:1;min-width:220px" placeholder="e.g. Fresh Laphet arrived! Orders before 6 pm delivered today.">
+                        <button type="button" id="banner-save" onclick="window.saveBanner()" class="btn btn-dark">Save banner</button>
+                    </div>
+                </section>
                 <div class="card table-wrap">
                     <table class="table">
                         <thead><tr><th style="width:64px">Photo</th><th>Name</th><th class="num">Price</th><th>Stock</th><th class="num">Actions</th></tr></thead>
@@ -734,6 +794,7 @@
             <form id="product-form" onsubmit="window.saveProduct(event)" style="display:flex;flex-direction:column;gap:0.9rem">
                 <input type="hidden" id="prod-id">
                 <div><label for="prod-name" class="field-label">အမည် <span class="en-inline">Name</span></label><input type="text" id="prod-name" class="field" required></div>
+                <div><label for="prod-category" class="field-label">အမျိုးအစား <span class="en-inline">Category (optional)</span></label><input type="text" id="prod-category" list="category-options" maxlength="40" class="field" placeholder="e.g. Noodles, Snacks, Spices"><datalist id="category-options"></datalist></div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
                     <div><label for="prod-price" class="field-label">ဈေးနှုန်း <span class="en-inline">Price ₹</span></label><input type="number" id="prod-price" class="field" required min="0.01" step="0.01" inputmode="decimal"></div>
                     <div><label for="prod-stock" class="field-label">လက်ကျန် <span class="en-inline">Stock</span></label><input type="number" id="prod-stock" class="field" required min="0" inputmode="numeric"></div>
@@ -842,6 +903,12 @@
             detachListeners();
             window.users = []; window.products = []; window.orders = []; window.expenses = [];
             let loadedFlags = { users: false, products: false, orders: false };
+            // Show the screen right away; each list shows a skeleton until its data arrives.
+            window.loaded = loadedFlags;
+            window.seenPendingOrders = null;
+            window.orderStatusSeen = null;
+            document.getElementById('app-loading').classList.add('hide');
+            window.routeApp();
             const normalizeCollection = (value, collectionName) => {
                 if (value == null) return [];
                 if (Array.isArray(value)) return value.filter(item => item && typeof item === 'object' && !Array.isArray(item));
@@ -854,9 +921,8 @@
                 return [];
             };
             const checkInitialLoad = () => {
-                if(loadedFlags.users && loadedFlags.products && loadedFlags.orders) {
-                    document.getElementById('app-loading').classList.add('hide');
-                    window.routeApp();
+                if(loadedFlags.users && loadedFlags.products && loadedFlags.orders && !loadedFlags.all) {
+                    loadedFlags.all = true;
                     if (window.currentUser.passwordResetRequired) window.openRequiredPasswordChange();
                 }
             };
@@ -876,6 +942,7 @@
                     if(!loadedFlags.users) { loadedFlags.users = true; checkInitialLoad(); }
                 });
             }
+            listen(db.ref('settings/banner'), (s) => { window.shopBanner = s.val() || { text: '', enabled: false }; window.renderBanner(); });
             listen(db.ref('products'), (s) => { window.products = normalizeCollection(s.val(), 'products'); if(!loadedFlags.products) { loadedFlags.products = true; checkInitialLoad(); } if (window.currentUser?.role === 'admin') window.renderAdminProducts(); if (window.currentUser?.role === 'customer') window.renderProducts(); });
             let prevLen = -1;
             // Customers may only run this exact query (enforced in database.rules.json).
@@ -1285,24 +1352,116 @@
             if (qty === 0) return `<button type="button" onclick="window.updateCart('${p.dbId}', 1)" class="btn ${large ? 'btn-primary' : 'btn-soft btn-sm'} btn-block"><i class="fas fa-plus"></i>ထည့်မည် · Add</button>`;
             return `<div class="stepper ${large ? 'stepper-lg' : ''}"><button type="button" aria-label="Remove one" onclick="window.updateCart('${p.dbId}', -1)">−</button><span aria-live="polite">${qty}${large ? ' in cart' : ''}</span><button type="button" aria-label="Add one" ${qty >= p.stockQty ? 'disabled' : ''} onclick="window.updateCart('${p.dbId}', 1)">+</button></div>`;
         };
+        const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        // Animate a number in an element from its last shown value to the new one.
+        window.animateNumber = (el, to, format, duration = 450) => {
+            const from = Number(el.dataset.value);
+            el.dataset.value = to;
+            if (!Number.isFinite(from) || from === to || prefersReducedMotion()) { el.innerText = format(to); return; }
+            const start = performance.now();
+            cancelAnimationFrame(el._raf);
+            const step = now => {
+                const t = Math.min(1, (now - start) / duration);
+                const eased = 1 - Math.pow(1 - t, 3);
+                el.innerText = format(from + (to - from) * eased);
+                if (t < 1) el._raf = requestAnimationFrame(step); else el.innerText = format(to);
+            };
+            el._raf = requestAnimationFrame(step);
+            // Fallback: if animation frames are paused (background tab), still land on the final value.
+            clearTimeout(el._done);
+            el._done = setTimeout(() => { if (Number(el.dataset.value) === to) { cancelAnimationFrame(el._raf); el.innerText = format(to); } }, duration + 150);
+        };
         window.refreshCartBar = () => {
             let count = 0, total = 0;
             Object.entries(window.cart).forEach(([id, qty]) => { count += qty; const p = window.products.find(x => x.dbId === id); if (p) total += Number(p.price) * qty; });
-            document.getElementById('cart-count').innerText = count;
-            document.getElementById('cart-total-bar').innerText = formatPrice(total);
-            document.getElementById('nav-cart').classList.toggle('hide', count === 0);
+            const bar = document.getElementById('nav-cart');
+            const wasHidden = bar.classList.contains('hide');
+            const countEl = document.getElementById('cart-count');
+            const changed = countEl.innerText !== String(count);
+            countEl.innerText = count;
+            window.animateNumber(document.getElementById('cart-total-bar'), total, v => formatPrice(Math.round(v * 100) / 100));
+            bar.classList.toggle('hide', count === 0);
+            if (changed && !wasHidden && count > 0) { bar.classList.remove('bump'); void bar.offsetWidth; bar.classList.add('bump'); }
         };
-        window.renderProducts = () => {
-            window.refreshCartBar();
+        // Photo of the product flies from where it was tapped into the cart bar.
+        // `from` is measured before the grid re-renders, because re-rendering replaces the image element.
+        window.flyToCart = (sourceImg, from) => {
+            const target = document.getElementById('nav-cart');
+            if (!sourceImg || !from || !target || target.classList.contains('hide') || prefersReducedMotion()) return;
+            const to = target.getBoundingClientRect();
+            if (!from.width) return;
+            const ghost = sourceImg.cloneNode();
+            Object.assign(ghost.style, { position: 'fixed', left: `${from.left}px`, top: `${from.top}px`, width: `${from.width}px`, height: `${from.height}px`, objectFit: 'contain', zIndex: 9000, pointerEvents: 'none', borderRadius: '16px', background: '#fff', boxShadow: '0 12px 30px rgba(16,24,40,.25)' });
+            document.body.appendChild(ghost);
+            const dx = to.left + 36 - (from.left + from.width / 2), dy = to.top + to.height / 2 - (from.top + from.height / 2);
+            ghost.animate([
+                { transform: 'translate(0,0) scale(1)', opacity: 1 },
+                { transform: `translate(${dx * 0.55}px, ${dy * 0.35 - 60}px) scale(.55)`, opacity: .9, offset: .55 },
+                { transform: `translate(${dx}px, ${dy}px) scale(.12)`, opacity: .2 }
+            ], { duration: 620, easing: 'cubic-bezier(.4,0,.2,1)' }).onfinish = () => ghost.remove();
+            setTimeout(() => ghost.remove(), 900);
+        };
+        window.activeCategory = 'all';
+        window.setCategory = category => {
+            window.activeCategory = category;
             const list = document.getElementById('product-list');
+            list.classList.add('is-filtering');
+            window.renderProducts();
+            setTimeout(() => list.classList.remove('is-filtering'), 300);
+        };
+        window.renderCategoryChips = () => {
+            const chips = document.getElementById('category-chips');
+            const counts = new Map();
+            window.products.forEach(p => { if (p.category) counts.set(p.category, (counts.get(p.category) || 0) + 1); });
+            if (window.activeCategory !== 'all' && !counts.has(window.activeCategory)) window.activeCategory = 'all';
+            chips.classList.toggle('hide', counts.size === 0);
+            if (!counts.size) { chips.innerHTML = ''; return; }
+            const categories = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+            chips.innerHTML = [`<button type="button" class="chip" aria-pressed="${window.activeCategory === 'all'}" data-cat="all">အားလုံး · All</button>`]
+                .concat(categories.map(([c, n]) => `<button type="button" class="chip" aria-pressed="${window.activeCategory === c}" data-cat="${escapeHtml(c)}">${escapeHtml(c)}<small>${n}</small></button>`)).join('');
+            chips.querySelectorAll('.chip').forEach(btn => btn.addEventListener('click', () => window.setCategory(btn.dataset.cat)));
+        };
+        window.renderBanner = () => {
+            const banner = window.shopBanner || {};
+            const show = !!banner.enabled && !!String(banner.text || '').trim();
+            const el = document.getElementById('shop-banner');
+            if (el) { el.classList.toggle('hide', !show); document.getElementById('shop-banner-text').innerText = banner.text || ''; }
+            const textInput = document.getElementById('banner-text');
+            if (textInput && document.activeElement !== textInput) {
+                textInput.value = banner.text || '';
+                document.getElementById('banner-enabled').checked = !!banner.enabled;
+            }
+        };
+        window.saveBanner = async () => {
+            if (window.currentUser?.role !== 'admin') return window.showToast('Admin access required.', 'error');
+            const text = document.getElementById('banner-text').value.trim();
+            const enabled = document.getElementById('banner-enabled').checked;
+            if (enabled && !text) return window.showToast('Write the banner text first, or untick "Show in shop".', 'error');
+            const button = document.getElementById('banner-save');
+            button.disabled = true;
+            try {
+                await db.ref('settings/banner').set({ text, enabled });
+                window.showToast(enabled ? 'Banner is now showing in the shop.' : 'Banner saved and hidden.', 'success');
+            } catch (error) {
+                console.error('Saving banner failed', error);
+                window.showToast(`Could not save the banner: ${error.message || 'Please try again.'}`, 'error');
+            } finally { button.disabled = false; }
+        };
+        const productSkeleton = () => `<div class="card product" aria-hidden="true"><div class="product-img skeleton"></div><div class="product-body"><div class="skeleton" style="height:13px;width:85%"></div><div class="skeleton" style="height:13px;width:55%;margin-top:8px"></div></div><div class="product-action"><div class="skeleton" style="height:38px;border-radius:10px"></div></div></div>`;
+        window.renderProducts = () => {
+            const list = document.getElementById('product-list');
+            if (window.loaded && !window.loaded.products) { list.setAttribute('aria-busy', 'true'); list.innerHTML = productSkeleton().repeat(6); return; }
+            list.removeAttribute('aria-busy');
+            window.refreshCartBar();
+            window.renderCategoryChips();
             const query = document.getElementById('product-search').value.trim().toLowerCase();
             document.getElementById('clear-product-search').classList.toggle('hide', !query);
             if (window.products.length === 0) return list.innerHTML = `<div class="empty" style="grid-column:1/-1"><i class="fas fa-basket-shopping"></i><p lang="my">ပစ္စည်းများ မကြာမီ ရောက်ပါမည်။</p><p>No items yet. Check back soon.</p></div>`;
-            const products = window.products.filter(product => String(product.name || '').toLowerCase().includes(query));
-            if (products.length === 0) return list.innerHTML = `<div class="empty" style="grid-column:1/-1"><i class="fas fa-magnifying-glass"></i><p>Nothing matches “${escapeHtml(query)}”.</p><button type="button" class="btn btn-soft btn-sm" style="margin-top:.75rem" onclick="window.clearProductSearch()">Clear search</button></div>`;
+            const products = window.products.filter(product => String(product.name || '').toLowerCase().includes(query) && (window.activeCategory === 'all' || product.category === window.activeCategory));
+            if (products.length === 0) return list.innerHTML = `<div class="empty" style="grid-column:1/-1"><i class="fas fa-magnifying-glass"></i><p>${query ? `Nothing matches “${escapeHtml(query)}”${window.activeCategory !== 'all' ? ' in this category' : ''}.` : 'Nothing in this category right now.'}</p><button type="button" class="btn btn-soft btn-sm" style="margin-top:.75rem" onclick="window.clearProductSearch(); window.setCategory('all')">Show all items</button></div>`;
             list.innerHTML = products.map(p => {
                 const isOut = p.stockQty <= 0;
-                return `<article class="card product ${isOut ? 'is-out' : ''}"><button type="button" class="product-open" onclick="window.openProductDetail('${p.dbId}')" aria-label="View ${escapeHtml(p.name)}"><div class="product-img"><img src="${p.img}" alt="" loading="lazy"></div><div class="product-body"><h3 class="product-name">${escapeHtml(p.name)}</h3><div class="product-meta"><span class="price">₹${formatPrice(p.price)}</span><span class="stock">${isOut ? 'ကုန်သွားပြီ' : `${p.stockQty} left`}</span></div></div></button><div class="product-action">${window.cartControl(p, window.cart[p.dbId] || 0, false)}</div></article>`;
+                return `<article class="card product ${isOut ? 'is-out' : ''}" data-pid="${escapeHtml(p.dbId)}"><button type="button" class="product-open" onclick="window.openProductDetail('${p.dbId}')" aria-label="View ${escapeHtml(p.name)}"><div class="product-img"><img src="${p.img}" alt="" loading="lazy"></div><div class="product-body"><h3 class="product-name">${escapeHtml(p.name)}</h3><div class="product-meta"><span class="price">₹${formatPrice(p.price)}</span><span class="stock">${isOut ? 'ကုန်သွားပြီ' : `${p.stockQty} left`}</span></div></div></button><div class="product-action ${window.lastCartChange === p.dbId ? 'pop-in' : ''}">${window.cartControl(p, window.cart[p.dbId] || 0, false)}</div></article>`;
             }).join('');
         };
 
@@ -1318,12 +1477,24 @@
             const currentQty = window.cart[id] || 0;
             if (product && change > 0 && currentQty >= product.stockQty) return window.showToast(`လက်ကျန် ${product.stockQty} ခုသာ ရှိပါသည်။ Only ${product.stockQty} left.`, 'error');
             window.cart[id] = currentQty + change; if (window.cart[id] <= 0) delete window.cart[id];
+            // Only the control that changed between "Add" and the stepper gets the pop animation.
+            window.lastCartChange = (currentQty === 0 || !window.cart[id]) ? id : null;
+            const detailOpen = !document.getElementById('product-detail-modal').classList.contains('hide');
+            const checkoutOpen = !document.getElementById('checkout-modal').classList.contains('hide');
+            const sourceImg = change > 0 && !checkoutOpen
+                ? (detailOpen ? document.querySelector('#detail-main-content img') : document.querySelector(`#product-list [data-pid="${CSS.escape(id)}"] .product-img img`))
+                : null;
+            const sourceRect = sourceImg && !detailOpen ? sourceImg.getBoundingClientRect() : null;
             window.renderProducts();
+            window.lastCartChange = null;
+            if (sourceRect) window.flyToCart(sourceImg, sourceRect);
             const totalQty = Object.values(window.cart).reduce((a, b) => a + b, 0);
             if (totalQty === 0) window.closeCheckout();
             else if (!document.getElementById('checkout-modal').classList.contains('hide')) window.renderCheckout();
-            if (product && !document.getElementById('product-detail-modal').classList.contains('hide')) {
-                document.getElementById('detail-sticky-cart').innerHTML = window.cartControl(product, window.cart[id] || 0, true);
+            if (product && detailOpen) {
+                const sticky = document.getElementById('detail-sticky-cart');
+                sticky.innerHTML = window.cartControl(product, window.cart[id] || 0, true);
+                if (currentQty === 0 || !window.cart[id]) { sticky.classList.remove('pop-in'); void sticky.offsetWidth; sticky.classList.add('pop-in'); }
             }
         };
 
@@ -1560,6 +1731,7 @@
         };
 
         window.switchCustomerTab = (t) => {
+            window.currentCustomerTab = t;
             document.getElementById('tab-home').classList.toggle('hide', t !== 'home');
             document.getElementById('tab-orders').classList.toggle('hide', t !== 'orders');
             document.getElementById('nav-home').classList.toggle('is-active', t === 'home');
@@ -1568,6 +1740,7 @@
         };
         window.renderCustomerOrders = () => {
             const list = document.getElementById('customer-orders-list');
+            if (window.loaded && !window.loaded.orders) { list.innerHTML = '<div class="card order-card" aria-hidden="true"><div class="skeleton" style="height:20px;width:45%"></div><div class="skeleton" style="height:14px;width:80%;margin-top:14px"></div><div class="skeleton" style="height:24px;margin-top:16px"></div></div>'.repeat(2); return; }
             const myOrders = window.orders.filter(order => order.uid === window.currentUser.uid);
             if (myOrders.length === 0) return list.innerHTML = `<div class="empty"><i class="fas fa-receipt"></i><p lang="my">မှာယူထားခြင်း မရှိသေးပါ။</p><p>Your orders will show up here.</p><button type="button" class="btn btn-soft btn-sm" style="margin-top:.9rem" onclick="window.switchCustomerTab('home')">Browse the shop</button></div>`;
             const states = {
@@ -1576,6 +1749,19 @@
                 ontheway: { label: 'လာနေပြီ · On the way', badge: 'badge-info' },
                 delivered: { label: 'ရောက်ပြီ · Delivered', badge: 'badge-ok' },
                 rejected: { label: 'ပယ်ချခံရ · Rejected', badge: 'badge-danger' }
+            };
+            const STEPS = [['pending', 'မှာပြီး', 'Placed'], ['confirmed', 'အတည်ပြု', 'Confirmed'], ['ontheway', 'လာနေပြီ', 'On the way'], ['delivered', 'ရောက်ပြီ', 'Delivered']];
+            const stepIndex = status => STEPS.findIndex(st => st[0] === status);
+            const previous = window.orderStatusSeen || {};
+            const firstRender = !window.orderStatusSeen;
+            const advanced = [];
+            const tracker = order => {
+                const idx = stepIndex(order.status);
+                if (idx < 0) return '';
+                const before = previous[order.dbId] && !firstRender ? Math.max(0, stepIndex(previous[order.dbId])) : idx;
+                if (!firstRender && previous[order.dbId] && before < idx) advanced.push(order);
+                const pct = i => (i / (STEPS.length - 1)) * 100;
+                return `<div class="tracker" role="img" aria-label="Order status: ${STEPS[idx][2]}"><div class="tracker-line"><div class="tracker-fill" style="width:${pct(before)}%" data-target="${pct(idx)}"></div></div>${STEPS.map((st, i) => `<div class="tracker-step ${i <= idx ? 'done' : ''} ${i === idx ? 'current' : ''} ${idx === STEPS.length - 1 ? 'final' : ''}"><span class="tracker-dot">${i <= idx ? '<i class="fas fa-check"></i>' : ''}</span><span>${st[1]}<br><span style="font-weight:500;color:var(--muted)">${st[2]}</span></span></div>`).join('')}</div>`;
             };
             list.innerHTML = window.groupOrdersByDate(myOrders).map(group => `
                 <section class="order-group" aria-label="Orders from ${group.label}">
@@ -1586,10 +1772,20 @@
                 const placedTime = order.createdAt ? new Date(order.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : order.time;
                 const actions = `<div class="order-actions" style="grid-template-columns:${canInvoice ? '1fr 1fr' : '1fr'}"><button type="button" onclick="window.contactAdminWhatsApp('${order.dbId}')" class="btn btn-sm btn-ghost"><i class="fab fa-whatsapp" style="color:var(--ok)"></i>Message admin</button>${canInvoice ? `<button type="button" onclick="window.downloadInvoice('${order.dbId}')" class="btn btn-sm btn-ghost"><i class="fas fa-download"></i>Invoice</button>` : ''}</div>`;
                 const note = canInvoice ? '' : `<p class="order-note ${order.status === 'rejected' ? 'is-danger' : ''}">${order.status === 'rejected' ? 'This order was rejected. Message the admin if you have questions.' : 'The invoice will be ready once the admin confirms.'}</p>`;
-                return `<article class="card order-card"><div class="order-head"><span class="badge ${state.badge}">${state.label}</span><span class="price">₹${formatPrice(order.total)}</span></div><p class="order-items">${escapeHtml(order.items)}</p><div class="order-foot"><span>${escapeHtml(order.dbId)}</span><span>${placedTime ? `Placed ${placedTime}` : ''}</span></div>${actions}${note}</article>`;
+                const isNew = !firstRender && !previous[order.dbId];
+                return `<article class="card order-card ${isNew ? 'slide-in' : ''}"><div class="order-head"><span class="badge ${state.badge}">${state.label}</span><span class="price">₹${formatPrice(order.total)}</span></div><p class="order-items">${escapeHtml(order.items)}</p>${tracker(order)}<div class="order-foot" style="margin-top:.6rem"><span>${escapeHtml(order.dbId)}</span><span>${placedTime ? `Placed ${placedTime}` : ''}</span></div>${actions}${note}</article>`;
                     }).join('')}
                 </section>
             `).join('');
+            // Move each tracker from where it was to its new step.
+            // A short delay lets the browser paint the old position first, so the CSS transition runs.
+            setTimeout(() => list.querySelectorAll('.tracker-fill').forEach(fill => { fill.style.width = `${fill.dataset.target}%`; }), 40);
+            if (!firstRender) myOrders.forEach(order => { if (previous[order.dbId] && previous[order.dbId] !== 'rejected' && order.status === 'rejected') window.showToast(`Order ${order.dbId} was rejected. Message the admin if you have questions.`, 'error'); });
+            window.orderStatusSeen = Object.fromEntries(myOrders.map(order => [order.dbId, order.status]));
+            advanced.forEach(order => {
+                const messages = { confirmed: 'Your order was confirmed. အော်ဒါ အတည်ပြုပြီးပါပြီ။', ontheway: 'Your order is on the way! အော်ဒါ လာနေပါပြီ။', delivered: 'Your order was delivered. ရောက်ရှိပြီးပါပြီ။' };
+                if (messages[order.status]) window.showToast(messages[order.status], 'success');
+            });
         };
 
         window.switchAdminTab = (t) => {
@@ -1703,7 +1899,14 @@
             }
         };
         window.renderAdminOrders = () => {
+            if (window.loaded && !window.loaded.orders) {
+                document.getElementById('admin-pending-orders').innerHTML = '<div class="pending-grid">' + '<div class="card pending-card" aria-hidden="true"><div class="skeleton" style="height:18px;width:40%"></div><div class="skeleton" style="height:14px;width:75%;margin-top:14px"></div><div class="skeleton" style="height:44px;margin-top:18px;border-radius:12px"></div></div>'.repeat(2) + '</div>';
+                document.getElementById('admin-orders-table').innerHTML = '<tr aria-hidden="true"><td colspan="7"><div class="skeleton" style="height:16px"></div></td></tr>'.repeat(4);
+                return;
+            }
             const pendingOrders = window.orders.filter(order => order.status === 'pending');
+            const seenBefore = window.seenPendingOrders;
+            window.seenPendingOrders = new Set([...(seenBefore || []), ...pendingOrders.map(order => order.dbId)]);
             document.getElementById('pending-orders-count').innerText = `${pendingOrders.length} pending`;
             document.getElementById('admin-pending-orders').innerHTML = pendingOrders.length
                 ? window.groupOrdersByDate(pendingOrders).map(group => `
@@ -1711,7 +1914,8 @@
                         <h3 class="order-group-title">${group.label}</h3>
                         <div class="pending-grid">${group.orders.map(order => {
                             const busy = window.orderActionsInProgress.has(order.dbId);
-                            return `<article class="card pending-card"><div class="order-head"><div><p style="font-weight:700">${escapeHtml(order.user || 'Customer')}</p><p class="order-id">${escapeHtml(order.phone || '')}</p></div><span class="price">₹${formatPrice(order.total)}</span></div><p class="order-items">${escapeHtml(order.items || 'No item details')}</p><p style="font-size:.82rem;color:var(--muted);display:flex;gap:.45rem"><i class="fas fa-location-dot" style="margin-top:.2rem"></i><span>${escapeHtml(order.address || 'No delivery address')}</span></p><p class="order-id" style="margin-top:.4rem">${escapeHtml(order.dbId)}</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.85rem"><button type="button" ${busy ? 'disabled' : ''} onclick="window.confirmOrder('${order.dbId}')" class="btn btn-whatsapp"><i class="fas fa-check"></i>Confirm</button><button type="button" ${busy ? 'disabled' : ''} onclick="window.rejectOrder('${order.dbId}')" class="btn btn-danger-soft"><i class="fas fa-xmark"></i>Reject</button></div></article>`;
+                            const isNew = seenBefore && !seenBefore.has(order.dbId);
+                            return `<article class="card pending-card ${isNew ? 'is-new' : ''}"><div class="order-head"><div><p style="font-weight:700">${escapeHtml(order.user || 'Customer')}</p><p class="order-id">${escapeHtml(order.phone || '')}</p></div><span class="price">₹${formatPrice(order.total)}</span></div><p class="order-items">${escapeHtml(order.items || 'No item details')}</p><p style="font-size:.82rem;color:var(--muted);display:flex;gap:.45rem"><i class="fas fa-location-dot" style="margin-top:.2rem"></i><span>${escapeHtml(order.address || 'No delivery address')}</span></p><p class="order-id" style="margin-top:.4rem">${escapeHtml(order.dbId)}</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.85rem"><button type="button" ${busy ? 'disabled' : ''} onclick="window.confirmOrder('${order.dbId}')" class="btn btn-whatsapp"><i class="fas fa-check"></i>Confirm</button><button type="button" ${busy ? 'disabled' : ''} onclick="window.rejectOrder('${order.dbId}')" class="btn btn-danger-soft"><i class="fas fa-xmark"></i>Reject</button></div></article>`;
                         }).join('')}</div>
                     </section>
                 `).join('')
@@ -1793,12 +1997,12 @@
             const otherCost = expenses.filter(e => e.category !== 'stock').reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
             const cost = stockCost + otherCost;
             const profit = revenue - cost;
-            document.getElementById('fin-revenue').innerText = formatMoney(revenue);
+            window.animateNumber(document.getElementById('fin-revenue'), revenue, v => formatMoney(Math.round(v)), 650);
             document.getElementById('fin-revenue-sub').innerText = `${orders.length} order${orders.length === 1 ? '' : 's'}`;
-            document.getElementById('fin-cost').innerText = formatMoney(cost);
+            window.animateNumber(document.getElementById('fin-cost'), cost, v => formatMoney(Math.round(v)), 650);
             document.getElementById('fin-cost-sub').innerText = `Stock ${formatMoney(stockCost)}, other ${formatMoney(otherCost)}`;
             const profitEl = document.getElementById('fin-profit');
-            profitEl.innerText = (profit < 0 ? '−' : '') + formatMoney(Math.abs(profit));
+            window.animateNumber(profitEl, profit, v => (Math.round(v) < 0 ? '−' : '') + formatMoney(Math.abs(Math.round(v))), 650);
             profitEl.style.color = profit < 0 ? 'var(--danger)' : 'var(--ink)';
             document.getElementById('fin-profit-sub').innerText = revenue > 0
                 ? (profit < 0 ? 'Costs are higher than revenue' : `Margin ${Math.round((profit / revenue) * 100)}% of revenue`)
@@ -1864,8 +2068,9 @@
             buckets.forEach((b, i) => {
                 const cx = padL + slot * i + slot / 2;
                 // 2px gap between the pair of bars.
-                svg += `<path d="${barPath(cx - barW - 1, y(b.revenue), barW, plotH + padT - y(b.revenue))}" fill="var(--series-revenue)"></path>`;
-                svg += `<path d="${barPath(cx + 1, y(b.cost), barW, plotH + padT - y(b.cost))}" fill="var(--series-cost)"></path>`;
+                const delay = `animation-delay:${Math.min(i * 14, 420)}ms`;
+                svg += `<path class="bar" style="${delay}" d="${barPath(cx - barW - 1, y(b.revenue), barW, plotH + padT - y(b.revenue))}" fill="var(--series-revenue)"></path>`;
+                svg += `<path class="bar" style="${delay}" d="${barPath(cx + 1, y(b.cost), barW, plotH + padT - y(b.cost))}" fill="var(--series-cost)"></path>`;
                 if (i % labelEvery === 0) svg += `<text class="tick" x="${cx}" y="${height - 8}" text-anchor="middle">${escapeHtml(b.short)}</text>`;
                 svg += `<rect class="hit" data-i="${i}" x="${padL + slot * i}" y="${padT}" width="${slot}" height="${plotH}"></rect>`;
             });
@@ -2012,7 +2217,8 @@
             setTimeout(() => URL.revokeObjectURL(url), 1000);
             window.showToast(`Exported ${rows.length - 1} rows.`, 'success');
         };
-        window.addEventListener('resize', () => { clearTimeout(window.financeResizeTimer); window.financeResizeTimer = setTimeout(window.refreshFinanceIfOpen, 150); });
+        window.addEventListener('resize', () => { clearTimeout(window.financeResizeTimer); window.financeResizeTimer = setTimeout(() => { document.getElementById('finance-chart')?.classList.add('no-anim'); window.refreshFinanceIfOpen(); }, 150); });
+        document.addEventListener('change', e => { if (e.target.closest && e.target.closest('.fin-filters')) document.getElementById('finance-chart').classList.remove('no-anim'); });
 
         window.getOrderInventoryItems = (order) => {
             let items = Array.isArray(order.lineItems) ? order.lineItems : [];
@@ -2153,10 +2359,11 @@
         };
         window.renderAdminProducts = () => {
             const table = document.getElementById('admin-products-table');
+            if (window.loaded && !window.loaded.products) { table.innerHTML = '<tr aria-hidden="true"><td><div class="skeleton" style="width:44px;height:44px;border-radius:10px"></div></td><td colspan="4"><div class="skeleton" style="height:16px"></div></td></tr>'.repeat(4); return; }
             if (!window.products.length) { table.innerHTML = '<tr><td colspan="5"><div class="empty"><i class="fas fa-box-open"></i><p>No products yet. Use Add product to create the first one.</p></div></td></tr>'; return; }
             table.innerHTML = window.products.map(p => {
                 const out = Number(p.stockQty) <= 0;
-                return `<tr><td><img src="${p.img}" alt="" class="thumb" style="${out ? 'filter:grayscale(1);opacity:.5' : ''}"></td><td class="cell-name" style="font-weight:600">${escapeHtml(p.name)}</td><td class="num" style="font-weight:700">₹${formatPrice(p.price)}</td><td><div style="display:flex;align-items:center;gap:.5rem">${out ? '<span class="badge badge-danger">ကုန်သွားပြီ · Sold out</span>' : `<span class="badge badge-muted">${p.stockQty} ခု</span>`}<button type="button" onclick="window.openRestockModal('${p.dbId}')" class="btn btn-sm btn-soft"><i class="fas fa-plus"></i>Add stock</button></div></td><td class="num"><div style="display:inline-flex;gap:.35rem"><button type="button" onclick="window.openProductModal('${p.dbId}')" class="icon-btn" aria-label="Edit ${escapeHtml(p.name)}" title="Edit"><i class="fas fa-pen"></i></button><button type="button" onclick="window.deleteProduct('${p.dbId}')" class="icon-btn" style="color:var(--danger)" aria-label="Delete ${escapeHtml(p.name)}" title="Delete"><i class="fas fa-trash"></i></button></div></td></tr>`;
+                return `<tr><td><img src="${p.img}" alt="" class="thumb" style="${out ? 'filter:grayscale(1);opacity:.5' : ''}"></td><td class="cell-name"><p style="font-weight:600">${escapeHtml(p.name)}</p>${p.category ? `<p style="font-size:.75rem;color:var(--muted)">${escapeHtml(p.category)}</p>` : ''}</td><td class="num" style="font-weight:700">₹${formatPrice(p.price)}</td><td><div style="display:flex;align-items:center;gap:.5rem">${out ? '<span class="badge badge-danger">ကုန်သွားပြီ · Sold out</span>' : `<span class="badge badge-muted">${p.stockQty} ခု</span>`}<button type="button" onclick="window.openRestockModal('${p.dbId}')" class="btn btn-sm btn-soft"><i class="fas fa-plus"></i>Add stock</button></div></td><td class="num"><div style="display:inline-flex;gap:.35rem"><button type="button" onclick="window.openProductModal('${p.dbId}')" class="icon-btn" aria-label="Edit ${escapeHtml(p.name)}" title="Edit"><i class="fas fa-pen"></i></button><button type="button" onclick="window.deleteProduct('${p.dbId}')" class="icon-btn" style="color:var(--danger)" aria-label="Delete ${escapeHtml(p.name)}" title="Delete"><i class="fas fa-trash"></i></button></div></td></tr>`;
             }).join('');
         };
         window.openRestockModal = (id) => { const p = window.products.find(x => x.dbId === id); if (!p) return; document.getElementById('restock-prod-id').value = id; document.getElementById('restock-prod-name').innerText = `${p.name}: လက်ရှိ ${p.stockQty} ခု (${p.stockQty} in stock)`; document.getElementById('restock-qty').value = ''; document.getElementById('restock-cost').value = ''; document.getElementById('restock-modal').classList.remove('hide'); };
@@ -2192,6 +2399,8 @@
             document.getElementById('save-product-button').innerText = 'Save product';
             document.getElementById('product-save-feedback').innerText = '';
             document.getElementById('prod-img-file').value = '';
+            const categories = [...new Set(window.products.map(p => p.category).filter(Boolean))].sort();
+            document.getElementById('category-options').innerHTML = categories.map(c => `<option value="${escapeHtml(c)}"></option>`).join('');
             if (id !== null) {
                 const product = window.products.find(item => item.dbId === id);
                 if (!product) return window.showToast('Product not found. Please refresh and try again.', 'error');
@@ -2200,6 +2409,7 @@
                 document.getElementById('prod-name').value = product.name;
                 document.getElementById('prod-price').value = product.price;
                 document.getElementById('prod-stock').value = product.stockQty;
+                document.getElementById('prod-category').value = product.category || '';
                 document.getElementById('prod-img-base64').value = product.img;
                 document.getElementById('img-preview').src = product.img;
                 document.getElementById('img-preview-container').classList.remove('hide');
@@ -2209,6 +2419,7 @@
                 document.getElementById('prod-name').value = '';
                 document.getElementById('prod-price').value = '';
                 document.getElementById('prod-stock').value = '';
+                document.getElementById('prod-category').value = window.activeCategory !== 'all' ? window.activeCategory : '';
                 document.getElementById('prod-img-base64').value = '';
                 document.getElementById('img-preview').src = '';
                 document.getElementById('img-preview-container').classList.add('hide');
@@ -2245,6 +2456,8 @@
             }
 
             const product = { name, price, stockQty, img: image, dbId: id || 'PROD-' + Date.now() };
+            const category = document.getElementById('prod-category').value.trim().slice(0, 40);
+            if (category) product.category = category;
 
             button.disabled = true;
             button.innerText = 'Saving...';
