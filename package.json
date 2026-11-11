@@ -1,0 +1,9 @@
+{
+  "name": "zay-india-app",
+  "private": true,
+  "description": "Zay India web app. Static site plus one Vercel function (api/admin-account.js).",
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "firebase-admin": "^13.10.0"
+  }
+}

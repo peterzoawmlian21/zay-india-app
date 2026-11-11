@@ -23,7 +23,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js"></script>
 
     <!-- EmailJS SDK -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
@@ -708,12 +707,13 @@
                             <div><h2 id="reset-password-title" class="modal-title">Temporary password</h2><p id="reset-password-user" class="modal-sub"></p></div>
                             <button type="button" onclick="window.closeResetPasswordModal()" aria-label="Close" class="icon-btn"><i class="fas fa-xmark"></i></button>
                         </div>
-                        <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.75rem">Send this to the customer on WhatsApp. It won't be shown again, and they'll be asked to set a new password after logging in.</p>
+                        <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.75rem">Send this to the customer on WhatsApp. It won't be shown again. When they log in with it, the app makes them choose their own new password.</p>
                         <div style="display:flex;gap:0.5rem">
                             <input id="reset-password-value" type="text" readonly class="field" style="font-family:ui-monospace,Consolas,monospace;font-weight:700;letter-spacing:0.04em">
                             <button type="button" onclick="window.copyResetPassword()" class="btn btn-dark"><i class="fas fa-copy"></i>Copy</button>
                         </div>
-                        <button type="button" onclick="window.closeResetPasswordModal()" class="btn btn-ghost btn-block" style="margin-top:1rem">Done</button>
+                        <button type="button" onclick="window.sendResetOnWhatsApp()" class="btn btn-whatsapp btn-block" style="margin-top:1rem"><i class="fab fa-whatsapp"></i>Send on WhatsApp</button>
+                        <button type="button" onclick="window.closeResetPasswordModal()" class="btn btn-ghost btn-block" style="margin-top:.5rem">Done</button>
                     </div>
                 </div>
             </div>
@@ -927,8 +927,25 @@
         if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
         const db = firebase.database();
         const auth = firebase.auth();
-        // Must match the region in functions/index.js
-        const cloudFunctions = firebase.app().functions('asia-southeast1');
+        // Admin-only account actions run on our Vercel function (api/admin-account.js), because a web page
+        // can't change another user's password. The admin's Firebase ID token proves who is asking.
+        const callAdminAccount = async (action, uid) => {
+            const user = auth.currentUser;
+            if (!user) throw new Error('Sign in again and retry.');
+            let response;
+            try {
+                response = await fetch('/api/admin-account', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await user.getIdToken()}` },
+                    body: JSON.stringify({ action, uid })
+                });
+            } catch {
+                throw new Error('No connection to the server. Check your internet and try again.');
+            }
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.error || (response.status === 404 ? 'The password-reset server is not deployed yet.' : `Server error (${response.status}).`));
+            return data;
+        };
 
         // ---------- Install as an app (PWA) ----------
         window.deferredInstallPrompt = null;
@@ -2061,8 +2078,8 @@
             }
             if (!window.confirm(`Permanently delete ${user.name || user.phone}'s account? Existing order history will be retained.`)) return;
             try {
-                // Deleting a Firebase Auth login requires the Admin SDK, so this runs as a Cloud Function.
-                await cloudFunctions.httpsCallable('deleteCustomerAccount')({ uid });
+                // Deleting a Firebase Auth login requires the Admin SDK, so this runs on the server.
+                await callAdminAccount('delete', uid);
                 window.showToast('Inactive account deleted. Order history was retained.', 'success');
             } catch (error) {
                 console.error('Inactive account deletion failed', error);
@@ -2075,22 +2092,33 @@
             if (!user) return window.showToast('Customer account not found.', 'error');
             if (!window.confirm(`Generate a new temporary password for ${user.name || user.phone}? Their current password will stop working.`)) return;
             try {
-                // Only the server (Admin SDK) can set another user's password. The function checks
-                // that the caller is in /admins, generates the temporary password, and returns it once.
-                const result = await cloudFunctions.httpsCallable('resetCustomerPassword')({ uid });
+                // Only the server (Admin SDK) can set another user's password. It checks that the
+                // caller is in /admins, generates the temporary password, and returns it once.
+                const result = { data: await callAdminAccount('reset-password', uid) };
+                window.resetTarget = { phone: normalizePhone(user.phone), name: user.name || '' };
                 document.getElementById('reset-password-user').innerText = `${user.name || 'Customer'} (${user.phone})`;
                 document.getElementById('reset-password-value').value = result.data.temporaryPassword;
                 document.getElementById('reset-password-modal').classList.remove('hide');
             } catch (error) {
                 console.error('Customer password reset failed', error);
-                const notDeployed = ['functions/not-found', 'functions/internal', 'functions/unavailable'].includes(error.code);
-                const message = notDeployed
-                    ? 'Password reset is not switched on yet: its server function has not been deployed (needs the Firebase Blaze plan).'
-                    : error.code === 'functions/failed-precondition' ? error.message : `Could not reset password: ${error.message || 'Please try again.'}`;
-                window.showToast(message, 'error');
+                window.showToast(`Could not reset password: ${error.message || 'Please try again.'}`, 'error');
             }
         };
+        // Opens a WhatsApp chat with the customer, pre-filled with the temporary password and what to do next.
+        window.sendResetOnWhatsApp = () => {
+            const password = document.getElementById('reset-password-value').value;
+            const target = window.resetTarget || {};
+            if (!password || !target.phone) return window.showToast('No temporary password to send.', 'error');
+            const message = [
+                `Zay India: ${target.name ? target.name + ', ' : ''}your temporary password is: ${password}`,
+                'Log in with your phone number and this password. The app will then ask you to choose your own new password.',
+                `ယာယီစကားဝှက်: ${password}`,
+                'ဖုန်းနံပါတ်နှင့် ဤစကားဝှက်ဖြင့် ဝင်ပြီး စကားဝှက်အသစ် ပြောင်းပါ။'
+            ].join('\n');
+            window.open(`https://wa.me/${target.phone}?${new URLSearchParams({ text: message })}`, '_blank', 'noopener,noreferrer');
+        };
         window.closeResetPasswordModal = () => {
+            window.resetTarget = null;
             document.getElementById('reset-password-value').value = '';
             document.getElementById('reset-password-user').innerText = '';
             document.getElementById('reset-password-modal').classList.add('hide');
