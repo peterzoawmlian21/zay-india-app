@@ -377,6 +377,16 @@
         /* ---------- Categories + banner ---------- */
         .chips { display: flex; gap: .5rem; overflow-x: auto; margin: .75rem -1rem 0; padding: 0 1rem 2px; scrollbar-width: none; }
         .chips::-webkit-scrollbar { display: none; }
+        /* Mouse/trackpad computers can't swipe, and the wheel scrolls vertically: wrap the
+           categories onto extra lines there so every one is visible without sideways scrolling. */
+        @media (hover: hover) and (pointer: fine) {
+            .chips { flex-wrap: wrap; overflow-x: visible; margin-inline: 0; padding-inline: 0; }
+            /* Sideways card rows get a thin visible scrollbar (plus wheel and drag, see enableSideScroll). */
+            .side-scroll { scrollbar-width: thin; scrollbar-color: #D0D5DD transparent; cursor: grab; }
+            .side-scroll::-webkit-scrollbar { display: block; height: 6px; }
+            .side-scroll::-webkit-scrollbar-thumb { background: #D0D5DD; border-radius: 999px; }
+            .side-scroll.is-dragging { cursor: grabbing; user-select: none; }
+        }
         .chip { flex-shrink: 0; min-height: 36px; padding: .4rem .95rem; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-weight: 600; font-size: .85rem; cursor: pointer; transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease; }
         .chip:hover { border-color: #CBD2DC; }
         .chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
@@ -573,7 +583,7 @@
                     <div id="detail-main-content"></div>
                     <div style="padding:1.25rem 1rem 0;border-top:1px solid var(--line);margin-top:1rem">
                         <h3 class="section-title" style="font-size:1rem">အခြားပစ္စည်းများ <span class="en-inline">More items</span></h3>
-                        <div id="detail-other-products" class="no-scrollbar" style="display:flex;gap:0.65rem;overflow-x:auto;padding:0.75rem 0 0.25rem"></div>
+                        <div id="detail-other-products" class="side-scroll" style="display:flex;gap:0.65rem;overflow-x:auto;padding:0.75rem 0 0.25rem"></div>
                     </div>
                 </div>
                 <div id="detail-sticky-cart" class="sheet-foot pb-safe"></div>
@@ -951,6 +961,36 @@
             window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(error => console.error('Service worker registration failed', error)));
         }
         document.addEventListener('DOMContentLoaded', window.updateInstallCard);
+
+        // Sideways rows on a computer: the mouse wheel scrolls them sideways, and they can be
+        // dragged with the mouse. A drag doesn't count as a click on the card under the pointer.
+        window.enableSideScroll = el => {
+            if (!el || el.dataset.sideScroll) return;
+            el.dataset.sideScroll = '1';
+            el.addEventListener('wheel', event => {
+                const canScroll = el.scrollWidth > el.clientWidth;
+                if (!canScroll || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return; // trackpads already scroll sideways
+                const before = el.scrollLeft;
+                el.scrollLeft += event.deltaY;
+                if (el.scrollLeft !== before) event.preventDefault(); // at either end, let the page scroll normally
+            }, { passive: false });
+            let startX = 0, startLeft = 0, dragged = false, pointerId = null;
+            el.addEventListener('pointerdown', event => {
+                if (event.pointerType !== 'mouse' || event.button !== 0) return;
+                pointerId = event.pointerId; startX = event.clientX; startLeft = el.scrollLeft; dragged = false;
+            });
+            el.addEventListener('pointermove', event => {
+                if (pointerId !== event.pointerId) return;
+                const dx = event.clientX - startX;
+                if (!dragged && Math.abs(dx) > 5) { dragged = true; el.classList.add('is-dragging'); try { el.setPointerCapture(pointerId); } catch { /* keep dragging without capture */ } }
+                if (dragged) el.scrollLeft = startLeft - dx;
+            });
+            const end = () => { pointerId = null; el.classList.remove('is-dragging'); setTimeout(() => { dragged = false; }, 0); };
+            el.addEventListener('pointerup', end);
+            el.addEventListener('pointercancel', end);
+            el.addEventListener('click', event => { if (dragged) { event.preventDefault(); event.stopPropagation(); } }, true);
+        };
+        document.addEventListener('DOMContentLoaded', () => window.enableSideScroll(document.getElementById('detail-other-products')));
 
         // Customers log in with their phone number. Firebase Auth needs an email, so each
         // phone maps to a synthetic, non-deliverable address. database.rules.json relies on
