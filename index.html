@@ -816,10 +816,10 @@
                 address: document.getElementById('reg-address').value.trim(),
                 role: 'customer'
             };
-            const users = [...window.users, newUser];
-            try {
-                await dbAPI.saveUsers(users);
-                window.users = users;
+           try {
+                const newUserRef = db.ref('users').push();
+                newUser.dbId = newUserRef.key;
+                await newUserRef.set(newUser);
                 window.showToast("အကောင့်အသစ် ဖွင့်ပြီးပါပြီ။ Login ဝင်နိုင်ပါပြီ။", "success");
                 window.toggleAuth('login');
                 e.target.reset();
@@ -836,10 +836,8 @@
             const user = window.users[userIndex];
             if (user) {
                 const loggedInUser = { ...user, lastLoginAt: new Date().toISOString() };
-                const users = window.users.map((account, index) => index === userIndex ? loggedInUser : account);
                 try {
-                    await dbAPI.saveUsers(users);
-                    window.users = users;
+                    await db.ref(`users/${user.dbId}`).update({ lastLoginAt: loggedInUser.lastLoginAt });
                 } catch (error) {
                     console.error('Could not record customer login time', error);
                     window.showToast('Login succeeded, but activity could not be recorded. This account will not be eligible for inactive-account cleanup yet.', 'error');
@@ -902,15 +900,18 @@
                 return;
             }
 
-            const updatedUser = { ...window.users[userIndex], name, phone, email, address };
-            const users = window.users.map((user, index) => index === userIndex ? updatedUser : user);
-            const orders = window.orders.map(order => order.phone === originalPhone ? { ...order, phone } : order);
+           const updatedUser = { ...window.users[userIndex], name, phone, email, address };
             saveButton.disabled = true;
             feedback.innerText = '';
             try {
-                await dbAPI.saveCustomerProfile(users, orders);
-                window.users = users;
-                window.orders = orders;
+                const updates = {};
+                updates[`users/${updatedUser.dbId}`] = updatedUser;
+                window.orders.forEach(order => {
+                    if (order.phone === originalPhone) {
+                        updates[`orders/${order.dbId}/phone`] = phone;
+                    }
+                });
+                await db.ref().update(updates);
                 window.currentUser = updatedUser;
                 localStorage.setItem('zay_currentUser', JSON.stringify(updatedUser));
                 document.getElementById('customer-header-address').innerText = address;
@@ -1124,8 +1125,8 @@
             window.orderSubmissionInProgress = true;
             confirmButton.disabled = true;
             document.getElementById('confirm-order-label').innerText = 'Saving order...';
-            try {
-                await dbAPI.saveOrders(orders);
+          try {
+                await db.ref(`orders/${newOrder.dbId}`).set(newOrder);
             } catch (error) {
                 if (whatsappWindow) whatsappWindow.close();
                 console.error('Order could not be saved.', error);
@@ -1536,10 +1537,8 @@
             const id = document.getElementById('restock-prod-id').value;
             const addQty = Number.parseInt(document.getElementById('restock-qty').value, 10);
             if (!Number.isInteger(addQty) || addQty <= 0) return window.showToast('Enter a positive whole-number quantity.', 'error');
-            try {
-                const savedProducts = await dbAPI.adjustProductStock([{ dbId: id, delta: addQty }]);
-                window.products = normalizeProductCollection(savedProducts);
-                window.renderAdminProducts();
+         try {
+                await db.ref(`products/${id}/stockQty`).set(firebase.database.ServerValue.increment(addQty));
                 window.showToast(`${addQty} ခု ထပ်ပေါင်းထည့်ပြီးပါပြီ`, 'success');
                 document.getElementById('restock-modal').classList.add('hide');
             } catch (error) {
@@ -1609,10 +1608,9 @@
 
             button.disabled = true;
             button.innerText = 'Saving...';
-            try {
-                const savedProducts = await dbAPI.saveProduct(id, product);
-                window.products = normalizeProductCollection(savedProducts);
-                window.renderAdminProducts();
+           try {
+                if (!id) product.dbId = 'PROD-' + Date.now();
+                await db.ref(`products/${product.dbId}`).set(product);
                 document.getElementById('product-modal').classList.add('hide');
                 window.showToast('Product saved successfully.', 'success');
             } catch (error) {
@@ -1629,10 +1627,8 @@
             const product = window.products.find(item => item.dbId === id);
             if (!product) return window.showToast('Product not found. Please refresh and try again.', 'error');
             if (!window.confirm(`Permanently delete "${product.name}"? This cannot be undone.`)) return;
-            try {
-                const savedProducts = await dbAPI.deleteProduct(id);
-                window.products = normalizeProductCollection(savedProducts);
-                window.renderAdminProducts();
+           try {
+                await db.ref(`products/${id}`).remove();
                 window.showToast('Product permanently deleted.', 'success');
             } catch (error) {
                 console.error('Product deletion failed', error);
