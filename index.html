@@ -1121,7 +1121,7 @@
                 time: new Date().toLocaleTimeString(),
                 createdAt: new Date().toISOString()
             };
-            const orders = [newOrder, ...window.orders];
+            //const orders = [newOrder, ...window.orders];
             window.orderSubmissionInProgress = true;
             confirmButton.disabled = true;
             document.getElementById('confirm-order-label').innerText = 'Saving order...';
@@ -1138,7 +1138,7 @@
                 document.getElementById('confirm-order-label').innerText = 'Confirm items & contact admin';
             }
 
-            window.orders = orders;
+            //window.orders = orders;
             window.cart = {};
             document.getElementById('cart-count').innerText = '0';
             document.getElementById('cart-count').classList.add('hide');
