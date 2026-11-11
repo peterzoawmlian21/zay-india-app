@@ -24,9 +24,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
-    <!-- QR codes for UPI payment (pinned version + integrity hash) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js" integrity="sha384-mZT2gIty7ZDdOGkxfP6joZcYdMW1Jvj9dRlfpTmaJAKKXTqzygtB22k7FLe+KZC1" crossorigin="anonymous"></script>
-
     <!-- EmailJS SDK -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
@@ -349,18 +346,6 @@
         .fin-columns > section { min-width: 0; }
         @media (min-width: 1100px) { .fin-columns { grid-template-columns: 1fr 1fr; } }
 
-        /* ---------- UPI payment ---------- */
-        .pay-amount { font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; text-align: center; margin: .25rem 0 1rem; font-variant-numeric: tabular-nums; }
-        .pay-steps { display: flex; flex-direction: column; gap: 1rem; counter-reset: step; }
-        .pay-steps > li { position: relative; padding-left: 2.2rem; }
-        .pay-steps > li::before { counter-increment: step; content: counter(step); position: absolute; left: 0; top: 0; width: 1.6rem; height: 1.6rem; border-radius: 999px; background: var(--brand-soft); color: var(--brand-ink); font-weight: 800; font-size: .85rem; display: flex; align-items: center; justify-content: center; }
-        .pay-step-title { font-weight: 700; margin-bottom: .5rem; }
-        .pay-qr { width: 196px; height: 196px; margin: .25rem auto .5rem; padding: 8px; border: 1px solid var(--line); border-radius: var(--r-ctl); background: #fff; }
-        .pay-qr svg { width: 100%; height: 100%; display: block; }
-        .pay-upi-row { display: flex; align-items: center; gap: .5rem; padding: .55rem .7rem; border-radius: var(--r-ctl); background: var(--well); font-size: .88rem; }
-        .pay-upi-row code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-weight: 700; font-family: ui-monospace, Consolas, monospace; }
-        .pay-row { margin-top: .6rem; padding: .6rem .75rem; border-radius: var(--r-ctl); font-size: .82rem; display: flex; align-items: center; gap: .5rem; }
-
         /* ---------- Notifications ---------- */
         .bell { position: relative; }
         .bell-badge { position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--danger); color: #fff; font-size: .68rem; font-weight: 800; display: flex; align-items: center; justify-content: center; border: 2px solid var(--surface); }
@@ -618,38 +603,6 @@
             </div>
         </div>
 
-        <!-- Pay with UPI -->
-        <div id="pay-modal" class="overlay z-[75] hide" onclick="if(event.target===this)window.closePayment()">
-            <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pay-title" style="max-width:400px">
-                <div class="modal-head" style="margin-bottom:.25rem">
-                    <div><h2 id="pay-title" class="modal-title">UPI ဖြင့်ပေးချေရန် <span class="en-inline">Pay with UPI</span></h2><p class="modal-sub" id="pay-order-label"></p></div>
-                    <button type="button" onclick="window.closePayment()" aria-label="Close" class="icon-btn"><i class="fas fa-xmark"></i></button>
-                </div>
-                <p class="pay-amount">₹<span id="pay-amount">0</span></p>
-                <div id="pay-not-setup" class="note note-muted hide" style="margin-bottom:1rem"><i class="fas fa-circle-info" style="margin-top:.15rem"></i><span>Online payment isn't set up yet. Your order is saved; the admin will contact you about payment.</span></div>
-                <ol class="pay-steps" id="pay-steps">
-                    <li>
-                        <p class="pay-step-title">ငွေပေးချေပါ <span class="en-inline">Pay this amount</span></p>
-                        <a id="pay-open-app" href="#" class="btn btn-primary btn-block" style="margin-bottom:.6rem"><i class="fas fa-mobile-screen-button"></i>Open UPI app</a>
-                        <p id="pay-qr-hint" style="font-size:.8rem;color:var(--muted);text-align:center">Or scan with any UPI app:</p>
-                        <div id="pay-qr" class="pay-qr" role="img" aria-label="UPI payment QR code"></div>
-                        <div class="pay-upi-row"><span style="color:var(--muted)">UPI ID</span><code id="pay-upi-id"></code><button type="button" onclick="window.copyUpiId()" class="btn btn-sm btn-ghost" style="min-height:32px">Copy</button></div>
-                        <p style="font-size:.75rem;color:var(--muted);margin-top:.4rem">Paying manually? Send exactly the amount above and write <strong id="pay-note"></strong> in the note.</p>
-                    </li>
-                    <li>
-                        <p class="pay-step-title">UTR နံပါတ်ထည့်ပါ <span class="en-inline">Enter the UTR</span></p>
-                        <form onsubmit="window.submitUtr(event)" style="display:flex;flex-direction:column;gap:.6rem">
-                            <label for="pay-utr" class="sr-only">12-digit UTR number</label>
-                            <input id="pay-utr" class="field" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="12-digit UTR / transaction ID" required>
-                            <p class="field-hint" style="margin:0">Find it in your UPI app's payment details (also called UPI Ref No.).</p>
-                            <p id="pay-error" class="error-text" role="status" aria-live="polite"></p>
-                            <button type="submit" id="pay-submit" class="btn btn-dark btn-block">I've paid</button>
-                        </form>
-                    </li>
-                </ol>
-            </div>
-        </div>
-
         <!-- Cart / checkout -->
         <div id="checkout-modal" class="overlay overlay-sheet z-50 hide opacity-0" onclick="if(event.target===this)window.closeCheckout()">
             <div class="sheet translate-y-full" id="checkout-sheet" role="dialog" aria-modal="true" aria-labelledby="checkout-title" style="max-height:90vh;max-height:90dvh">
@@ -660,12 +613,12 @@
                 </div>
                 <div id="checkout-content" class="no-scrollbar" style="flex:1;min-height:0;overflow-y:auto;padding:0.5rem 1rem 1rem">
                     <div id="checkout-items-list"></div>
-                    <div class="note note-muted" style="margin-top:0.75rem"><i class="fas fa-indian-rupee-sign" style="margin-top:0.15rem"></i><span>After you place the order, you'll pay with UPI (GPay, PhonePe, Paytm…). The admin confirms it once the payment arrives.</span></div>
+                    <div class="note note-ok" style="margin-top:0.75rem"><i class="fab fa-whatsapp" style="margin-top:0.15rem"></i><span>Placing the order saves it and opens WhatsApp with the details. Arrange payment with the admin there.</span></div>
                 </div>
                 <div class="sheet-foot pb-safe">
                     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.75rem"><span style="font-weight:600;color:var(--muted)">စုစုပေါင်း <span class="en-inline">Total</span></span><span class="price" style="font-size:1.35rem">₹<span id="checkout-total">0</span></span></div>
-                    <button id="btn-confirm-order" onclick="window.placeOrder()" class="btn btn-primary btn-block" style="min-height:54px">
-                        <i class="fas fa-check" style="font-size:1.1rem"></i><span id="confirm-order-label">မှာယူမည် · Place order</span>
+                    <button id="btn-confirm-order" onclick="window.placeOrder()" class="btn btn-whatsapp btn-block" style="min-height:54px">
+                        <i class="fab fa-whatsapp" style="font-size:1.25rem"></i><span id="confirm-order-label">Place order on WhatsApp</span>
                     </button>
                 </div>
             </div>
@@ -767,15 +720,6 @@
                     </div>
                 </div>
 
-                <section class="card" style="padding:1rem 1.1rem;margin-bottom:1rem" aria-labelledby="upi-settings-heading">
-                    <div class="admin-section-head" style="margin-bottom:.5rem"><h2 id="upi-settings-heading">UPI ငွေလက်ခံမှု <span class="en-inline">UPI payment details</span></h2><span id="upi-status" class="badge badge-muted">Not set</span></div>
-                    <p style="font-size:.82rem;color:var(--muted);margin-bottom:.6rem">Customers pay to this UPI ID after placing an order. Check each payment's UTR and amount in your bank app, then mark the order paid.</p>
-                    <div style="display:flex;gap:.6rem;flex-wrap:wrap">
-                        <label for="upi-id-input" class="sr-only">UPI ID</label><input id="upi-id-input" class="field" style="flex:2;min-width:200px" placeholder="yourname@okaxis" autocomplete="off" spellcheck="false">
-                        <label for="upi-name-input" class="sr-only">Name shown to payers</label><input id="upi-name-input" class="field" style="flex:1;min-width:160px" maxlength="60" placeholder="Name on the account">
-                        <button type="button" id="upi-save" onclick="window.savePaymentSettings()" class="btn btn-dark">Save</button>
-                    </div>
-                </section>
                 <div id="finance-reset-notice" class="note note-muted hide" style="align-items:center;margin-bottom:1rem;flex-wrap:wrap">
                     <i class="fas fa-rotate-left"></i>
                     <span style="flex:1;min-width:200px" id="finance-reset-text"></span>
@@ -1150,7 +1094,6 @@
                     window.renderNotifications();
                 });
             }
-            listen(db.ref('settings/payment'), (s) => { window.paymentSettings = s.val() || {}; window.renderPaymentSettings(); });
             listen(db.ref('settings/banner'), (s) => { window.shopBanner = s.val() || { text: '', enabled: false }; window.renderBanner(); });
             listen(db.ref('products'), (s) => { window.products = normalizeCollection(s.val(), 'products'); if(!loadedFlags.products) { loadedFlags.products = true; checkInitialLoad(); } if (window.currentUser?.role === 'admin') window.renderAdminProducts(); if (window.currentUser?.role === 'customer') window.renderProducts(); });
             let prevLen = -1;
@@ -1704,120 +1647,6 @@
                 setTimeout(() => card.classList.remove('is-focus'), 1800);
             }, 320);
         };
-        // ---------- UPI payment ----------
-        const UPI_ID_PATTERN = /^[a-zA-Z0-9._-]{2,256}@[a-zA-Z]{2,64}$/;
-        const upiLink = order => {
-            const settings = window.paymentSettings || {};
-            const params = new URLSearchParams({ pa: settings.upiId, pn: settings.payeeName || 'Zay India', am: Number(order.total).toFixed(2), cu: 'INR', tn: `Zay India ${order.dbId}` });
-            return `upi://pay?${params.toString().replace(/\+/g, '%20')}`;
-        };
-        window.renderPaymentSettings = () => {
-            const settings = window.paymentSettings || {};
-            const idInput = document.getElementById('upi-id-input');
-            if (idInput && document.activeElement !== idInput && document.activeElement?.id !== 'upi-name-input') {
-                idInput.value = settings.upiId || '';
-                document.getElementById('upi-name-input').value = settings.payeeName || '';
-            }
-            const status = document.getElementById('upi-status');
-            if (status) { status.className = `badge ${settings.upiId ? 'badge-ok' : 'badge-pending'}`; status.innerText = settings.upiId ? 'Active' : 'Not set'; }
-        };
-        window.savePaymentSettings = async () => {
-            if (window.currentUser?.role !== 'admin') return window.showToast('Admin access required.', 'error');
-            const upiId = document.getElementById('upi-id-input').value.trim();
-            const payeeName = document.getElementById('upi-name-input').value.trim();
-            if (!UPI_ID_PATTERN.test(upiId)) return window.showToast('Enter a valid UPI ID, like yourname@okaxis.', 'error');
-            const button = document.getElementById('upi-save');
-            button.disabled = true;
-            try {
-                await db.ref('settings/payment').set(payeeName ? { upiId, payeeName } : { upiId });
-                window.showToast('UPI details saved. Customers will pay to this UPI ID.', 'success');
-            } catch (error) {
-                console.error('Saving UPI details failed', error);
-                window.showToast(`Could not save UPI details: ${error.message || 'Please try again.'}`, 'error');
-            } finally { button.disabled = false; }
-        };
-        window.openPayment = (orderId, orderOverride) => {
-            const order = orderOverride || window.orders.find(o => o.dbId === orderId);
-            if (!order) return window.showToast('Order not found. Refresh and try again.', 'error');
-            window.payingOrderId = order.dbId;
-            const settings = window.paymentSettings || {};
-            const ready = UPI_ID_PATTERN.test(settings.upiId || '');
-            document.getElementById('pay-order-label').innerText = `Order ${order.dbId}`;
-            document.getElementById('pay-amount').innerText = formatPrice(order.total);
-            document.getElementById('pay-not-setup').classList.toggle('hide', ready);
-            document.getElementById('pay-steps').classList.toggle('hide', !ready);
-            document.getElementById('pay-error').innerText = '';
-            document.getElementById('pay-utr').value = order.utr || '';
-            if (ready) {
-                const link = upiLink(order);
-                const onPhone = window.matchMedia('(pointer: coarse)').matches;
-                const openApp = document.getElementById('pay-open-app');
-                openApp.href = link;
-                openApp.classList.toggle('hide', !onPhone);
-                document.getElementById('pay-qr-hint').innerText = onPhone ? 'Or scan from another phone:' : 'Scan with any UPI app on your phone:';
-                document.getElementById('pay-upi-id').innerText = settings.upiId;
-                document.getElementById('pay-note').innerText = order.dbId;
-                try {
-                    const qr = qrcode(0, 'M');
-                    qr.addData(link);
-                    qr.make();
-                    document.getElementById('pay-qr').innerHTML = qr.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
-                } catch (error) {
-                    console.error('QR code failed', error);
-                    document.getElementById('pay-qr').innerHTML = '<p style="font-size:.8rem;color:var(--muted);text-align:center;padding-top:40%">QR unavailable. Use the UPI ID below.</p>';
-                }
-            }
-            document.getElementById('pay-modal').classList.remove('hide');
-        };
-        window.closePayment = () => { document.getElementById('pay-modal').classList.add('hide'); window.payingOrderId = null; };
-        window.copyUpiId = async () => {
-            const upiId = (window.paymentSettings || {}).upiId;
-            try { await navigator.clipboard.writeText(upiId); window.showToast('UPI ID copied.', 'success'); }
-            catch { window.showToast('Could not copy. Select the UPI ID and copy it manually.', 'error'); }
-        };
-        window.submitUtr = async event => {
-            event.preventDefault();
-            const errorEl = document.getElementById('pay-error');
-            const utr = document.getElementById('pay-utr').value.replace(/\s/g, '');
-            if (!/^\d{12}$/.test(utr)) { errorEl.innerText = 'The UTR is 12 digits. Copy it from the payment details in your UPI app.'; return; }
-            const orderId = window.payingOrderId;
-            if (!orderId || !window.currentUser?.uid) { errorEl.innerText = 'Sign in again and retry.'; return; }
-            const button = document.getElementById('pay-submit');
-            button.disabled = true; errorEl.innerText = '';
-            try {
-                await db.ref().update({
-                    [`orders/${orderId}/utr`]: utr,
-                    [`orders/${orderId}/paymentStatus`]: 'submitted',
-                    [`orders/${orderId}/utrSubmittedAt`]: new Date().toISOString()
-                });
-                window.closePayment();
-                window.showToast('Thanks! The admin will check your payment and confirm the order.', 'success');
-            } catch (error) {
-                console.error('Submitting UTR failed', error);
-                errorEl.innerText = /permission/i.test(error.message || '') ? 'This order can no longer be changed (already marked paid or rejected).' : `Could not save: ${error.message || 'Please try again.'}`;
-            } finally { button.disabled = false; }
-        };
-        // Admin: payment badge + actions for an order. Old orders (before UPI) have no payment info.
-        const paymentInfo = order => {
-            if (!order.paymentStatus) return { badge: '', actions: '' };
-            const duplicate = order.utr && window.orders.some(o => o.dbId !== order.dbId && o.utr === order.utr);
-            if (order.paymentStatus === 'verified') return { badge: `<span class="badge badge-ok"><i class="fas fa-check"></i>Paid${order.utr ? ` · ${escapeHtml(order.utr)}` : ''}</span>`, actions: `<button type="button" class="btn btn-sm btn-ghost" onclick="window.setPaymentStatus('${order.dbId}', '${order.utr ? 'submitted' : 'unpaid'}')">Undo paid</button>` };
-            if (order.paymentStatus === 'submitted') return { badge: `<span class="badge ${duplicate ? 'badge-danger' : 'badge-info'}" title="Check this UTR and the amount in your bank app">UTR ${escapeHtml(order.utr || '?')}${duplicate ? ' · used on another order!' : ''}</span>`, actions: `<button type="button" class="btn btn-sm btn-soft" onclick="window.setPaymentStatus('${order.dbId}', 'verified')"><i class="fas fa-check"></i>Mark paid</button>` };
-            return { badge: '<span class="badge badge-pending">Not paid yet</span>', actions: `<button type="button" class="btn btn-sm btn-ghost" onclick="window.setPaymentStatus('${order.dbId}', 'verified')">Mark paid (cash/other)</button>` };
-        };
-        window.setPaymentStatus = async (id, paymentStatus) => {
-            if (window.currentUser?.role !== 'admin') return window.showToast('Admin access required.', 'error');
-            const order = window.orders.find(o => o.dbId === id);
-            if (!order) return;
-            if (paymentStatus === 'verified' && !window.confirm(`Mark ${order.dbId} as paid?\n\nOnly do this after you've seen ₹${formatPrice(order.total)} arrive in your bank/UPI app${order.utr ? ` with UTR ${order.utr}` : ''}.`)) return;
-            try {
-                await dbAPI.updateOrder(id, { paymentStatus });
-                window.showToast(paymentStatus === 'verified' ? 'Marked as paid.' : 'Payment mark removed.', 'success');
-            } catch (error) {
-                console.error('Payment status update failed', error);
-                window.showToast(`Could not update payment: ${error.message || 'Please try again.'}`, 'error');
-            }
-        };
         const productSkeleton = () => `<div class="card product" aria-hidden="true"><div class="product-img skeleton"></div><div class="product-body"><div class="skeleton" style="height:13px;width:85%"></div><div class="skeleton" style="height:13px;width:55%;margin-top:8px"></div></div><div class="product-action"><div class="skeleton" style="height:38px;border-radius:10px"></div></div></div>`;
         window.renderProducts = () => {
             const list = document.getElementById('product-list');
@@ -1914,7 +1743,7 @@
                 `Items: ${order.items}`,
                 `Total: ₹${Number(order.total).toFixed(2)}`,
                 `DELIVERY ADDRESS (please deliver to): ${order.address}`,
-                order.paymentStatus === 'submitted' ? `I have paid by UPI (UTR ${order.utr}).` : 'I have a question about this order.'
+                'Please confirm this order and let me know how to arrange payment.'
             ].join('\n');
             return `https://wa.me/${ADMIN_WHATSAPP_NUMBER}?${new URLSearchParams({ text: message })}`;
         };
@@ -1931,14 +1760,20 @@
             if (Object.keys(window.cart).length === 0) return window.showToast('Your cart is empty. Please add items and try again.', 'error');
             if (!window.currentUser.address?.trim()) return window.showToast('Add your delivery address in My profile before placing an order.', 'error');
 
-            await window.finalizeOrder();
+            const whatsappWindow = window.open('about:blank', '_blank');
+            if (whatsappWindow) whatsappWindow.opener = null;
+            await window.finalizeOrder(whatsappWindow);
         };
 
-        window.finalizeOrder = async () => {
+        window.finalizeOrder = async whatsappWindow => {
             const confirmButton = document.getElementById('btn-confirm-order');
-            if (window.orderSubmissionInProgress) return;
+            if (window.orderSubmissionInProgress) {
+                if (whatsappWindow) whatsappWindow.close();
+                return;
+            }
             const entries = Object.entries(window.cart);
             if (entries.length === 0) {
+                if (whatsappWindow) whatsappWindow.close();
                 return window.showToast('Your cart is empty. Please add items and try again.', 'error');
             }
 
@@ -1947,6 +1782,7 @@
             for (const [id, quantity] of entries) {
                 const product = window.products.find(item => item.dbId === id);
                 if (!product || !Number.isInteger(quantity) || quantity <= 0 || quantity > Number(product.stockQty)) {
+                    if (whatsappWindow) whatsappWindow.close();
                     window.renderCheckout();
                     return window.showToast('An item is unavailable or no longer has enough stock. Review your cart and try again.', 'error');
                 }
@@ -1967,8 +1803,6 @@
                 total,
                 status: 'pending',
                 inventoryDeducted: false,
-                paymentMethod: 'upi',
-                paymentStatus: 'unpaid',
                 time: new Date().toLocaleTimeString(),
                 createdAt: new Date().toISOString()
             };
@@ -1979,13 +1813,14 @@
           try {
                 await db.ref(`orders/${newOrder.dbId}`).set(newOrder);
             } catch (error) {
+                if (whatsappWindow) whatsappWindow.close();
                 console.error('Order could not be saved.', error);
                 window.showToast(`Could not save your order: ${error.message || 'Please check your connection and try again.'}`, 'error');
                 return;
             } finally {
                 window.orderSubmissionInProgress = false;
                 confirmButton.disabled = false;
-                document.getElementById('confirm-order-label').innerText = 'မှာယူမည် · Place order';
+                document.getElementById('confirm-order-label').innerText = 'Place order on WhatsApp';
             }
 
             //window.orders = orders;
@@ -1997,8 +1832,17 @@
             window.switchCustomerTab('orders');
             window.renderCustomerOrders();
 
-            window.showToast('Order placed. Now pay with UPI. အော်ဒါတင်ပြီးပါပြီ။', 'success');
-            window.openPayment(newOrder.dbId, newOrder);
+            if (whatsappWindow && !whatsappWindow.closed) {
+                try {
+                    whatsappWindow.location.href = window.buildAdminWhatsAppUrl(newOrder);
+                    window.showToast('Order saved. WhatsApp is ready with your order details; review and send the message to the admin.', 'success');
+                } catch (error) {
+                    console.error('Could not open the saved order in WhatsApp.', error);
+                    window.showToast('Order saved, but WhatsApp did not open. Use Contact admin on WhatsApp in your order history.', 'error');
+                }
+            } else {
+                window.showToast('Order saved, but WhatsApp did not open. Use Contact admin on WhatsApp in your order history.', 'error');
+            }
 
             try {
                 const emailResult = emailjs.send("service_bk5t2rh", "template_ted9gb3", {
@@ -2115,13 +1959,7 @@
                 const actions = `<div class="order-actions" style="grid-template-columns:${canInvoice ? '1fr 1fr' : '1fr'}"><button type="button" onclick="window.contactAdminWhatsApp('${order.dbId}')" class="btn btn-sm btn-ghost"><i class="fab fa-whatsapp" style="color:var(--ok)"></i>Message admin</button>${canInvoice ? `<button type="button" onclick="window.downloadInvoice('${order.dbId}')" class="btn btn-sm btn-ghost"><i class="fas fa-download"></i>Invoice</button>` : ''}</div>`;
                 const note = canInvoice ? '' : `<p class="order-note ${order.status === 'rejected' ? 'is-danger' : ''}">${order.status === 'rejected' ? 'This order was rejected. Message the admin if you have questions.' : 'The invoice will be ready once the admin confirms.'}</p>`;
                 const isNew = !firstRender && !previous[order.dbId];
-                let payment = '';
-                if (order.paymentStatus && order.status !== 'rejected') {
-                    if (order.paymentStatus === 'verified') payment = '<div class="pay-row" style="background:var(--ok-soft);color:var(--ok-ink)"><i class="fas fa-circle-check"></i><span>ငွေရရှိပြီး · Paid</span></div>';
-                    else if (order.paymentStatus === 'submitted') payment = `<div class="pay-row" style="background:var(--info-soft);color:var(--info-ink)"><i class="fas fa-hourglass-half"></i><span style="flex:1">Payment sent (UTR ${escapeHtml(order.utr || '')}). The admin is checking it.</span><button type="button" class="btn-link" style="font-size:.8rem" onclick="window.openPayment('${order.dbId}')">Edit</button></div>`;
-                    else payment = `<button type="button" class="btn btn-primary btn-block btn-sm" style="margin-top:.75rem" onclick="window.openPayment('${order.dbId}')"><i class="fas fa-indian-rupee-sign"></i>Pay ₹${formatPrice(order.total)} with UPI</button>`;
-                }
-                return `<article class="card order-card ${isNew ? 'slide-in' : ''}" data-oid="${escapeHtml(order.dbId)}"><div class="order-head"><span class="badge ${state.badge}">${state.label}</span><span class="price">₹${formatPrice(order.total)}</span></div><p class="order-items">${escapeHtml(order.items)}</p>${tracker(order)}<div class="order-foot" style="margin-top:.6rem"><span>${escapeHtml(order.dbId)}</span><span>${placedTime ? `Placed ${placedTime}` : ''}</span></div>${payment}${actions}${note}</article>`;
+                return `<article class="card order-card ${isNew ? 'slide-in' : ''}" data-oid="${escapeHtml(order.dbId)}"><div class="order-head"><span class="badge ${state.badge}">${state.label}</span><span class="price">₹${formatPrice(order.total)}</span></div><p class="order-items">${escapeHtml(order.items)}</p>${tracker(order)}<div class="order-foot" style="margin-top:.6rem"><span>${escapeHtml(order.dbId)}</span><span>${placedTime ? `Placed ${placedTime}` : ''}</span></div>${actions}${note}</article>`;
                     }).join('')}
                 </section>
             `).join('');
@@ -2223,7 +2061,7 @@
                         <div class="pending-grid">${group.orders.map(order => {
                             const busy = window.orderActionsInProgress.has(order.dbId);
                             const isNew = seenBefore && !seenBefore.has(order.dbId);
-                            return `<article class="card pending-card ${isNew ? 'is-new' : ''}"><div class="order-head"><div><p style="font-weight:700">${escapeHtml(order.user || 'Customer')}</p><p class="order-id">${escapeHtml(order.phone || '')}</p></div><span class="price">₹${formatPrice(order.total)}</span></div><p class="order-items">${escapeHtml(order.items || 'No item details')}</p><p style="font-size:.82rem;color:var(--muted);display:flex;gap:.45rem"><i class="fas fa-location-dot" style="margin-top:.2rem"></i><span>${escapeHtml(order.address || 'No delivery address')}</span></p><p class="order-id" style="margin-top:.4rem">${escapeHtml(order.dbId)}</p>${(() => { const pay = paymentInfo(order); return pay.badge ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap;margin-top:.6rem">${pay.badge}${pay.actions}</div>` : ''; })()}<div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.85rem"><button type="button" ${busy ? 'disabled' : ''} onclick="window.confirmOrder('${order.dbId}')" class="btn btn-whatsapp"><i class="fas fa-check"></i>Confirm</button><button type="button" ${busy ? 'disabled' : ''} onclick="window.rejectOrder('${order.dbId}')" class="btn btn-danger-soft"><i class="fas fa-xmark"></i>Reject</button></div></article>`;
+                            return `<article class="card pending-card ${isNew ? 'is-new' : ''}"><div class="order-head"><div><p style="font-weight:700">${escapeHtml(order.user || 'Customer')}</p><p class="order-id">${escapeHtml(order.phone || '')}</p></div><span class="price">₹${formatPrice(order.total)}</span></div><p class="order-items">${escapeHtml(order.items || 'No item details')}</p><p style="font-size:.82rem;color:var(--muted);display:flex;gap:.45rem"><i class="fas fa-location-dot" style="margin-top:.2rem"></i><span>${escapeHtml(order.address || 'No delivery address')}</span></p><p class="order-id" style="margin-top:.4rem">${escapeHtml(order.dbId)}</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.85rem"><button type="button" ${busy ? 'disabled' : ''} onclick="window.confirmOrder('${order.dbId}')" class="btn btn-whatsapp"><i class="fas fa-check"></i>Confirm</button><button type="button" ${busy ? 'disabled' : ''} onclick="window.rejectOrder('${order.dbId}')" class="btn btn-danger-soft"><i class="fas fa-xmark"></i>Reject</button></div></article>`;
                         }).join('')}</div>
                     </section>
                 `).join('')
@@ -2236,7 +2074,7 @@
             const orderActions = order.status === 'confirmed' || order.status === 'ontheway'
                 ? `<select aria-label="Order status" onchange="window.updateStatus('${order.dbId}', this.value)" class="status-select"><option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>Confirmed</option><option value="ontheway" ${order.status === 'ontheway' ? 'selected' : ''}>On the way</option><option value="delivered">Delivered</option></select>`
                 : (statusBadge[order.status] || statusBadge.pending);
-            return `<tr><td style="font-size:.8rem;color:var(--muted);white-space:nowrap">${escapeHtml(order.dbId)}</td><td><p style="font-weight:600">${escapeHtml(order.user)}</p><p style="font-size:.78rem;color:var(--muted)">${escapeHtml(order.phone)}</p></td><td style="min-width:160px">${escapeHtml(order.items)}</td><td class="num" style="font-weight:700">₹${formatPrice(order.total)}</td><td style="min-width:150px;max-width:220px;font-size:.82rem;color:var(--muted)">${escapeHtml(order.address)}</td><td>${orderActions}${(() => { const pay = order.status === 'rejected' ? { badge: '' } : paymentInfo(order); return pay.badge ? `<div style="display:flex;flex-direction:column;align-items:flex-start;gap:.35rem;margin-top:.45rem">${pay.badge}${pay.actions}</div>` : ''; })()}</td><td>${invoiceAvailable ? `<button type="button" onclick="window.downloadInvoice('${order.dbId}')" class="btn btn-sm btn-ghost"><i class="fas fa-download"></i>Invoice</button>` : '<span style="font-size:.78rem;color:var(--faint)">Not yet</span>'}</td></tr>`;
+            return `<tr><td style="font-size:.8rem;color:var(--muted);white-space:nowrap">${escapeHtml(order.dbId)}</td><td><p style="font-weight:600">${escapeHtml(order.user)}</p><p style="font-size:.78rem;color:var(--muted)">${escapeHtml(order.phone)}</p></td><td style="min-width:160px">${escapeHtml(order.items)}</td><td class="num" style="font-weight:700">₹${formatPrice(order.total)}</td><td style="min-width:150px;max-width:220px;font-size:.82rem;color:var(--muted)">${escapeHtml(order.address)}</td><td>${orderActions}</td><td>${invoiceAvailable ? `<button type="button" onclick="window.downloadInvoice('${order.dbId}')" class="btn btn-sm btn-ghost"><i class="fas fa-download"></i>Invoice</button>` : '<span style="font-size:.78rem;color:var(--faint)">Not yet</span>'}</td></tr>`;
                 }).join('')}
             `).join('') : '<tr><td colspan="7"><div class="empty"><i class="fas fa-receipt"></i><p>No orders yet.</p></div></td></tr>';
         };
