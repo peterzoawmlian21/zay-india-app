@@ -64,7 +64,7 @@
                 <i class="fas fa-store"></i>
             </div>
             <h1 class="text-3xl font-black text-slate-800 tracking-tight">Zay India</h1>
-            <p class="text-sm font-bold text-orange-600 mt-2 bg-orange-100 inline-block px-3 py-1 rounded-full">အိန္ဒိယရောက် မြန်မာများအတွက်</p>
+            <p class="text-sm font-bold text-orange-600 mt-2 bg-orange-100 inline-block px-3 py-1 rounded-full">Graphic Era univeristy မြန်မာများအတွက်</p>
         </div>
         
         <!-- Login -->
@@ -122,7 +122,10 @@
         <div class="bg-orange-600 text-white pt-6 pb-4 px-5 rounded-b-3xl shadow-md z-10 sticky top-0">
             <div class="flex justify-between items-center mb-3">
                 <h2 class="font-black text-xl tracking-tight">Zay India 🇲🇲</h2>
-                <button onclick="window.logout()" title="Logout" class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition text-sm"><i class="fas fa-sign-out-alt"></i></button>
+                <div class="flex gap-2">
+                    <button type="button" onclick="window.openCustomerProfile()" class="rounded-full bg-white/20 px-3 py-2 text-xs font-bold hover:bg-white/30"><i class="fas fa-user-edit mr-1"></i>My profile</button>
+                    <button onclick="window.logout()" title="Logout" class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition text-sm"><i class="fas fa-sign-out-alt"></i></button>
+                </div>
             </div>
             <div class="bg-white/10 rounded-2xl p-3 flex items-center">
                 <div class="w-8 h-8 bg-white text-orange-600 rounded-full flex items-center justify-center mr-3"><i class="fas fa-map-marker-alt"></i></div>
@@ -135,12 +138,36 @@
 
         <div id="tab-home" class="flex-1 p-5 overflow-y-auto">
             <h3 class="font-black text-lg text-slate-800 mb-1">ရရှိနိုင်သော ပစ္စည်းများ</h3>
+            <label for="product-search" class="sr-only">Search products</label>
+            <div class="relative mt-3">
+                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input id="product-search" type="search" autocomplete="off" oninput="window.renderProducts()" placeholder="Search items..." class="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-12 text-sm font-semibold shadow-sm outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100">
+                <button id="clear-product-search" type="button" onclick="window.clearProductSearch()" aria-label="Clear product search" class="hide absolute right-3 top-1/2 -translate-y-1/2 rounded-lg px-2 py-1 text-slate-400 hover:bg-slate-100"><i class="fas fa-times"></i></button>
+            </div>
             <div id="product-list" class="grid grid-cols-2 gap-4 mt-4"></div>
         </div>
 
         <div id="tab-orders" class="flex-1 p-5 overflow-y-auto hide bg-slate-50">
             <h3 class="font-black text-lg text-slate-800 mb-1">မှာယူထားသော မှတ်တမ်း</h3>
             <div id="customer-orders-list" class="space-y-4 mt-4"></div>
+        </div>
+
+        <div id="customer-profile-modal" class="fixed inset-0 z-[70] hide items-center justify-center bg-slate-900/50 p-4">
+            <section role="dialog" aria-modal="true" aria-labelledby="customer-profile-title" class="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl">
+                <div class="mb-5 flex items-center justify-between">
+                    <div><h2 id="customer-profile-title" class="text-xl font-black text-slate-900">My profile</h2><p class="mt-1 text-xs text-slate-500">Update your contact and delivery details.</p></div>
+                    <button type="button" onclick="window.closeCustomerProfile()" aria-label="Close profile" class="h-9 w-9 rounded-full bg-slate-100 text-slate-600"><i class="fas fa-times"></i></button>
+                </div>
+                <form id="customer-profile-form" onsubmit="window.saveCustomerProfile(event)" class="space-y-4">
+                    <div><label for="profile-name" class="mb-1 block text-xs font-bold text-slate-600">Name</label><input id="profile-name" type="text" autocomplete="name" required class="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 font-medium focus:border-orange-500 focus:outline-none"></div>
+                    <div><label for="profile-phone" class="mb-1 block text-xs font-bold text-slate-600">Phone number (used to log in)</label><input id="profile-phone" type="tel" autocomplete="tel" required class="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 font-medium focus:border-orange-500 focus:outline-none"></div>
+                    <div><label for="profile-email" class="mb-1 block text-xs font-bold text-slate-600">Email address</label><input id="profile-email" type="email" autocomplete="email" required class="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 font-medium focus:border-orange-500 focus:outline-none"></div>
+                    <div><label for="profile-address" class="mb-1 block text-xs font-bold text-slate-600">Delivery address</label><textarea id="profile-address" rows="3" autocomplete="street-address" required class="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 font-medium focus:border-orange-500 focus:outline-none"></textarea></div>
+                    <p class="rounded-xl bg-slate-50 p-3 text-xs text-slate-500">Password is not changed here. Updating your phone number also updates the login number linked to your existing order history.</p>
+                    <p id="customer-profile-feedback" class="text-sm font-semibold text-red-600" role="status" aria-live="polite"></p>
+                    <div class="flex gap-3"><button type="button" onclick="window.closeCustomerProfile()" class="flex-1 rounded-xl bg-slate-100 py-3 font-bold text-slate-600">Cancel</button><button id="save-customer-profile-button" type="submit" class="flex-1 rounded-xl bg-orange-600 py-3 font-bold text-white disabled:opacity-50">Save changes</button></div>
+                </form>
+            </section>
         </div>
 
         <!-- Product Detail Modal -->
@@ -160,41 +187,34 @@
 
         <!-- Checkout Modal -->
         <div id="checkout-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex flex-col justify-end hide opacity-0 transition-opacity duration-300">
-            <div class="bg-white w-full max-w-[480px] mx-auto rounded-t-3xl p-6 pb-8 transform translate-y-full transition-transform duration-300" id="checkout-sheet">
-                <div class="flex justify-between items-center mb-5">
-                    <div><h2 class="text-xl font-black text-slate-800">ငွေပေးချေရန်</h2></div>
+            <div class="bg-white w-full max-w-[480px] mx-auto rounded-t-3xl px-5 pt-5 pb-safe h-[92vh] max-h-[92dvh] flex flex-col overflow-hidden transform translate-y-full transition-transform duration-300" id="checkout-sheet">
+                <div class="flex justify-between items-center mb-4 shrink-0">
+                    <div><h2 class="text-xl font-black text-slate-800">သင့်ခြင်းတောင်း <span class="text-sm font-bold text-slate-400">(Your Cart)</span></h2><p class="text-xs text-slate-500 mt-1">Review your items before contacting the admin</p></div>
                     <button onclick="window.closeCheckout()" class="w-8 h-8 bg-slate-100 rounded-full text-slate-500"><i class="fas fa-times"></i></button>
                 </div>
-                <div class="bg-slate-50 rounded-2xl p-4 mb-5 border border-slate-100">
-                    <div id="checkout-items-list" class="space-y-2 mb-3 text-sm font-semibold text-slate-700 border-b border-slate-200 pb-3"></div>
-                    <div class="flex justify-between items-center"><span class="font-bold text-slate-600">Total</span><span class="font-black text-xl text-orange-600">₹<span id="checkout-total">0</span></span></div>
+                <div id="checkout-content" class="flex-1 min-h-0 overflow-y-auto no-scrollbar">
+                    <div class="bg-slate-50 rounded-2xl p-4 mb-4 border border-slate-100">
+                        <div id="checkout-items-list" class="space-y-3 text-sm font-semibold text-slate-700"></div>
+                    </div>
+                    <p class="mb-4 rounded-2xl border border-green-200 bg-green-50 p-4 text-sm font-semibold text-green-800"><i class="fab fa-whatsapp mr-2"></i>Confirm your items to save the order and open WhatsApp with the order details. You can discuss payment directly with the admin.</p>
                 </div>
-                <div class="grid grid-cols-2 gap-3 mb-6">
-                    <button id="btn-pay-upi" onclick="window.selectPayment('UPI')" class="border-2 border-blue-500 bg-blue-50 text-blue-700 font-bold py-3 rounded-2xl transition"><i class="fab fa-google-pay mr-1 text-lg"></i> GPay / UPI</button>
-                    <button id="btn-pay-cod" onclick="window.selectPayment('COD')" class="border border-slate-200 text-slate-500 font-bold py-3 rounded-2xl transition flex flex-col items-center leading-tight"><span><i class="fas fa-hand-holding-usd mr-1"></i> COD</span><span class="text-[9px] font-normal mt-0.5">ပစ္စည်းရောက်ငွေချေ</span></button>
-                </div>
-                <div id="upi-payment-followup" class="hide mb-4">
-                    <label for="upi-transaction-id" class="block text-xs font-bold text-slate-600 mb-2">After payment, enter the UPI transaction reference (UTR). Payment will be verified manually.</label>
-                    <input id="upi-transaction-id" type="text" autocomplete="off" placeholder="UPI transaction reference / UTR" class="w-full bg-white p-3 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 font-medium text-sm">
-                    <button type="button" onclick="window.contactAdminWhatsApp()" class="mt-3 w-full bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 transition">
-                        <i class="fab fa-whatsapp mr-2"></i>Send payment screenshot to admin
+                <div class="shrink-0 border-t border-slate-100 bg-white pt-3">
+                    <div class="flex justify-between items-center mb-3"><span class="font-bold text-slate-600">Total</span><span class="font-black text-xl text-orange-600">₹<span id="checkout-total">0</span></span></div>
+                    <button id="btn-confirm-order" onclick="window.placeOrder()" class="w-full bg-green-600 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center">
+                        <i class="fab fa-whatsapp mr-2 text-xl"></i><span id="confirm-order-label">Confirm items & contact admin</span>
                     </button>
-                    <p class="text-[11px] text-slate-500 mt-2">WhatsApp will open with your order details. Attach your payment screenshot in the chat before sending.</p>
                 </div>
-                <p class="text-xs text-slate-500 mb-4">If your bank reports a payment limit, try another bank/UPI account or choose COD. UPI payments are not confirmed automatically.</p>
-                <button id="btn-confirm-order" onclick="window.placeOrder()" class="w-full bg-slate-900 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all flex flex-col items-center">
-                    <span id="confirm-order-label">အတည်ပြုမည်</span><span id="confirm-order-subtitle" class="text-[10px] font-normal">Confirm Order</span>
-                </button>
             </div>
         </div>
 
         <!-- Bottom Nav -->
         <div class="fixed bottom-0 w-full max-w-[480px] bg-white border-t border-slate-100 flex justify-around p-2 pb-safe shadow-[0_-10px_40px_rgba(0,0,0,0.03)] z-40 rounded-t-3xl">
             <button onclick="window.switchCustomerTab('home')" id="nav-home" class="flex flex-col items-center p-2 text-orange-600 w-1/3"><i class="fas fa-store text-xl mb-1"></i><span class="text-[10px] font-bold">ဆိုင်ခန်း (Shop)</span></button>
-            <button onclick="window.openCheckout()" class="flex flex-col items-center w-1/3 relative -mt-6">
+            <button id="nav-cart" aria-label="Open shopping cart" onclick="window.openCheckout()" class="flex flex-col items-center w-1/3 relative -mt-6">
                 <div class="w-14 h-14 bg-slate-900 text-white rounded-full flex items-center justify-center shadow-lg border-4 border-white"><i class="fas fa-shopping-bag text-xl"></i>
                     <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white hide">0</span>
                 </div>
+                <span class="text-[10px] font-bold text-slate-500 mt-1">Cart</span>
             </button>
             <button onclick="window.switchCustomerTab('orders')" id="nav-orders" class="flex flex-col items-center p-2 text-slate-400 w-1/3"><i class="fas fa-receipt text-xl mb-1"></i><span class="text-[10px] font-bold">မှတ်တမ်း (Orders)</span></button>
         </div>
@@ -217,10 +237,17 @@
         <div class="flex-1 p-6 overflow-y-auto h-screen">
             <div id="admin-tab-orders" class="block">
                 <div class="flex justify-between items-center mb-6"><h1 class="text-2xl font-black text-slate-900">အော်ဒါစီမံခန့်ခွဲမှု</h1></div>
+                <section class="mb-6" aria-labelledby="pending-orders-heading">
+                    <div class="mb-3 flex items-center justify-between">
+                        <h2 id="pending-orders-heading" class="text-lg font-black text-slate-900">Pending orders — confirm or reject</h2>
+                        <span id="pending-orders-count" class="rounded-full bg-orange-100 px-3 py-1 text-xs font-black text-orange-700">0 pending</span>
+                    </div>
+                    <div id="admin-pending-orders" class="grid grid-cols-1 gap-4 xl:grid-cols-2"></div>
+                </section>
                 <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden overflow-x-auto">
                     <table class="min-w-full text-left text-sm whitespace-nowrap">
                         <thead class="bg-slate-50 border-b border-slate-200">
-                            <tr><th class="px-6 py-4 font-bold text-slate-500">ID</th><th class="px-6 py-4 font-bold text-slate-500">Customer</th><th class="px-6 py-4 font-bold text-slate-500">Items</th><th class="px-6 py-4 font-bold text-slate-500">Total</th><th class="px-6 py-4 font-bold text-slate-500">Payment</th><th class="px-6 py-4 font-bold text-slate-500">Address</th><th class="px-6 py-4 font-bold text-slate-500">Decision / Status</th><th class="px-6 py-4 font-bold text-slate-500">Invoice</th></tr>
+                            <tr><th class="px-6 py-4 font-bold text-slate-500">ID</th><th class="px-6 py-4 font-bold text-slate-500">Customer</th><th class="px-6 py-4 font-bold text-slate-500">Items</th><th class="px-6 py-4 font-bold text-slate-500">Total</th><th class="px-6 py-4 font-bold text-slate-500">Address</th><th class="px-6 py-4 font-bold text-slate-500">Order actions</th><th class="px-6 py-4 font-bold text-slate-500">Invoice</th></tr>
                         </thead>
                         <tbody id="admin-orders-table" class="divide-y divide-slate-100"></tbody>
                     </table>
@@ -357,10 +384,10 @@
         const db = firebase.database();
 
         window.users = []; window.products = []; window.orders = [];
-        window.currentUser = null; window.cart = {}; window.selectedPayment = 'UPI';
-        window.upiPaymentLaunched = false;
+        window.currentUser = null; window.cart = {};
         window.productImageProcessing = false;
         window.orderActionsInProgress = new Set();
+        window.orderSubmissionInProgress = false;
 
         // Toast 
         window.showToast = function(msg, type='info') {
@@ -420,8 +447,45 @@
             initDatabase(); 
         };
 
-        const dbAPI = { saveUsers: (u) => db.ref('users').set(u), saveProducts: (p) => db.ref('products').set(p), saveOrders: (o) => db.ref('orders').set(o), saveInventoryAndOrders: (products, orders) => db.ref().update({ products, orders }) };
+        const dbAPI = { saveUsers: (u) => db.ref('users').set(u), saveProducts: (p) => db.ref('products').set(p), saveOrders: (o) => db.ref('orders').set(o), saveInventoryAndOrders: (products, orders) => db.ref().update({ products, orders }), saveCustomerProfile: (users, orders) => db.ref().update({ users, orders }) };
         const ADMIN_WHATSAPP_NUMBER = '916909235738';
+
+        window.groupOrdersByDate = orders => {
+            const groups = new Map();
+            const getOrderDate = order => {
+                const rawDate = order.createdAt || order.timestamp || order.date;
+                if (!rawDate) return null;
+                const date = new Date(rawDate);
+                return Number.isFinite(date.getTime()) ? date : null;
+            };
+            orders.forEach(order => {
+                const date = getOrderDate(order);
+                const key = date
+                    ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+                    : 'unknown';
+                if (!groups.has(key)) {
+                    groups.set(key, {
+                        key,
+                        date,
+                        orders: []
+                    });
+                }
+                groups.get(key).orders.push(order);
+            });
+            return [...groups.values()]
+                .sort((a, b) => {
+                    if (!a.date) return 1;
+                    if (!b.date) return -1;
+                    return b.date - a.date;
+                })
+                .map(group => ({
+                    ...group,
+                    label: group.date
+                        ? new Intl.DateTimeFormat(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }).format(group.date)
+                        : 'Date unavailable (older order)',
+                    orders: group.orders.sort((a, b) => (getOrderDate(b)?.getTime() || 0) - (getOrderDate(a)?.getTime() || 0))
+                }));
+        };
 
         window.toggleAuth = (v) => { document.getElementById('login-form').classList.toggle('hide', v!=='login'); document.getElementById('register-form').classList.toggle('hide', v!=='register'); };
         
@@ -476,6 +540,79 @@
             } else { window.showToast("ဖုန်းနံပါတ် (သို့) စကားဝှက် မှားယွင်းနေပါသည်", "error"); }
         };
 
+        window.openCustomerProfile = () => {
+            if (!window.currentUser || window.currentUser.role !== 'customer') return window.showToast('Sign in as a customer to edit your profile.', 'error');
+            document.getElementById('profile-name').value = window.currentUser.name || '';
+            document.getElementById('profile-phone').value = window.currentUser.phone || '';
+            document.getElementById('profile-email').value = window.currentUser.email || '';
+            document.getElementById('profile-address').value = window.currentUser.address || '';
+            document.getElementById('customer-profile-feedback').innerText = '';
+            document.getElementById('customer-profile-modal').classList.remove('hide');
+            document.getElementById('customer-profile-modal').classList.add('flex');
+        };
+        window.closeCustomerProfile = () => {
+            document.getElementById('customer-profile-modal').classList.add('hide');
+            document.getElementById('customer-profile-modal').classList.remove('flex');
+        };
+        window.saveCustomerProfile = async event => {
+            event.preventDefault();
+            const feedback = document.getElementById('customer-profile-feedback');
+            const saveButton = document.getElementById('save-customer-profile-button');
+            if (!window.currentUser || window.currentUser.role !== 'customer') {
+                feedback.innerText = 'Sign in as a customer to edit your profile.';
+                return;
+            }
+            const originalPhone = window.currentUser.phone;
+            const userIndex = window.users.findIndex(user => user.role === 'customer' && user.phone === originalPhone);
+            if (userIndex < 0) {
+                feedback.innerText = 'Your account could not be found. Sign in again and retry.';
+                return;
+            }
+
+            const name = document.getElementById('profile-name').value.trim();
+            const phone = document.getElementById('profile-phone').value.trim();
+            const email = document.getElementById('profile-email').value.trim().toLowerCase();
+            const address = document.getElementById('profile-address').value.trim();
+            if (!name || !phone || !email || !address) {
+                feedback.innerText = 'Complete all profile fields before saving.';
+                return;
+            }
+            if (phone.toLowerCase() === 'admin') {
+                feedback.innerText = 'This phone number cannot be used.';
+                return;
+            }
+            if (window.users.some((user, index) => index !== userIndex && user.role === 'customer' && user.phone === phone)) {
+                feedback.innerText = 'This phone number is already used by another account.';
+                return;
+            }
+            if (window.users.some((user, index) => index !== userIndex && user.email && user.email.toLowerCase() === email)) {
+                feedback.innerText = 'This email address is already used by another account.';
+                return;
+            }
+
+            const updatedUser = { ...window.users[userIndex], name, phone, email, address };
+            const users = window.users.map((user, index) => index === userIndex ? updatedUser : user);
+            const orders = window.orders.map(order => order.phone === originalPhone ? { ...order, phone } : order);
+            saveButton.disabled = true;
+            feedback.innerText = '';
+            try {
+                await dbAPI.saveCustomerProfile(users, orders);
+                window.users = users;
+                window.orders = orders;
+                window.currentUser = updatedUser;
+                localStorage.setItem('zay_currentUser', JSON.stringify(updatedUser));
+                document.getElementById('customer-header-address').innerText = address;
+                window.renderCustomerOrders();
+                window.closeCustomerProfile();
+                window.showToast('Your profile was updated. Your existing order history stays linked to your account.', 'success');
+            } catch (error) {
+                console.error('Customer profile update failed.', error);
+                feedback.innerText = `Could not save your profile: ${error.message || 'Please try again.'}`;
+            } finally {
+                saveButton.disabled = false;
+            }
+        };
+
         window.openRequiredPasswordChange = () => {
             document.getElementById('new-account-password').value = '';
             document.getElementById('confirm-account-password').value = '';
@@ -522,20 +659,34 @@
 
         window.renderProducts = () => {
             const list = document.getElementById('product-list');
+            const search = document.getElementById('product-search');
+            const query = search.value.trim().toLowerCase();
+            document.getElementById('clear-product-search').classList.toggle('hide', !query);
             if(window.products.length === 0) return list.innerHTML = `<div class="col-span-2 py-10 text-center text-slate-400 font-bold bg-white rounded-2xl border border-slate-100"><p>လောလောဆယ် ပစ္စည်းများ မရှိသေးပါ။</p></div>`;
-            list.innerHTML = window.products.map(p => {
+            const products = window.products.filter(product => product.name.toLowerCase().includes(query));
+            if (products.length === 0) return list.innerHTML = `<div class="col-span-2 py-10 text-center text-slate-400 font-bold bg-white rounded-2xl border border-slate-100"><i class="fas fa-search mb-2 text-xl"></i><p>No items match your search.</p></div>`;
+            list.innerHTML = products.map(p => {
                 const qty = window.cart[p.dbId] || 0; const isOut = p.stockQty <= 0;
                 let btn = isOut ? `<button disabled class="w-full bg-slate-100 text-slate-400 font-bold py-2 rounded-xl text-xs cursor-not-allowed">ကုန်နေပါသည်</button>` : (qty === 0 ? `<button onclick="event.stopPropagation(); window.updateCart('${p.dbId}', 1)" class="w-full border-2 border-orange-100 text-orange-600 bg-orange-50 font-bold py-2 rounded-xl text-xs hover:bg-orange-100 transition">Add to Cart</button>` : `<div class="flex justify-between items-center bg-orange-600 text-white rounded-xl" onclick="event.stopPropagation()"><button onclick="window.updateCart('${p.dbId}', -1)" class="px-4 py-2 font-black">-</button><span class="font-bold text-sm">${qty}</span><button onclick="window.updateCart('${p.dbId}', 1)" class="px-4 py-2 font-black">+</button></div>`);
                 return `<div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col ${isOut ? 'opacity-60 grayscale' : ''}"><div class="cursor-pointer" onclick="window.openProductDetail('${p.dbId}')"><div class="h-32 bg-slate-100 relative"><img src="${p.img}" class="w-full h-full object-cover"></div><div class="p-3 flex-1 flex flex-col"><h4 class="font-bold text-sm text-slate-800 mb-1 leading-tight line-clamp-1">${p.name}</h4><div class="flex justify-between items-center mb-3"><span class="font-black text-orange-600 text-sm">₹${p.price}</span>${!isOut ? `<span class="text-[10px] font-bold text-slate-400">လက်ကျန်: ${p.stockQty}</span>` : ''}</div></div></div><div class="px-3 pb-3 mt-auto">${btn}</div></div>`;
             }).join('');
         };
 
+        window.clearProductSearch = () => {
+            document.getElementById('product-search').value = '';
+            window.renderProducts();
+            document.getElementById('product-search').focus();
+        };
+
         window.updateCart = (id, change) => {
-            const product = window.products.find(x => x.dbId === id); const currentQty = window.cart[id] || 0;
-            if (change > 0 && currentQty >= product.stockQty) return window.showToast(`လက်ကျန်အရေအတွက် ထက် ပိုမှာ၍မရပါ`, "error");
+            const product = window.products.find(x => x.dbId === id);
+            if (!product && change > 0) return window.showToast('This item is no longer available. Refresh the catalogue and try again.', 'error');
+            const currentQty = window.cart[id] || 0;
+            if (product && change > 0 && currentQty >= product.stockQty) return window.showToast(`လက်ကျန်အရေအတွက် ထက် ပိုမှာ၍မရပါ`, "error");
             window.cart[id] = currentQty + change; if(window.cart[id] <= 0) delete window.cart[id];
             window.renderProducts();
             let totalQty = Object.values(window.cart).reduce((a, b) => a + b, 0); let badge = document.getElementById('cart-count'); badge.innerText = totalQty; badge.classList.toggle('hide', totalQty === 0); if(totalQty === 0) window.closeCheckout();
+            else if (!document.getElementById('checkout-modal').classList.contains('hide')) window.renderCheckout();
         };
 
         window.openProductDetail = function(dbId) {
@@ -549,96 +700,159 @@
         };
 
         window.closeProductDetail = function() { const modal = document.getElementById('product-detail-modal'), sheet = document.getElementById('product-detail-sheet'); modal.classList.add('opacity-0'); sheet.classList.add('translate-y-full'); setTimeout(() => modal.classList.add('hide'), 300); };
-        window.openCheckout = () => { if(Object.keys(window.cart).length === 0) return window.showToast("ခြင်းတောင်းထဲတွင် ဘာမှမရှိပါ", "error"); let total = 0; document.getElementById('checkout-items-list').innerHTML = Object.keys(window.cart).map(dbId => { let p = window.products.find(x => x.dbId === dbId); total += p.price * window.cart[dbId]; return `<div class="flex justify-between"><span><span class="text-orange-600 mr-1">${window.cart[dbId]}x</span> ${p.name}</span><span>₹${p.price * window.cart[dbId]}</span></div>`; }).join(''); document.getElementById('checkout-total').innerText = total; const m = document.getElementById('checkout-modal'), s = document.getElementById('checkout-sheet'); m.classList.remove('hide'); setTimeout(() => { m.classList.remove('opacity-0'); s.classList.remove('translate-y-full'); }, 10); };
-        window.closeCheckout = () => { const m = document.getElementById('checkout-modal'), s = document.getElementById('checkout-sheet'); m.classList.add('opacity-0'); s.classList.add('translate-y-full'); setTimeout(() => m.classList.add('hide'), 300); };
-        window.selectPayment = (m) => { window.selectedPayment = m; document.getElementById('btn-pay-upi').className = m==='UPI' ? "border-2 border-blue-500 bg-blue-50 text-blue-700 font-bold py-3 rounded-2xl transition" : "border border-slate-200 text-slate-500 font-bold py-3 rounded-2xl transition bg-white"; document.getElementById('btn-pay-cod').className = m==='COD' ? "border-2 border-orange-500 bg-orange-50 text-orange-700 font-bold py-3 rounded-2xl transition flex flex-col items-center leading-tight" : "border border-slate-200 text-slate-500 font-bold py-3 rounded-2xl transition bg-white flex flex-col items-center leading-tight";         };
-        window.contactAdminForPassword = () => {
-            const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP_NUMBER}?${new URLSearchParams({ text: 'forgot passwords' })}`;
-            window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+        window.renderCheckout = () => {
+            let total = 0;
+            let hasUnavailableItems = false;
+            document.getElementById('checkout-items-list').innerHTML = Object.entries(window.cart).map(([id, quantity]) => {
+                const product = window.products.find(item => item.dbId === id);
+                if (!product) {
+                    hasUnavailableItems = true;
+                    return `<div class="flex items-center justify-between gap-3 border-b border-slate-200 pb-3 last:border-0 last:pb-0"><span class="text-sm font-bold text-red-600">This item is no longer available.</span><button type="button" aria-label="Remove unavailable item" onclick="window.updateCart('${id}', -${quantity})" class="rounded-lg bg-red-50 px-3 py-2 text-xs font-bold text-red-700">Remove</button></div>`;
+                }
+                total += product.price * quantity;
+                return `<div class="flex items-center justify-between gap-3 border-b border-slate-200 pb-3 last:border-0 last:pb-0"><div class="min-w-0 flex-1"><p class="truncate font-bold text-slate-800">${product.name}</p><p class="mt-1 text-xs text-slate-500">₹${product.price} each</p></div><div class="flex shrink-0 items-center gap-2"><button type="button" aria-label="Remove one ${product.name}" onclick="window.updateCart('${id}', -1)" class="h-8 w-8 rounded-full border border-slate-200 bg-white font-black text-slate-600">−</button><span class="min-w-5 text-center font-black">${quantity}</span><button type="button" aria-label="Add one ${product.name}" onclick="window.updateCart('${id}', 1)" class="h-8 w-8 rounded-full border border-slate-200 bg-white font-black text-slate-600" ${quantity >= product.stockQty ? 'disabled' : ''}>+</button></div><span class="w-16 shrink-0 text-right font-black text-slate-700">₹${(product.price * quantity).toFixed(2)}</span></div>`;
+            }).join('');
+            document.getElementById('checkout-total').innerText = total.toFixed(2);
+            document.getElementById('btn-confirm-order').disabled = hasUnavailableItems;
         };
-        window.contactAdminWhatsApp = (orderId = null) => {
-            if (!window.currentUser || window.currentUser.role !== 'customer') return window.showToast('Please sign in as a customer to contact the admin.', 'error');
-            const order = orderId ? window.orders.find(item => item.dbId === orderId) : null;
-            if (orderId && (!order || order.phone !== window.currentUser.phone || order.payment !== 'UPI' || order.status === 'rejected')) {
-                return window.showToast('Payment support is only available for your active UPI orders.', 'error');
-            }
-
-            const items = order
-                ? order.items
-                : Object.keys(window.cart).map(id => {
-                    const product = window.products.find(item => item.dbId === id);
-                    return product ? `${window.cart[id]}x ${product.name}` : null;
-                }).filter(Boolean).join(', ');
-            const amount = order
-                ? order.total
-                : Object.keys(window.cart).reduce((sum, id) => {
-                    const product = window.products.find(item => item.dbId === id);
-                    return sum + (product ? product.price * window.cart[id] : 0);
-                }, 0);
-            if (!items || amount <= 0) return window.showToast('Add items to your cart before contacting the admin.', 'error');
-
+        window.openCheckout = () => {
+            if (Object.keys(window.cart).length === 0) return window.showToast("ခြင်းတောင်းထဲတွင် ဘာမှမရှိပါ", "error");
+            window.renderCheckout();
+            const m = document.getElementById('checkout-modal'), s = document.getElementById('checkout-sheet');
+            m.classList.remove('hide');
+            setTimeout(() => { m.classList.remove('opacity-0'); s.classList.remove('translate-y-full'); }, 10);
+        };
+        window.closeCheckout = () => { const m = document.getElementById('checkout-modal'), s = document.getElementById('checkout-sheet'); m.classList.add('opacity-0'); s.classList.add('translate-y-full'); setTimeout(() => m.classList.add('hide'), 300); };
+        window.contactAdminForPassword = () => {
+            const phone = document.getElementById('login-phone').value.trim();
             const message = [
-                'Hello, I have completed my UPI payment for my Zay India order.',
-                order ? `Order ID: ${order.dbId}` : 'I am completing checkout now.',
-                `Customer: ${window.currentUser.name}`,
-                `Phone: ${window.currentUser.phone}`,
-                `Items: ${items}`,
-                `Amount: ₹${amount}`,
-                order?.txn ? `UPI reference: ${order.txn}` : '',
-                'I will attach my payment screenshot here for verification.'
-            ].filter(Boolean).join('\n');
+                'Hello Admin, I forgot the password for my Zay India account. Please help me reset it.',
+                `My registered phone number is: ${phone || '[enter your registered phone number]'}.`,
+                'Thank you.'
+            ].join('\n');
             const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP_NUMBER}?${new URLSearchParams({ text: message })}`;
             window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
         };
-
-        // 3. GPay/UPI Logic
-        window.placeOrder = () => {
-            if (window.selectedPayment !== 'UPI') return window.finalizeOrder('COD');
-
-            if (window.upiPaymentLaunched) {
-                const txnId = document.getElementById('upi-transaction-id').value.trim();
-                if (!txnId) return window.showToast('Enter the UPI transaction reference after completing payment', 'error');
-                return window.finalizeOrder(`Unverified UPI UTR: ${txnId}`);
-            }
-
-            const amount = Object.keys(window.cart).reduce((sum, id) => {
-                const product = window.products.find(p => p.dbId === id);
-                return sum + (product ? product.price * window.cart[id] : 0);
-            }, 0);
-            if (amount <= 0) return window.showToast('Your cart is empty. Please add items and try again.', 'error');
-
-            const params = new URLSearchParams({
-                pa: 'peterzalian525@oksbi',
-                pn: 'ZayIndia',
-                am: amount.toFixed(2),
-                cu: 'INR'
-            });
-            const upiUrl = `upi://pay?${params.toString()}`;
-            window.upiPaymentLaunched = true;
-            document.getElementById('upi-payment-followup').classList.remove('hide');
-            document.getElementById('confirm-order-label').innerText = 'ငွေလွှဲပြီးပါပြီ';
-            document.getElementById('confirm-order-subtitle').innerText = 'I have completed payment';
-            window.location.href = upiUrl;
+        window.buildAdminWhatsAppUrl = order => {
+            const message = [
+                'Hello, I would like to confirm my Zay India order.',
+                `Order ID: ${order.dbId}`,
+                `Customer: ${order.user}`,
+                `Phone: ${order.phone}`,
+                `Items: ${order.items}`,
+                `Total: ₹${Number(order.total).toFixed(2)}`,
+                `DELIVERY ADDRESS (please deliver to): ${order.address}`,
+                'Please confirm this order and let me know how to arrange payment.'
+            ].join('\n');
+            return `https://wa.me/${ADMIN_WHATSAPP_NUMBER}?${new URLSearchParams({ text: message })}`;
+        };
+        window.contactAdminWhatsApp = orderId => {
+            if (!window.currentUser || window.currentUser.role !== 'customer') return window.showToast('Please sign in as a customer to contact the admin.', 'error');
+            const order = window.orders.find(item => item.dbId === orderId);
+            if (!order || order.phone !== window.currentUser.phone) return window.showToast('Order not found for this account.', 'error');
+            window.open(window.buildAdminWhatsAppUrl(order), '_blank', 'noopener,noreferrer');
         };
 
-        window.finalizeOrder = (txnId) => {
+        window.placeOrder = async () => {
+            if (window.orderSubmissionInProgress) return;
+            if (!window.currentUser || window.currentUser.role !== 'customer') return window.showToast('Please sign in as a customer to place an order.', 'error');
             if (Object.keys(window.cart).length === 0) return window.showToast('Your cart is empty. Please add items and try again.', 'error');
-            let total = 0, itemsStr = Object.keys(window.cart).map(id => { let p = window.products.find(x => x.dbId === id); total += p.price * window.cart[id]; return `${window.cart[id]}x ${p.name}`; }).join(', ');
+            if (!window.currentUser.address?.trim()) return window.showToast('Add your delivery address in My profile before placing an order.', 'error');
 
-            const newOrder = { dbId: 'ORD-' + Date.now(), user: window.currentUser.name, phone: window.currentUser.phone, address: window.currentUser.address, items: itemsStr, lineItems: Object.keys(window.cart).map(id => { const product = window.products.find(p => p.dbId === id); return { productId: id, name: product.name, quantity: window.cart[id], unitPrice: product.price, subtotal: product.price * window.cart[id] }; }), total: total, payment: window.selectedPayment, txn: txnId, status: 'pending', inventoryDeducted: false, time: new Date().toLocaleTimeString(), createdAt: new Date().toISOString() };
-            window.orders.unshift(newOrder); dbAPI.saveOrders(window.orders);
-            window.cart = {}; window.upiPaymentLaunched = false; document.getElementById('upi-payment-followup').classList.add('hide'); document.getElementById('upi-transaction-id').value = ''; document.getElementById('confirm-order-label').innerText = 'အတည်ပြုမည်'; document.getElementById('confirm-order-subtitle').innerText = 'Confirm Order'; window.closeCheckout(); window.updateCart('',0); window.switchCustomerTab('orders'); window.showToast(window.selectedPayment === 'UPI' ? 'Order submitted. UPI payment must be verified manually.' : 'အော်ဒါတင်ခြင်း အောင်မြင်ပါသည်!', 'success');
+            const whatsappWindow = window.open('about:blank', '_blank');
+            if (whatsappWindow) whatsappWindow.opener = null;
+            await window.finalizeOrder(whatsappWindow);
+        };
 
-            // 4. EmailJS Notification
-            try { 
-                emailjs.send("service_bk5t2rh", "template_ted9gb3", { 
-                    order_id: newOrder.dbId, 
-                    customer_name: newOrder.user, 
-                    total_amount: newOrder.total 
-                }); 
-                console.log("Email sent successfully!");
-            } catch (error) { 
-                console.log("Email sending failed", error); 
+        window.finalizeOrder = async whatsappWindow => {
+            const confirmButton = document.getElementById('btn-confirm-order');
+            if (window.orderSubmissionInProgress) {
+                if (whatsappWindow) whatsappWindow.close();
+                return;
+            }
+            const entries = Object.entries(window.cart);
+            if (entries.length === 0) {
+                if (whatsappWindow) whatsappWindow.close();
+                return window.showToast('Your cart is empty. Please add items and try again.', 'error');
+            }
+
+            let total = 0;
+            const lineItems = [];
+            for (const [id, quantity] of entries) {
+                const product = window.products.find(item => item.dbId === id);
+                if (!product || !Number.isInteger(quantity) || quantity <= 0 || quantity > Number(product.stockQty)) {
+                    if (whatsappWindow) whatsappWindow.close();
+                    window.renderCheckout();
+                    return window.showToast('An item is unavailable or no longer has enough stock. Review your cart and try again.', 'error');
+                }
+                const subtotal = Number(product.price) * quantity;
+                total += subtotal;
+                lineItems.push({ productId: id, name: product.name, quantity, unitPrice: Number(product.price), subtotal });
+            }
+
+            const itemsStr = lineItems.map(item => `${item.quantity}x ${item.name}`).join(', ');
+            const newOrder = {
+                dbId: 'ORD-' + Date.now(),
+                user: window.currentUser.name,
+                phone: window.currentUser.phone,
+                address: window.currentUser.address,
+                items: itemsStr,
+                lineItems,
+                total,
+                status: 'pending',
+                inventoryDeducted: false,
+                time: new Date().toLocaleTimeString(),
+                createdAt: new Date().toISOString()
+            };
+            const orders = [newOrder, ...window.orders];
+            window.orderSubmissionInProgress = true;
+            confirmButton.disabled = true;
+            document.getElementById('confirm-order-label').innerText = 'Saving order...';
+            try {
+                await dbAPI.saveOrders(orders);
+            } catch (error) {
+                if (whatsappWindow) whatsappWindow.close();
+                console.error('Order could not be saved.', error);
+                window.showToast(`Could not save your order: ${error.message || 'Please check your connection and try again.'}`, 'error');
+                return;
+            } finally {
+                window.orderSubmissionInProgress = false;
+                confirmButton.disabled = false;
+                document.getElementById('confirm-order-label').innerText = 'Confirm items & contact admin';
+            }
+
+            window.orders = orders;
+            window.cart = {};
+            document.getElementById('cart-count').innerText = '0';
+            document.getElementById('cart-count').classList.add('hide');
+            window.renderProducts();
+            window.closeCheckout();
+            window.switchCustomerTab('orders');
+            window.renderCustomerOrders();
+
+            if (whatsappWindow && !whatsappWindow.closed) {
+                try {
+                    whatsappWindow.location.href = window.buildAdminWhatsAppUrl(newOrder);
+                    window.showToast('Order saved. WhatsApp is ready with your order details; review and send the message to the admin.', 'success');
+                } catch (error) {
+                    console.error('Could not open the saved order in WhatsApp.', error);
+                    window.showToast('Order saved, but WhatsApp did not open. Use Contact admin on WhatsApp in your order history.', 'error');
+                }
+            } else {
+                window.showToast('Order saved, but WhatsApp did not open. Use Contact admin on WhatsApp in your order history.', 'error');
+            }
+
+            try {
+                const emailResult = emailjs.send("service_bk5t2rh", "template_ted9gb3", {
+                    order_id: newOrder.dbId,
+                    customer_name: newOrder.user,
+                    total_amount: newOrder.total
+                });
+                if (emailResult && typeof emailResult.catch === 'function') {
+                    emailResult.catch(error => console.error('Admin order email notification failed.', error));
+                }
+            } catch (error) {
+                console.error('Admin order email notification failed.', error);
             }
         };
 
@@ -686,7 +900,7 @@
     <header><div><h1>Zay India</h1><div class="muted">Myanmar Food</div></div><div class="meta"><h2>INVOICE</h2><strong>${escapeHtml(order.dbId)}</strong><div class="muted">${escapeHtml(invoiceDate)}</div></div></header>
     <h2>Bill to</h2><div class="details">${escapeHtml(order.user)}<br>${escapeHtml(order.phone)}<br>${escapeHtml(order.address)}</div>
     <table><thead><tr><th>Item</th><th class="number">Qty</th><th class="number">Unit price</th><th class="number">Amount</th></tr></thead><tbody>${itemRows}</tbody></table>
-    <div class="summary"><p><span>Payment</span><span>${escapeHtml(order.payment)}${order.txn && order.payment !== 'COD' ? ` (${escapeHtml(order.txn)})` : ''}</span></p><p><span>Status</span><span>${escapeHtml(order.status)}</span></p><p class="total"><span>Total</span><span>₹${Number(order.total || 0).toFixed(2)}</span></p></div>
+    <div class="summary"><p><span>Status</span><span>${escapeHtml(order.status)}</span></p><p class="total"><span>Total</span><span>₹${Number(order.total || 0).toFixed(2)}</span></p></div>
 </main>
 </body>
 </html>`;
@@ -707,7 +921,10 @@
             const list = document.getElementById('customer-orders-list');
             const myOrders = window.orders.filter(order => order.phone === window.currentUser.phone);
             if (myOrders.length === 0) return list.innerHTML = `<p class="text-slate-500 font-semibold text-center mt-5">မှာယူထားသော မှတ်တမ်းမရှိသေးပါ။</p>`;
-            list.innerHTML = myOrders.map(order => {
+            list.innerHTML = window.groupOrdersByDate(myOrders).map(group => `
+                <section class="space-y-3" aria-label="Orders from ${group.label}">
+                    <h4 class="sticky top-0 z-[1] rounded-xl border border-orange-100 bg-orange-50 px-4 py-2 text-sm font-black text-orange-800">${group.label}</h4>
+                    ${group.orders.map(order => {
                 const states = {
                     pending: { label: 'Pending admin confirmation', badge: 'bg-yellow-100 text-yellow-700' },
                     confirmed: { label: 'Confirmed', badge: 'bg-green-100 text-green-700' },
@@ -719,11 +936,12 @@
                 const invoiceAction = ['confirmed', 'ontheway', 'delivered'].includes(order.status)
                     ? `<button onclick="window.downloadInvoice('${order.dbId}')" class="mt-4 w-full bg-slate-900 text-white font-bold py-2.5 rounded-xl hover:bg-slate-800 transition"><i class="fas fa-download mr-2"></i>Download invoice</button>`
                     : `<p class="mt-4 text-center text-xs font-semibold ${order.status === 'rejected' ? 'text-red-600' : 'text-slate-500'}">${order.status === 'rejected' ? 'This order was rejected. No invoice is available.' : 'Invoice available after admin confirmation.'}</p>`;
-                const paymentSupport = order.payment === 'UPI' && order.status !== 'rejected'
-                    ? `<button onclick="window.contactAdminWhatsApp('${order.dbId}')" class="mt-3 w-full bg-green-600 text-white font-bold py-2.5 rounded-xl hover:bg-green-700 transition"><i class="fab fa-whatsapp mr-2"></i>Send payment screenshot</button>`
-                    : '';
-                return `<div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100"><div class="flex justify-between items-center mb-3 border-b border-slate-100 pb-3"><span class="font-black text-slate-800">${order.dbId}</span><span class="px-2 py-1 rounded text-[10px] font-bold ${state.badge}">${state.label}</span></div><p class="text-sm font-semibold text-slate-600 mb-3">${order.items}</p><div class="flex justify-between items-end"><div><p class="text-[10px] font-bold text-slate-400">${order.time}</p><p class="text-xs font-bold ${order.payment==='UPI'?'text-blue-600':'text-orange-600'}">${order.payment} ${order.txn && order.payment!=='COD' ? `(${order.txn})`:''}</p></div><span class="font-black text-orange-600">₹${order.total}</span></div>${paymentSupport}${invoiceAction}</div>`;
-            }).join('');
+                const contactAdminAction = `<button onclick="window.contactAdminWhatsApp('${order.dbId}')" class="mt-3 w-full bg-green-600 text-white font-bold py-2.5 rounded-xl hover:bg-green-700 transition"><i class="fab fa-whatsapp mr-2"></i>Contact admin on WhatsApp</button>`;
+                const placedTime = order.createdAt ? new Date(order.createdAt).toLocaleTimeString() : order.time;
+                return `<div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100"><div class="flex justify-between items-center mb-3 border-b border-slate-100 pb-3"><span class="font-black text-slate-800">${order.dbId}</span><span class="px-2 py-1 rounded text-[10px] font-bold ${state.badge}">${state.label}</span></div><p class="text-sm font-semibold text-slate-600 mb-3">${order.items}</p><div class="flex justify-between items-end"><p class="text-[10px] font-bold text-slate-400">Placed ${placedTime || ''}</p><span class="font-black text-orange-600">₹${order.total}</span></div>${contactAdminAction}${invoiceAction}</div>`;
+                    }).join('')}
+                </section>
+            `).join('');
         };
 
         window.switchAdminTab = (t) => {
@@ -825,15 +1043,33 @@
                 window.showToast('Could not access the clipboard. Select and copy the temporary password manually.', 'error');
             }
         };
-        window.renderAdminOrders = () => { document.getElementById('admin-orders-table').innerHTML = window.orders.map((order) => {
+        window.renderAdminOrders = () => {
+            const pendingOrders = window.orders.filter(order => order.status === 'pending');
+            document.getElementById('pending-orders-count').innerText = `${pendingOrders.length} pending`;
+            document.getElementById('admin-pending-orders').innerHTML = pendingOrders.length
+                ? window.groupOrdersByDate(pendingOrders).map(group => `
+                    <section class="space-y-3 xl:col-span-2" aria-label="Pending orders from ${group.label}">
+                        <h3 class="rounded-xl border border-orange-100 bg-orange-50 px-4 py-2 text-sm font-black text-orange-800">${group.label}</h3>
+                        <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">${group.orders.map(order => {
+                            const busy = window.orderActionsInProgress.has(order.dbId);
+                            return `<article class="rounded-2xl border border-orange-200 bg-white p-4 shadow-sm"><div class="mb-3 flex flex-wrap items-start justify-between gap-2"><div><p class="font-black text-slate-900">${order.user || 'Customer'}</p><p class="text-xs font-semibold text-slate-500">${order.dbId} · ${order.phone || ''}</p></div><p class="font-black text-orange-600">₹${Number(order.total || 0).toFixed(2)}</p></div><p class="mb-2 text-sm font-semibold text-slate-700">${order.items || 'No item details'}</p><p class="mb-4 text-xs text-slate-500">${order.address || 'No delivery address provided'}</p><div class="grid grid-cols-2 gap-3"><button type="button" ${busy ? 'disabled' : ''} onclick="window.confirmOrder('${order.dbId}')" class="rounded-xl bg-green-600 px-4 py-3 font-black text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"><i class="fas fa-check mr-2"></i>Confirm order</button><button type="button" ${busy ? 'disabled' : ''} onclick="window.rejectOrder('${order.dbId}')" class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 font-black text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"><i class="fas fa-times mr-2"></i>Reject order</button></div></article>`;
+                        }).join('')}</div>
+                    </section>
+                `).join('')
+                : '<p class="rounded-2xl border border-slate-200 bg-white p-5 text-sm font-semibold text-slate-500">No pending orders need review.</p>';
+            document.getElementById('admin-orders-table').innerHTML = window.groupOrdersByDate(window.orders).map(group => `
+                <tr><th colspan="7" class="bg-slate-100 px-6 py-3 text-left text-sm font-black text-slate-700">${group.label}</th></tr>
+                ${group.orders.map(order => {
             const invoiceAvailable = ['confirmed', 'ontheway', 'delivered'].includes(order.status);
             const orderActions = order.status === 'pending'
-                ? `<div class="flex gap-2"><button ${window.orderActionsInProgress.has(order.dbId) ? 'disabled' : ''} onclick="window.confirmOrder('${order.dbId}')" class="bg-green-600 text-white px-3 py-2 rounded-lg font-bold hover:bg-green-700 disabled:opacity-50">Confirm</button><button ${window.orderActionsInProgress.has(order.dbId) ? 'disabled' : ''} onclick="window.rejectOrder('${order.dbId}')" class="bg-red-50 text-red-700 px-3 py-2 rounded-lg font-bold hover:bg-red-100 disabled:opacity-50">Reject</button></div>`
+                ? '<span class="text-xs font-bold text-orange-700">Use pending orders above</span>'
                 : order.status === 'confirmed' || order.status === 'ontheway'
                     ? `<select onchange="window.updateStatus('${order.dbId}', this.value)" class="text-xs font-bold p-2 rounded-lg border outline-none"><option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>Confirmed</option><option value="ontheway" ${order.status === 'ontheway' ? 'selected' : ''}>On the way</option><option value="delivered">Delivered</option></select>`
                     : `<span class="text-xs font-bold ${order.status === 'rejected' ? 'text-red-600' : 'text-green-700'}">${order.status === 'rejected' ? 'Rejected' : 'Delivered'}</span>`;
-            return `<tr class="hover:bg-slate-50 transition"><td class="px-6 py-4 font-black text-slate-800">${order.dbId}</td><td class="px-6 py-4"><p class="font-bold text-slate-700">${order.user}</p><p class="text-xs text-slate-500">${order.phone}</p></td><td class="px-6 py-4 text-xs font-semibold text-slate-600 whitespace-normal min-w-[200px]">${order.items}</td><td class="px-6 py-4 text-right font-black text-orange-600">₹${order.total}</td><td class="px-6 py-4 text-xs font-bold ${order.payment==='UPI'?'text-blue-600':'text-slate-500'}">${order.payment}<br>${order.txn?order.txn:''}</td><td class="px-6 py-4 text-xs font-medium text-slate-600 max-w-[250px] whitespace-normal">${order.address}</td><td class="px-6 py-4">${orderActions}</td><td class="px-6 py-4">${invoiceAvailable ? `<button onclick="window.downloadInvoice('${order.dbId}')" class="bg-orange-50 text-orange-700 px-3 py-2 rounded-lg font-bold hover:bg-orange-100 transition"><i class="fas fa-download mr-1"></i>Download</button>` : '<span class="text-xs font-semibold text-slate-400">Unavailable</span>'}</td></tr>`;
-        }).join(''); };
+            return `<tr class="hover:bg-slate-50 transition"><td class="px-6 py-4 font-black text-slate-800">${order.dbId}</td><td class="px-6 py-4"><p class="font-bold text-slate-700">${order.user}</p><p class="text-xs text-slate-500">${order.phone}</p></td><td class="px-6 py-4 text-xs font-semibold text-slate-600 whitespace-normal min-w-[200px]">${order.items}</td><td class="px-6 py-4 text-right font-black text-orange-600">₹${order.total}</td><td class="px-6 py-4 text-xs font-medium text-slate-600 max-w-[250px] whitespace-normal">${order.address}</td><td class="px-6 py-4">${orderActions}</td><td class="px-6 py-4">${invoiceAvailable ? `<button onclick="window.downloadInvoice('${order.dbId}')" class="bg-orange-50 text-orange-700 px-3 py-2 rounded-lg font-bold hover:bg-orange-100 transition"><i class="fas fa-download mr-1"></i>Download</button>` : '<span class="text-xs font-semibold text-slate-400">Unavailable</span>'}</td></tr>`;
+                }).join('')}
+            `).join('');
+        };
         window.getOrderInventoryItems = (order) => {
             let items = Array.isArray(order.lineItems) ? order.lineItems : [];
             if (!items.length && typeof order.items === 'string') {
@@ -850,6 +1086,7 @@
             });
         };
         window.confirmOrder = async (id) => {
+            if (window.currentUser?.role !== 'admin') return window.showToast('Admin access required.', 'error');
             const orderIndex = window.orders.findIndex(order => order.dbId === id);
             if (orderIndex < 0 || window.orders[orderIndex].status !== 'pending') return window.showToast('This order is no longer pending.', 'error');
             if (window.orderActionsInProgress.has(id)) return;
@@ -885,6 +1122,7 @@
             }
         };
         window.rejectOrder = async (id) => {
+            if (window.currentUser?.role !== 'admin') return window.showToast('Admin access required.', 'error');
             const orderIndex = window.orders.findIndex(order => order.dbId === id);
             if (orderIndex < 0 || window.orders[orderIndex].status !== 'pending') return window.showToast('This order is no longer pending.', 'error');
             if (window.orderActionsInProgress.has(id)) return;
