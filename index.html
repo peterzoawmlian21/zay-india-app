@@ -2,11 +2,20 @@
 <html lang="my" translate="no">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <!-- Disable Google Translate Popup completely -->
     <meta name="google" content="notranslate">
     
     <title>Zay India</title>
+    <!-- Installable web app (PWA) -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#FFFFFF">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Zay India">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -338,6 +347,16 @@
         .fin-columns > section { min-width: 0; }
         @media (min-width: 1100px) { .fin-columns { grid-template-columns: 1fr 1fr; } }
 
+        /* ---------- Install card (login page) ---------- */
+        .install-card { display: flex; align-items: center; gap: .8rem; margin-bottom: 1.25rem; padding: .75rem .8rem; border: 1px solid var(--line); border-radius: var(--r-card); background: var(--surface); }
+        .install-card img { width: 44px; height: 44px; border-radius: 11px; flex-shrink: 0; }
+        .install-card .install-text { flex: 1; min-width: 0; line-height: 1.3; }
+        .install-card .install-title { font-weight: 700; font-size: .92rem; }
+        .install-card .install-sub { font-size: .78rem; color: var(--muted); }
+        .ios-steps { display: flex; flex-direction: column; gap: .85rem; margin: .5rem 0 1.1rem; }
+        .ios-steps li { display: flex; align-items: center; gap: .75rem; font-size: .92rem; }
+        .ios-steps .step-icon { width: 36px; height: 36px; border-radius: 10px; background: var(--well); display: flex; align-items: center; justify-content: center; color: var(--info-ink); flex-shrink: 0; }
+
         /* ---------- Categories + banner ---------- */
         .chips { display: flex; gap: .5rem; overflow-x: auto; margin: .75rem -1rem 0; padding: 0 1rem 2px; scrollbar-width: none; }
         .chips::-webkit-scrollbar { display: none; }
@@ -410,6 +429,12 @@
             <div class="wordmark"><span class="wordmark-my" lang="my">ဈေး</span><span class="wordmark-en">Zay India</span></div>
             <p lang="my">Graphic Era မြန်မာကျောင်းသားများအတွက် မြန်မာစားသောက်ကုန်ဆိုင်</p>
         </header>
+
+        <div id="install-card" class="install-card hide">
+            <img src="icons/icon-192.png" alt="">
+            <div class="install-text"><p class="install-title">ဖုန်းထဲ အက်ပ်အဖြစ်ထည့်မည်</p><p class="install-sub">Install Zay India on your home screen</p></div>
+            <button type="button" onclick="window.installApp()" class="btn btn-dark btn-sm"><i class="fas fa-download"></i>Install</button>
+        </div>
 
         <div class="segmented" role="tablist" aria-label="Account">
             <button type="button" role="tab" id="auth-tab-login" aria-selected="true" onclick="window.toggleAuth('login')">ဝင်မည် <span class="en-inline">Log in</span></button>
@@ -756,6 +781,21 @@
         </div>
     </div>
 
+    <!-- iPhone/iPad: browsers there have no install prompt, so explain the two taps -->
+    <div id="ios-install-modal" class="overlay z-[90] hide" onclick="if(event.target===this)this.classList.add('hide')">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ios-install-title" style="max-width:380px">
+            <div class="modal-head">
+                <div><h2 id="ios-install-title" class="modal-title">Home Screen ထဲထည့်ရန်</h2><p class="modal-sub">Add Zay India to your Home Screen in two taps:</p></div>
+                <button type="button" onclick="document.getElementById('ios-install-modal').classList.add('hide')" aria-label="Close" class="icon-btn"><i class="fas fa-xmark"></i></button>
+            </div>
+            <ol class="ios-steps">
+                <li><span class="step-icon"><i class="fas fa-arrow-up-from-bracket"></i></span><span>Tap the <strong>Share</strong> button in the browser bar.</span></li>
+                <li><span class="step-icon"><i class="far fa-square-plus"></i></span><span>Choose <strong>Add to Home Screen</strong>, then tap <strong>Add</strong>.</span></li>
+            </ol>
+            <button type="button" onclick="document.getElementById('ios-install-modal').classList.add('hide')" class="btn btn-primary btn-block">Got it</button>
+        </div>
+    </div>
+
     <!-- Shown once after the first Google sign-in: Google gives name + email, but orders need phone + address -->
     <div id="google-profile-modal" class="overlay z-[80] hide">
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="google-profile-title">
@@ -851,6 +891,41 @@
         const auth = firebase.auth();
         // Must match the region in functions/index.js
         const cloudFunctions = firebase.app().functions('asia-southeast1');
+
+        // ---------- Install as an app (PWA) ----------
+        window.deferredInstallPrompt = null;
+        const isStandaloneApp = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        const isAppleMobile = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        // Shown only when the app can actually be installed here and isn't already.
+        window.updateInstallCard = () => {
+            const card = document.getElementById('install-card');
+            if (card) card.classList.toggle('hide', isStandaloneApp() || !(window.deferredInstallPrompt || isAppleMobile()));
+        };
+        window.addEventListener('beforeinstallprompt', event => {
+            event.preventDefault(); // keep the browser's mini-bar away; we show our own button
+            window.deferredInstallPrompt = event;
+            window.updateInstallCard();
+        });
+        window.addEventListener('appinstalled', () => {
+            window.deferredInstallPrompt = null;
+            window.updateInstallCard();
+            window.showToast('Zay India was added to your home screen.', 'success');
+        });
+        window.installApp = async () => {
+            const promptEvent = window.deferredInstallPrompt;
+            if (promptEvent) {
+                promptEvent.prompt();
+                await promptEvent.userChoice.catch(() => null);
+                window.deferredInstallPrompt = null; // a prompt can only be used once
+                window.updateInstallCard();
+            } else if (isAppleMobile()) {
+                document.getElementById('ios-install-modal').classList.remove('hide');
+            }
+        };
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(error => console.error('Service worker registration failed', error)));
+        }
+        document.addEventListener('DOMContentLoaded', window.updateInstallCard);
 
         // Customers log in with their phone number. Firebase Auth needs an email, so each
         // phone maps to a synthetic, non-deliverable address. database.rules.json relies on
