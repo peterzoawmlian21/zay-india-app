@@ -33,13 +33,19 @@ function generateTemporaryPassword(length = 12) {
 exports.resetCustomerPassword = onCall(async (request) => {
   await assertAdmin(request);
   const uid = await getCustomerUid(request);
-  const temporaryPassword = generateTemporaryPassword();
+  let user;
   try {
-    await admin.auth().updateUser(uid, { password: temporaryPassword });
+    user = await admin.auth().getUser(uid);
   } catch (error) {
     if (error.code === 'auth/user-not-found') throw new HttpsError('not-found', 'This customer has no login account.');
     throw error;
   }
+  // Google-login customers have no password; giving them one would add a second way into the account.
+  if (!user.providerData.some(provider => provider.providerId === 'password')) {
+    throw new HttpsError('failed-precondition', 'This customer signs in with Google, so there is no password to reset. Ask them to use "Continue with Google".');
+  }
+  const temporaryPassword = generateTemporaryPassword();
+  await admin.auth().updateUser(uid, { password: temporaryPassword });
   // Signs the customer out of other devices.
   await admin.auth().revokeRefreshTokens(uid);
   await admin.database().ref(`users/${uid}/passwordResetRequired`).set(true);

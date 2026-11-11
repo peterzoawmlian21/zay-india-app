@@ -347,6 +347,24 @@
         .fin-columns > section { min-width: 0; }
         @media (min-width: 1100px) { .fin-columns { grid-template-columns: 1fr 1fr; } }
 
+        /* ---------- Notifications ---------- */
+        .bell { position: relative; }
+        .bell-badge { position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--danger); color: #fff; font-size: .68rem; font-weight: 800; display: flex; align-items: center; justify-content: center; border: 2px solid var(--surface); }
+        .notif-item { display: flex; gap: .75rem; width: 100%; padding: .8rem .2rem; border: 0; border-bottom: 1px solid var(--line); background: none; text-align: left; cursor: pointer; }
+        .notif-item:last-child { border-bottom: 0; }
+        .notif-item:hover { background: #FCFCFD; }
+        .notif-icon { width: 38px; height: 38px; border-radius: 999px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .notif-body { flex: 1; min-width: 0; }
+        .notif-title { font-weight: 700; font-size: .92rem; }
+        .notif-text { font-size: .82rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .notif-time { font-size: .72rem; color: var(--faint); margin-top: .15rem; }
+        .notif-unread-dot { width: 9px; height: 9px; border-radius: 999px; background: var(--brand); margin-top: .4rem; flex-shrink: 0; }
+        .order-card.is-focus { box-shadow: 0 0 0 3px rgba(234, 88, 12, .35); transition: box-shadow 300ms ease; }
+        @media (prefers-reduced-motion: no-preference) {
+            .bell.is-ringing i { animation: bellRing 900ms ease; transform-origin: 50% 0; }
+            @keyframes bellRing { 0%, 100% { transform: rotate(0); } 15% { transform: rotate(16deg); } 30% { transform: rotate(-14deg); } 45% { transform: rotate(10deg); } 60% { transform: rotate(-6deg); } 75% { transform: rotate(3deg); } }
+        }
+
         /* ---------- Install card (login page) ---------- */
         .install-card { display: flex; align-items: center; gap: .8rem; margin-bottom: 1.25rem; padding: .75rem .8rem; border: 1px solid var(--line); border-radius: var(--r-card); background: var(--surface); }
         .install-card img { width: 44px; height: 44px; border-radius: 11px; flex-shrink: 0; }
@@ -496,6 +514,7 @@
             <div class="shop-header-top">
                 <div class="wordmark"><img src="icons/logo.svg" alt="" class="logo"><span class="wordmark-en">Zay India</span></div>
                 <div style="display:flex;gap:0.4rem">
+                    <button type="button" id="notif-button" onclick="window.openNotifications()" class="icon-btn bell" aria-label="Notifications" title="Notifications"><i class="fas fa-bell"></i><span id="notif-badge" class="bell-badge hide">0</span></button>
                     <button type="button" onclick="window.openCustomerProfile()" class="icon-btn" aria-label="My profile" title="My profile"><i class="fas fa-user"></i></button>
                     <button type="button" onclick="window.logout()" class="icon-btn" aria-label="Log out" title="Log out"><i class="fas fa-arrow-right-from-bracket"></i></button>
                 </div>
@@ -561,6 +580,19 @@
                     </div>
                 </div>
                 <div id="detail-sticky-cart" class="sheet-foot pb-safe"></div>
+            </div>
+        </div>
+
+        <!-- Notifications -->
+        <div id="notif-modal" class="overlay overlay-sheet z-50 hide opacity-0" onclick="if(event.target===this)window.closeNotifications()">
+            <div class="sheet translate-y-full" id="notif-sheet" role="dialog" aria-modal="true" aria-labelledby="notif-title" style="max-height:80vh;max-height:80dvh">
+                <div class="sheet-handle"></div>
+                <div class="modal-head" style="padding:0.75rem 1rem 0;margin:0">
+                    <div><h2 id="notif-title" class="modal-title">အသိပေးချက်များ <span class="en-inline">Notifications</span></h2><p class="modal-sub">Updates about your orders.</p></div>
+                    <button onclick="window.closeNotifications()" class="icon-btn" aria-label="Close notifications"><i class="fas fa-xmark"></i></button>
+                </div>
+                <div id="notif-list" class="no-scrollbar" style="flex:1;min-height:0;overflow-y:auto;padding:.25rem 1rem 1rem"></div>
+                <div class="sheet-foot pb-safe" id="notif-foot"><button type="button" onclick="window.clearNotifications()" class="btn btn-ghost btn-block btn-sm">Clear all</button></div>
             </div>
         </div>
 
@@ -1024,6 +1056,18 @@
                     if(!loadedFlags.users) { loadedFlags.users = true; checkInitialLoad(); }
                 });
             }
+            if (role !== 'admin') {
+                window.notifications = []; window.notificationsSeen = null;
+                listen(db.ref(`notifications/${uid}`).orderByChild('createdAt').limitToLast(30), (s) => {
+                    const items = Object.entries(s.val() || {}).map(([id, n]) => ({ ...n, id })).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+                    const seen = window.notificationsSeen;
+                    window.notifications = items;
+                    window.notificationsSeen = new Set(items.map(n => n.id));
+                    // Announce only notifications that arrived while the app is open.
+                    if (seen) items.filter(n => !seen.has(n.id) && !n.read).reverse().forEach(n => window.announceNotification(n));
+                    window.renderNotifications();
+                });
+            }
             listen(db.ref('settings/banner'), (s) => { window.shopBanner = s.val() || { text: '', enabled: false }; window.renderBanner(); });
             listen(db.ref('products'), (s) => { window.products = normalizeCollection(s.val(), 'products'); if(!loadedFlags.products) { loadedFlags.products = true; checkInitialLoad(); } if (window.currentUser?.role === 'admin') window.renderAdminProducts(); if (window.currentUser?.role === 'customer') window.renderProducts(); });
             let prevLen = -1;
@@ -1225,7 +1269,17 @@
                 return products.filter(product => product.dbId !== id);
             }),
             // Update one order only; never overwrite the whole orders node.
-            updateOrder: (id, changes) => db.ref(`orders/${id}`).update(changes)
+            // Update one order only; when its status changes, also leave the customer a notification
+            // in the same atomic write so the two never disagree.
+            updateOrder: (id, changes) => {
+                const order = window.orders.find(item => item.dbId === id);
+                const updates = {};
+                Object.entries(changes).forEach(([key, value]) => { updates[`orders/${id}/${key}`] = value; });
+                if (changes.status && order?.uid && changes.status !== order.status && ['confirmed', 'ontheway', 'delivered', 'rejected'].includes(changes.status)) {
+                    updates[`notifications/${order.uid}/N-${Date.now()}-${id}`] = { orderId: id, status: changes.status, items: String(order.items || '').slice(0, 200), createdAt: new Date().toISOString(), read: false };
+                }
+                return db.ref().update(updates);
+            }
         };
         const ADMIN_WHATSAPP_NUMBER = '916909235738';
 
@@ -1528,6 +1582,80 @@
                 console.error('Saving banner failed', error);
                 window.showToast(`Could not save the banner: ${error.message || 'Please try again.'}`, 'error');
             } finally { button.disabled = false; }
+        };
+        const NOTIF_STYLES = {
+            confirmed: { my: 'အော်ဒါ အတည်ပြုပြီး', en: 'Order confirmed', icon: 'fa-circle-check', fg: 'var(--ok-ink)', bg: 'var(--ok-soft)' },
+            ontheway: { my: 'အော်ဒါ လာနေပြီ', en: 'On the way', icon: 'fa-truck-fast', fg: 'var(--info-ink)', bg: 'var(--info-soft)' },
+            delivered: { my: 'ရောက်ရှိပြီး', en: 'Delivered', icon: 'fa-box-open', fg: 'var(--ok-ink)', bg: 'var(--ok-soft)' },
+            rejected: { my: 'အော်ဒါ ပယ်ချခံရ', en: 'Order rejected', icon: 'fa-circle-xmark', fg: 'var(--danger)', bg: 'var(--danger-soft)' }
+        };
+        const timeAgo = iso => {
+            const t = Date.parse(iso); if (!Number.isFinite(t)) return '';
+            const mins = Math.round((Date.now() - t) / 60000);
+            if (mins < 1) return 'Just now';
+            if (mins < 60) return `${mins} min ago`;
+            const hrs = Math.round(mins / 60);
+            if (hrs < 24) return `${hrs} h ago`;
+            return new Date(t).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+        };
+        window.announceNotification = n => {
+            const st = NOTIF_STYLES[n.status]; if (!st) return;
+            window.showToast(`${st.en}: ${escapeHtml(n.items || n.orderId)}`, n.status === 'rejected' ? 'error' : 'success');
+            const bell = document.getElementById('notif-button');
+            if (bell) { bell.classList.remove('is-ringing'); void bell.offsetWidth; bell.classList.add('is-ringing'); }
+        };
+        window.renderNotifications = () => {
+            const list = window.notifications || [];
+            const unread = list.filter(n => !n.read).length;
+            const badge = document.getElementById('notif-badge');
+            badge.innerText = unread > 9 ? '9+' : String(unread);
+            badge.classList.toggle('hide', unread === 0);
+            document.getElementById('notif-button').setAttribute('aria-label', unread ? `Notifications, ${unread} unread` : 'Notifications');
+            document.getElementById('notif-foot').classList.toggle('hide', list.length === 0);
+            document.getElementById('notif-list').innerHTML = list.length
+                ? list.map(n => {
+                    const st = NOTIF_STYLES[n.status] || NOTIF_STYLES.confirmed;
+                    return `<button type="button" class="notif-item" data-order="${escapeHtml(n.orderId)}"><span class="notif-icon" style="background:${st.bg};color:${st.fg}"><i class="fas ${st.icon}"></i></span><span class="notif-body"><span class="notif-title" style="display:block">${st.my} <span class="en-inline">${st.en}</span></span><span class="notif-text" style="display:block">${escapeHtml(n.items || n.orderId)}</span><span class="notif-time" style="display:block">${timeAgo(n.createdAt)}</span></span>${n.read ? '' : '<span class="notif-unread-dot" aria-label="Unread"></span>'}</button>`;
+                }).join('')
+                : '<div class="empty"><i class="fas fa-bell"></i><p>No notifications yet.</p><p>We\'ll let you know here when your orders are confirmed or on the way.</p></div>';
+            document.querySelectorAll('#notif-list .notif-item').forEach(item => item.addEventListener('click', () => window.goToOrder(item.dataset.order)));
+        };
+        window.openNotifications = () => {
+            window.renderNotifications();
+            const m = document.getElementById('notif-modal'), s = document.getElementById('notif-sheet');
+            m.classList.remove('hide');
+            setTimeout(() => { m.classList.remove('opacity-0'); s.classList.remove('translate-y-full'); }, 10);
+            // Opening the list marks everything as read (dots stay visible until it's closed).
+            const unread = (window.notifications || []).filter(n => !n.read);
+            if (unread.length && window.currentUser?.uid) {
+                const updates = {};
+                unread.forEach(n => { updates[`notifications/${window.currentUser.uid}/${n.id}/read`] = true; });
+                db.ref().update(updates).catch(error => console.error('Could not mark notifications read', error));
+            }
+        };
+        window.closeNotifications = () => {
+            const m = document.getElementById('notif-modal'), s = document.getElementById('notif-sheet');
+            m.classList.add('opacity-0'); s.classList.add('translate-y-full');
+            setTimeout(() => m.classList.add('hide'), 300);
+        };
+        window.clearNotifications = async () => {
+            const list = window.notifications || [];
+            if (!list.length || !window.currentUser?.uid) return;
+            const updates = {};
+            list.forEach(n => { updates[`notifications/${window.currentUser.uid}/${n.id}`] = null; });
+            try { await db.ref().update(updates); window.showToast('Notifications cleared.', 'success'); }
+            catch (error) { console.error('Could not clear notifications', error); window.showToast(`Could not clear notifications: ${error.message || 'Please try again.'}`, 'error'); }
+        };
+        window.goToOrder = orderId => {
+            window.closeNotifications();
+            window.switchCustomerTab('orders');
+            setTimeout(() => {
+                const card = document.querySelector(`#customer-orders-list [data-oid="${CSS.escape(orderId)}"]`);
+                if (!card) return window.showToast('This order is no longer in your history.', 'info');
+                card.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'center' });
+                card.classList.add('is-focus');
+                setTimeout(() => card.classList.remove('is-focus'), 1800);
+            }, 320);
         };
         const productSkeleton = () => `<div class="card product" aria-hidden="true"><div class="product-img skeleton"></div><div class="product-body"><div class="skeleton" style="height:13px;width:85%"></div><div class="skeleton" style="height:13px;width:55%;margin-top:8px"></div></div><div class="product-action"><div class="skeleton" style="height:38px;border-radius:10px"></div></div></div>`;
         window.renderProducts = () => {
@@ -1836,12 +1964,10 @@
             const stepIndex = status => STEPS.findIndex(st => st[0] === status);
             const previous = window.orderStatusSeen || {};
             const firstRender = !window.orderStatusSeen;
-            const advanced = [];
             const tracker = order => {
                 const idx = stepIndex(order.status);
                 if (idx < 0) return '';
                 const before = previous[order.dbId] && !firstRender ? Math.max(0, stepIndex(previous[order.dbId])) : idx;
-                if (!firstRender && previous[order.dbId] && before < idx) advanced.push(order);
                 const pct = i => (i / (STEPS.length - 1)) * 100;
                 return `<div class="tracker" role="img" aria-label="Order status: ${STEPS[idx][2]}"><div class="tracker-line"><div class="tracker-fill" style="width:${pct(before)}%" data-target="${pct(idx)}"></div></div>${STEPS.map((st, i) => `<div class="tracker-step ${i <= idx ? 'done' : ''} ${i === idx ? 'current' : ''} ${idx === STEPS.length - 1 ? 'final' : ''}"><span class="tracker-dot">${i <= idx ? '<i class="fas fa-check"></i>' : ''}</span><span>${st[1]}<br><span style="font-weight:500;color:var(--muted)">${st[2]}</span></span></div>`).join('')}</div>`;
             };
@@ -1855,19 +1981,15 @@
                 const actions = `<div class="order-actions" style="grid-template-columns:${canInvoice ? '1fr 1fr' : '1fr'}"><button type="button" onclick="window.contactAdminWhatsApp('${order.dbId}')" class="btn btn-sm btn-ghost"><i class="fab fa-whatsapp" style="color:var(--ok)"></i>Message admin</button>${canInvoice ? `<button type="button" onclick="window.downloadInvoice('${order.dbId}')" class="btn btn-sm btn-ghost"><i class="fas fa-download"></i>Invoice</button>` : ''}</div>`;
                 const note = canInvoice ? '' : `<p class="order-note ${order.status === 'rejected' ? 'is-danger' : ''}">${order.status === 'rejected' ? 'This order was rejected. Message the admin if you have questions.' : 'The invoice will be ready once the admin confirms.'}</p>`;
                 const isNew = !firstRender && !previous[order.dbId];
-                return `<article class="card order-card ${isNew ? 'slide-in' : ''}"><div class="order-head"><span class="badge ${state.badge}">${state.label}</span><span class="price">₹${formatPrice(order.total)}</span></div><p class="order-items">${escapeHtml(order.items)}</p>${tracker(order)}<div class="order-foot" style="margin-top:.6rem"><span>${escapeHtml(order.dbId)}</span><span>${placedTime ? `Placed ${placedTime}` : ''}</span></div>${actions}${note}</article>`;
+                return `<article class="card order-card ${isNew ? 'slide-in' : ''}" data-oid="${escapeHtml(order.dbId)}"><div class="order-head"><span class="badge ${state.badge}">${state.label}</span><span class="price">₹${formatPrice(order.total)}</span></div><p class="order-items">${escapeHtml(order.items)}</p>${tracker(order)}<div class="order-foot" style="margin-top:.6rem"><span>${escapeHtml(order.dbId)}</span><span>${placedTime ? `Placed ${placedTime}` : ''}</span></div>${actions}${note}</article>`;
                     }).join('')}
                 </section>
             `).join('');
             // Move each tracker from where it was to its new step.
             // A short delay lets the browser paint the old position first, so the CSS transition runs.
             setTimeout(() => list.querySelectorAll('.tracker-fill').forEach(fill => { fill.style.width = `${fill.dataset.target}%`; }), 40);
-            if (!firstRender) myOrders.forEach(order => { if (previous[order.dbId] && previous[order.dbId] !== 'rejected' && order.status === 'rejected') window.showToast(`Order ${order.dbId} was rejected. Message the admin if you have questions.`, 'error'); });
+            // Status-change toasts come from the notifications listener (see announceNotification).
             window.orderStatusSeen = Object.fromEntries(myOrders.map(order => [order.dbId, order.status]));
-            advanced.forEach(order => {
-                const messages = { confirmed: 'Your order was confirmed. အော်ဒါ အတည်ပြုပြီးပါပြီ။', ontheway: 'Your order is on the way! အော်ဒါ လာနေပါပြီ။', delivered: 'Your order was delivered. ရောက်ရှိပြီးပါပြီ။' };
-                if (messages[order.status]) window.showToast(messages[order.status], 'success');
-            });
         };
 
         window.switchAdminTab = (t) => {
@@ -1961,7 +2083,11 @@
                 document.getElementById('reset-password-modal').classList.remove('hide');
             } catch (error) {
                 console.error('Customer password reset failed', error);
-                window.showToast(`Could not reset password: ${error.message || 'Please try again.'}`, 'error');
+                const notDeployed = ['functions/not-found', 'functions/internal', 'functions/unavailable'].includes(error.code);
+                const message = notDeployed
+                    ? 'Password reset is not switched on yet: its server function has not been deployed (needs the Firebase Blaze plan).'
+                    : error.code === 'functions/failed-precondition' ? error.message : `Could not reset password: ${error.message || 'Please try again.'}`;
+                window.showToast(message, 'error');
             }
         };
         window.closeResetPasswordModal = () => {
