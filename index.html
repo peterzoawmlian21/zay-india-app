@@ -468,7 +468,6 @@
                 <label for="login-pass" class="field-label">စကားဝှက် <span class="en-inline">Password</span></label>
                 <input type="password" id="login-pass" autocomplete="current-password" placeholder="••••••••" class="field" required>
             </div>
-            <button type="button" onclick="window.contactAdminForPassword()" class="btn-link" style="align-self:flex-end;font-size:0.88rem">စကားဝှက်မေ့နေပါသလား? <span class="en-inline">Forgot password</span></button>
             <button type="submit" class="btn btn-primary btn-block">ဝင်မည် <span style="font-weight:500;opacity:.85">Log in</span></button>
             <div class="divider">or</div>
             <button type="button" onclick="window.signInWithGoogle()" class="btn btn-ghost btn-block"><i class="fab fa-google" style="color:#EA4335"></i>Continue with Google</button>
@@ -700,21 +699,6 @@
                         <tbody id="admin-accounts-table"></tbody>
                     </table>
                 </div>
-                <div id="reset-password-modal" class="overlay z-[70] hide">
-                    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="reset-password-title">
-                        <div class="modal-head">
-                            <div><h2 id="reset-password-title" class="modal-title">Temporary password</h2><p id="reset-password-user" class="modal-sub"></p></div>
-                            <button type="button" onclick="window.closeResetPasswordModal()" aria-label="Close" class="icon-btn"><i class="fas fa-xmark"></i></button>
-                        </div>
-                        <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.75rem">Send this to the customer on WhatsApp. It won't be shown again. When they log in with it, the app makes them choose their own new password.</p>
-                        <div style="display:flex;gap:0.5rem">
-                            <input id="reset-password-value" type="text" readonly class="field" style="font-family:ui-monospace,Consolas,monospace;font-weight:700;letter-spacing:0.04em">
-                            <button type="button" onclick="window.copyResetPassword()" class="btn btn-dark"><i class="fas fa-copy"></i>Copy</button>
-                        </div>
-                        <button type="button" onclick="window.sendResetOnWhatsApp()" class="btn btn-whatsapp btn-block" style="margin-top:1rem"><i class="fab fa-whatsapp"></i>Send on WhatsApp</button>
-                        <button type="button" onclick="window.closeResetPasswordModal()" class="btn btn-ghost btn-block" style="margin-top:.5rem">Done</button>
-                    </div>
-                </div>
             </div>
             <div id="admin-tab-finance" class="hide">
                 <div class="admin-page-head">
@@ -847,19 +831,6 @@
                     <button type="button" onclick="window.cancelGoogleProfile()" class="btn btn-ghost">Cancel</button>
                     <button id="google-profile-submit" type="submit" class="btn btn-primary">Start shopping</button>
                 </div>
-            </form>
-        </div>
-    </div>
-
-    <div id="customer-password-change-modal" class="overlay z-[80] hide">
-        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="password-change-title">
-            <h2 id="password-change-title" class="modal-title">စကားဝှက်အသစ် <span class="en-inline">Set a new password</span></h2>
-            <p class="modal-sub" style="margin-bottom:1rem">The admin reset your password. Choose a new one to continue.</p>
-            <form onsubmit="window.changeTemporaryPassword(event)" style="display:flex;flex-direction:column;gap:0.9rem">
-                <div><label for="new-account-password" class="field-label">New password</label><input id="new-account-password" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters" class="field" required></div>
-                <div><label for="confirm-account-password" class="field-label">Confirm new password</label><input id="confirm-account-password" type="password" autocomplete="new-password" minlength="8" class="field" required></div>
-                <p id="password-change-error" class="error-text" role="status" aria-live="polite"></p>
-                <button type="submit" class="btn btn-primary btn-block">Update password</button>
             </form>
         </div>
     </div>
@@ -1052,7 +1023,6 @@
             const checkInitialLoad = () => {
                 if(loadedFlags.users && loadedFlags.products && loadedFlags.orders && !loadedFlags.all) {
                     loadedFlags.all = true;
-                    if (window.currentUser.passwordResetRequired) window.openRequiredPasswordChange();
                 }
             };
             if (role === 'admin') {
@@ -1457,44 +1427,6 @@
             }
         };
 
-        window.openRequiredPasswordChange = () => {
-            document.getElementById('new-account-password').value = '';
-            document.getElementById('confirm-account-password').value = '';
-            document.getElementById('password-change-error').innerText = '';
-            document.getElementById('customer-password-change-modal').classList.remove('hide');
-        };
-        window.changeTemporaryPassword = async (event) => {
-            event.preventDefault();
-            const errorMessage = document.getElementById('password-change-error');
-            const newPassword = document.getElementById('new-account-password').value;
-            const confirmPassword = document.getElementById('confirm-account-password').value;
-            if (newPassword.length < 8) {
-                errorMessage.innerText = 'Password must be at least 8 characters.';
-                return;
-            }
-            if (newPassword !== confirmPassword) {
-                errorMessage.innerText = 'The passwords do not match.';
-                return;
-            }
-            const firebaseUser = auth.currentUser;
-            if (!firebaseUser || !window.currentUser?.uid) {
-                errorMessage.innerText = 'Account not found. Please sign in again or contact the admin.';
-                return;
-            }
-            try {
-                await firebaseUser.updatePassword(newPassword);
-                await db.ref(`users/${window.currentUser.uid}/passwordResetRequired`).set(false);
-                window.currentUser = { ...window.currentUser, passwordResetRequired: false };
-                document.getElementById('customer-password-change-modal').classList.add('hide');
-                window.showToast('Password updated successfully.', 'success');
-            } catch (error) {
-                console.error('Temporary password change failed', error);
-                errorMessage.innerText = error.code === 'auth/requires-recent-login'
-                    ? 'For security, log out and log in again with the temporary password, then set a new one.'
-                    : `Could not update password: ${error.message || 'Please try again.'}`;
-            }
-        };
-
         window.logout = () => { detachListeners(); auth.signOut().catch(error => console.error('Sign-out failed', error)); localStorage.removeItem('zay_currentUser'); window.currentUser = null; window.cart = {}; window.users = []; window.orders = []; document.getElementById('auth-view').classList.remove('hide'); document.getElementById('customer-view').classList.add('hide'); document.getElementById('admin-view').classList.add('hide'); document.getElementById('login-form').reset(); window.showToast("အကောင့်မှ ထွက်ပြီးပါပြီ", "success"); };
 
         window.routeApp = () => { document.getElementById('auth-view').classList.add('hide'); if (window.currentUser.role === 'admin') { document.getElementById('admin-view').classList.remove('hide'); window.switchAdminTab('orders'); } else { document.getElementById('customer-view').classList.remove('hide'); document.getElementById('customer-header-address').innerText = window.currentUser.address; window.switchCustomerTab('home'); } };
@@ -1762,18 +1694,6 @@
             setTimeout(() => { m.classList.remove('opacity-0'); s.classList.remove('translate-y-full'); }, 10);
         };
         window.closeCheckout = () => { const m = document.getElementById('checkout-modal'), s = document.getElementById('checkout-sheet'); m.classList.add('opacity-0'); s.classList.add('translate-y-full'); setTimeout(() => m.classList.add('hide'), 300); };
-        window.contactAdminForPassword = () => {
-            // Signed-out visitors can no longer read the user list, so we don't look the account up here.
-            const phone = normalizePhone(document.getElementById('login-phone').value);
-            if (!phone) return window.showToast('Enter your registered phone number first.', 'error');
-            const message = [
-                'Hello Admin, I forgot the password for my Zay India account. Please help me reset it.',
-                `My registered phone number is: ${phone}.`,
-                'Thank you.'
-            ].join('\n');
-            const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP_NUMBER}?${new URLSearchParams({ text: message })}`;
-            window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
-        };
         window.buildAdminWhatsAppUrl = order => {
             const message = [
                 'Hello, I would like to confirm my Zay India order.',
@@ -2041,15 +1961,10 @@
                     const isLegacy = Object.prototype.hasOwnProperty.call(user, 'pass');
                     const actions = isLegacy
                         ? `<span class="badge badge-muted">Old account, must re-register</span><button type="button" data-delete-uid="${escapeHtml(user.dbId)}" class="delete-legacy-account btn btn-sm btn-danger-soft">Delete</button>`
-                        : `${user.signInMethod === 'google'
-                            ? '<span class="badge badge-info" title="Signs in with Google, so there is no password to reset"><i class="fab fa-google"></i>Google login</span>'
-                            : `<button type="button" data-reset-uid="${escapeHtml(user.dbId)}" class="reset-user-password btn btn-sm btn-ghost"><i class="fas fa-key"></i>Reset password</button>`}${isInactive ? `<button type="button" data-delete-uid="${escapeHtml(user.dbId)}" class="delete-inactive-account btn btn-sm btn-danger-soft">Delete inactive</button>` : ''}`;
+                        : `${user.signInMethod === 'google' ? '<span class="badge badge-info" title="Signs in with Google"><i class="fab fa-google"></i>Google login</span>' : ''}${isInactive ? `<button type="button" data-delete-uid="${escapeHtml(user.dbId)}" class="delete-inactive-account btn btn-sm btn-danger-soft">Delete inactive</button>` : ''}`;
                     return `<tr><td style="font-weight:600">${escapeHtml(user.name)}</td><td style="white-space:nowrap">${escapeHtml(user.phone)}</td><td>${escapeHtml(user.email || 'Not provided')}</td><td style="min-width:200px;font-size:.82rem;color:var(--muted)">${escapeHtml(user.address)}</td><td style="white-space:nowrap;font-size:.82rem">${isInactive ? '<span class="badge badge-pending">Inactive</span> ' : ''}${lastLoginLabel}</td><td><div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap">${actions}</div></td></tr>`;
                 }).join('')
                 : '<tr><td colspan="6"><div class="empty"><i class="fas fa-users"></i><p>No customer accounts yet.</p></div></td></tr>';
-            table.querySelectorAll('.reset-user-password').forEach(button => {
-                button.addEventListener('click', () => window.resetUserPassword(button.dataset.resetUid));
-            });
             table.querySelectorAll('.delete-inactive-account').forEach(button => {
                 button.addEventListener('click', () => window.deleteInactiveAccount(button.dataset.deleteUid));
             });
@@ -2087,54 +2002,6 @@
             } catch (error) {
                 console.error('Inactive account deletion failed', error);
                 window.showToast(`Could not delete account: ${error.message || 'Please try again.'}`, 'error');
-            }
-        };
-        window.resetUserPassword = async (uid) => {
-            if (window.currentUser?.role !== 'admin') return window.showToast('Admin access required.', 'error');
-            const user = window.users.find(account => account.dbId === uid && account.role === 'customer');
-            if (!user) return window.showToast('Customer account not found.', 'error');
-            if (!window.confirm(`Generate a new temporary password for ${user.name || user.phone}? Their current password will stop working.`)) return;
-            try {
-                // Only the server (Admin SDK) can set another user's password. It checks that the
-                // caller is in /admins, generates the temporary password, and returns it once.
-                const result = { data: await callAdminAccount('reset-password', uid) };
-                window.resetTarget = { phone: normalizePhone(user.phone), name: user.name || '' };
-                document.getElementById('reset-password-user').innerText = `${user.name || 'Customer'} (${user.phone})`;
-                document.getElementById('reset-password-value').value = result.data.temporaryPassword;
-                document.getElementById('reset-password-modal').classList.remove('hide');
-            } catch (error) {
-                console.error('Customer password reset failed', error);
-                window.showToast(`Could not reset password: ${error.message || 'Please try again.'}`, 'error');
-            }
-        };
-        // Opens a WhatsApp chat with the customer, pre-filled with the temporary password and what to do next.
-        window.sendResetOnWhatsApp = () => {
-            const password = document.getElementById('reset-password-value').value;
-            const target = window.resetTarget || {};
-            if (!password || !target.phone) return window.showToast('No temporary password to send.', 'error');
-            const message = [
-                `Zay India: ${target.name ? target.name + ', ' : ''}your temporary password is: ${password}`,
-                'Log in with your phone number and this password. The app will then ask you to choose your own new password.',
-                `ယာယီစကားဝှက်: ${password}`,
-                'ဖုန်းနံပါတ်နှင့် ဤစကားဝှက်ဖြင့် ဝင်ပြီး စကားဝှက်အသစ် ပြောင်းပါ။'
-            ].join('\n');
-            window.open(`https://wa.me/${target.phone}?${new URLSearchParams({ text: message })}`, '_blank', 'noopener,noreferrer');
-        };
-        window.closeResetPasswordModal = () => {
-            window.resetTarget = null;
-            document.getElementById('reset-password-value').value = '';
-            document.getElementById('reset-password-user').innerText = '';
-            document.getElementById('reset-password-modal').classList.add('hide');
-        };
-        window.copyResetPassword = async () => {
-            const password = document.getElementById('reset-password-value').value;
-            if (!password) return window.showToast('No temporary password is available to copy.', 'error');
-            try {
-                await navigator.clipboard.writeText(password);
-                window.showToast('Temporary password copied. Share it only with the account owner.', 'success');
-            } catch (error) {
-                console.error('Could not copy temporary password', error);
-                window.showToast('Could not access the clipboard. Select and copy the temporary password manually.', 'error');
             }
         };
         window.renderAdminOrders = () => {

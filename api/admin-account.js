@@ -1,11 +1,10 @@
 // Vercel serverless function: admin-only account actions that a web page is not allowed to do itself.
-//   POST /api/admin-account   { "action": "reset-password" | "delete", "uid": "<customer uid>" }
+//   POST /api/admin-account   { "action": "delete", "uid": "<customer uid>" }
 //   Header: Authorization: Bearer <Firebase ID token of the signed-in admin>
 //
 // Needs one environment variable in Vercel (Project → Settings → Environment Variables):
 //   FIREBASE_SERVICE_ACCOUNT = the full JSON of a Firebase service-account key.
 // The key is a secret: it must never be committed to the repo or sent to the browser.
-const crypto = require('crypto');
 const admin = require('firebase-admin');
 
 const DATABASE_URL = 'https://zayindia-default-rtdb.asia-southeast1.firebasedatabase.app';
@@ -19,12 +18,6 @@ function getApp() {
 
 class HttpError extends Error {
   constructor(status, message) { super(message); this.status = status; }
-}
-
-// No look-alike characters (0/O, 1/l/I) so it is easy to read out over WhatsApp.
-function generateTemporaryPassword(length = 12) {
-  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-  return Array.from({ length }, () => alphabet[crypto.randomInt(alphabet.length)]).join('');
 }
 
 async function requireAdmin(req) {
@@ -51,26 +44,6 @@ async function getCustomerUid(body) {
   return uid;
 }
 
-async function resetPassword(uid) {
-  let user;
-  try {
-    user = await admin.auth().getUser(uid);
-  } catch (error) {
-    if (error.code === 'auth/user-not-found') throw new HttpError(404, 'This customer has no login account.');
-    throw error;
-  }
-  // Google-login customers have no password; giving them one would add a second way into the account.
-  if (!user.providerData.some(provider => provider.providerId === 'password')) {
-    throw new HttpError(409, 'This customer signs in with Google, so there is no password to reset. Ask them to use "Continue with Google".');
-  }
-  const temporaryPassword = generateTemporaryPassword();
-  await admin.auth().updateUser(uid, { password: temporaryPassword });
-  await admin.auth().revokeRefreshTokens(uid); // signs them out of other devices
-  await admin.database().ref(`users/${uid}/passwordResetRequired`).set(true);
-  // Returned once to the admin to send on WhatsApp; never stored.
-  return { temporaryPassword };
-}
-
 async function deleteCustomer(uid) {
   try {
     await admin.auth().deleteUser(uid);
@@ -92,11 +65,10 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Use POST.' });
   }
   try {
-    if (!getApp()) throw new HttpError(503, 'Password reset is not set up yet: FIREBASE_SERVICE_ACCOUNT is missing in Vercel.');
+    if (!getApp()) throw new HttpError(503, 'Account actions are not set up: FIREBASE_SERVICE_ACCOUNT is missing in Vercel.');
     await requireAdmin(req);
     const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
     const uid = await getCustomerUid(body);
-    if (body.action === 'reset-password') return res.status(200).json(await resetPassword(uid));
     if (body.action === 'delete') return res.status(200).json(await deleteCustomer(uid));
     throw new HttpError(400, 'Unknown action.');
   } catch (error) {
