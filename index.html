@@ -329,6 +329,20 @@
         .stepper.stepper-lg button { width: 58px; min-height: 54px; font-size: 1.3rem; border-radius: var(--r-ctl); }
         .stepper.stepper-lg span { font-size: 1.05rem; }
 
+        /* "Can't find something?" card after the products */
+        .suggest-card { grid-column: 1 / -1; display: flex; align-items: center; gap: .85rem; width: 100%; margin-top: .4rem; padding: .95rem 1rem; text-align: left; border: 1.5px dashed var(--line-strong); border-radius: var(--r-card); background: var(--surface); color: var(--ink); cursor: pointer; transition: border-color 180ms ease, background-color 180ms ease, transform 160ms var(--ease-out); }
+        .suggest-card:hover { border-color: var(--brand); background: var(--brand-soft); }
+        .suggest-card:active { transform: scale(.98); }
+        .suggest-icon { width: 40px; height: 40px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: var(--brand-soft); color: var(--brand); }
+        .suggest-text { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.35; }
+        .suggest-text strong { font-weight: 600; font-size: .92rem; }
+        .suggest-text small { font-size: .8rem; color: var(--muted); }
+        .suggest-card > .fa-chevron-right { color: var(--faint); font-size: .75rem; }
+        /* Admin suggestion rows */
+        .suggest-row { display: flex; gap: .85rem; align-items: flex-start; flex-wrap: wrap; padding: .8rem 0; border-top: 1px solid var(--line); }
+        .suggest-row:first-child { border-top: 0; padding-top: .2rem; }
+        .suggest-people { margin-top: .3rem; font-size: .8rem; color: var(--muted); display: grid; gap: .15rem; }
+        .suggest-actions { display: flex; gap: .45rem; flex-wrap: wrap; }
         .empty { padding: 2.75rem 1rem; text-align: center; color: var(--muted); }
         .empty i { width: 52px; height: 52px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: var(--well); font-size: 1.25rem; color: var(--leaf-2); margin-bottom: 0.8rem; }
 
@@ -739,6 +753,21 @@
             </section>
         </div>
 
+        <!-- Suggest an item -->
+        <div id="suggest-modal" class="overlay z-[70] hide" onclick="if(event.target===this)window.closeSuggest()">
+            <section role="dialog" aria-modal="true" aria-labelledby="suggest-title" class="modal">
+                <div class="modal-head">
+                    <div><h2 id="suggest-title" class="modal-title">ပစ္စည်းအကြံပြုမည် <span class="en-inline">Suggest an item</span></h2><p class="modal-sub">Tell us what you'd like the shop to stock.</p></div>
+                    <button type="button" onclick="window.closeSuggest()" aria-label="Close" class="icon-btn"><i class="fas fa-xmark"></i></button>
+                </div>
+                <form id="suggest-form" onsubmit="window.sendSuggestion(event)" style="display:flex;flex-direction:column;gap:0.9rem">
+                    <div><label for="suggest-item" class="field-label">ပစ္စည်းအမည် <span class="en-inline">Item</span></label><input id="suggest-item" type="text" maxlength="80" required autocomplete="off" class="field" placeholder="e.g. Shan noodles, Mama instant noodles"></div>
+                    <div><label for="suggest-note" class="field-label">မှတ်ချက် <span class="en-inline">Note (optional)</span></label><textarea id="suggest-note" rows="2" maxlength="200" class="field" placeholder="Brand, size, or how many you'd buy"></textarea></div>
+                    <div class="modal-actions"><button type="button" onclick="window.closeSuggest()" class="btn btn-ghost">Cancel</button><button id="suggest-send" type="submit" class="btn btn-primary">Send suggestion</button></div>
+                </form>
+            </section>
+        </div>
+
         <!-- Product detail -->
         <div id="product-detail-modal" class="overlay overlay-sheet z-[60] hide opacity-0" onclick="if(event.target===this)window.closeProductDetail()">
             <div class="sheet translate-y-full" id="product-detail-sheet" role="dialog" aria-modal="true" aria-label="Product details" style="height:88vh;max-height:88dvh">
@@ -881,6 +910,11 @@
                         <input id="banner-text" type="text" maxlength="200" class="field" style="flex:1;min-width:220px" placeholder="e.g. Fresh Laphet arrived! Orders before 6 pm delivered today.">
                         <button type="button" id="banner-save" onclick="window.saveBanner()" class="btn btn-dark">Save banner</button>
                     </div>
+                </section>
+                <section class="card" style="padding:1rem 1.1rem;margin-bottom:1.25rem" aria-labelledby="suggest-heading">
+                    <div class="admin-section-head" style="margin-bottom:.35rem"><h2 id="suggest-heading">ဝယ်သူအကြံပြုချက် <span class="en-inline">Customer suggestions</span></h2><span id="suggest-count" class="badge badge-muted">0 new</span></div>
+                    <p style="font-size:.82rem;color:var(--muted);margin-bottom:.6rem">Items customers asked you to stock. The same item from several people is grouped.</p>
+                    <div id="admin-suggestions"></div>
                 </section>
                 <div class="card table-wrap">
                     <table class="table">
@@ -1264,6 +1298,8 @@
                 // Finance data (admin only). Doesn't block the first render.
                 listen(db.ref('expenses'), (s) => { window.expenses = normalizeCollection(s.val(), 'expenses'); window.refreshFinanceIfOpen(); });
                 listen(db.ref('settings/financeStart'), (s) => { window.financeStart = s.val(); window.refreshFinanceIfOpen(); });
+                // Items customers asked the shop to stock (admin only).
+                listen(db.ref('suggestions'), (s) => { window.suggestions = Object.entries(s.val() || {}).map(([id, v]) => ({ id, ...v })); window.renderSuggestions(); });
             } else {
                 // A customer can read only their own profile.
                 listen(db.ref(`users/${uid}`), (s) => {
@@ -1509,6 +1545,82 @@
             const phone = document.getElementById('login-phone').value.trim();
             const text = `Hello, I forgot my Zay India password. Please reset it.${phone ? `\nMy login phone number: ${phone}` : ''}`;
             window.open(`https://wa.me/${ADMIN_WHATSAPP_NUMBER}?${new URLSearchParams({ text })}`, '_blank', 'noopener');
+        };
+
+        // ---------- Item suggestions ----------
+        // Customers suggest items to stock; the admin sees them grouped by item on the Products tab.
+        window.openSuggest = (prefill = '') => {
+            document.getElementById('suggest-item').value = String(prefill || '').trim().slice(0, 80);
+            document.getElementById('suggest-note').value = '';
+            document.getElementById('suggest-modal').classList.remove('hide');
+            setTimeout(() => document.getElementById(prefill ? 'suggest-note' : 'suggest-item').focus(), 50);
+        };
+        window.closeSuggest = () => document.getElementById('suggest-modal').classList.add('hide');
+        window.sendSuggestion = async event => {
+            event.preventDefault();
+            const user = window.currentUser;
+            if (!user) return window.showToast('Please log in first.', 'error');
+            const item = document.getElementById('suggest-item').value.trim().replace(/\s+/g, ' ');
+            const note = document.getElementById('suggest-note').value.trim();
+            if (!item) return window.showToast('Write the item you would like.', 'error');
+            const button = document.getElementById('suggest-send');
+            button.disabled = true; button.innerText = 'Sending…';
+            try {
+                const entry = { uid: user.uid, item: item.slice(0, 80), createdAt: new Date().toISOString(), status: 'new', name: String(user.name || '').slice(0, 200) };
+                if (note) entry.note = note.slice(0, 200);
+                if (user.phone) entry.phone = String(user.phone);
+                await db.ref('suggestions').push(entry);
+                window.closeSuggest();
+                window.showToast(`ကျေးဇူးတင်ပါတယ်! Thanks — the admin will see your suggestion for “${escapeHtml(item)}”.`, 'success');
+            } catch (error) {
+                console.error('Suggestion failed', error);
+                window.showToast(`Could not send your suggestion: ${error.message || 'Please try again.'}`, 'error');
+            } finally {
+                button.disabled = false; button.innerText = 'Send suggestion';
+            }
+        };
+        const suggestionKey = text => String(text || '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+        window.renderSuggestions = () => {
+            const box = document.getElementById('admin-suggestions');
+            if (!box) return;
+            const all = window.suggestions || [];
+            const open = all.filter(s => s.status !== 'added');
+            const groups = new Map();
+            open.forEach(s => {
+                const key = suggestionKey(s.item);
+                if (!groups.has(key)) groups.set(key, { key, item: s.item, entries: [] });
+                groups.get(key).entries.push(s);
+            });
+            const list = [...groups.values()].map(g => ({ ...g, latest: g.entries.map(e => e.createdAt || '').sort().pop() }))
+                .sort((a, b) => b.entries.length - a.entries.length || String(b.latest).localeCompare(String(a.latest)));
+            document.getElementById('suggest-count').innerText = `${open.length} new`;
+            document.getElementById('suggest-count').className = `badge ${open.length ? 'badge-brand' : 'badge-muted'}`;
+            const addedCount = all.length - open.length;
+            if (!list.length) { box.innerHTML = `<p style="font-size:.85rem;color:var(--muted)">No new suggestions. Customers can suggest items from the bottom of the shop.${addedCount ? ` ${addedCount} marked as added.` : ''}</p>`; return; }
+            box.innerHTML = list.map(g => {
+                const people = g.entries.map(e => {
+                    const who = escapeHtml(e.name || 'Customer') + (e.phone ? ` <span style="color:var(--faint)">${escapeHtml(e.phone)}</span>` : '');
+                    return `<li>${who}${e.note ? ` — ${escapeHtml(e.note)}` : ''}</li>`;
+                }).join('');
+                const when = g.latest ? new Date(g.latest).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '';
+                return `<article class="suggest-row"><div style="min-width:0;flex:1"><p style="font-weight:600">${escapeHtml(g.item)} <span class="badge badge-brand" style="margin-left:.3rem">${g.entries.length} ${g.entries.length === 1 ? 'request' : 'requests'}</span></p><ul class="suggest-people">${people}</ul>${when ? `<p style="font-size:.75rem;color:var(--faint);margin-top:.2rem">Latest ${when}</p>` : ''}</div><div class="suggest-actions"><button type="button" class="btn btn-sm btn-soft" onclick="window.resolveSuggestion('${encodeURIComponent(g.key)}', 'added')"><i class="fas fa-check"></i>Added to shop</button><button type="button" class="btn btn-sm btn-ghost" onclick="window.resolveSuggestion('${encodeURIComponent(g.key)}', 'dismiss')">Dismiss</button></div></article>`;
+            }).join('') + (addedCount ? `<p style="font-size:.78rem;color:var(--faint);margin-top:.6rem">${addedCount} earlier ${addedCount === 1 ? 'suggestion' : 'suggestions'} marked as added.</p>` : '');
+        };
+        window.resolveSuggestion = async (encodedKey, action) => {
+            if (window.currentUser?.role !== 'admin') return window.showToast('Admin access required.', 'error');
+            const key = decodeURIComponent(encodedKey);
+            const entries = (window.suggestions || []).filter(s => s.status !== 'added' && suggestionKey(s.item) === key);
+            if (!entries.length) return;
+            if (action === 'dismiss' && !window.confirm(`Dismiss ${entries.length === 1 ? 'this suggestion' : `these ${entries.length} suggestions`} for “${entries[0].item}”? They will be deleted.`)) return;
+            const updates = {};
+            entries.forEach(s => { updates[`suggestions/${s.id}${action === 'added' ? '/status' : ''}`] = action === 'added' ? 'added' : null; });
+            try {
+                await db.ref().update(updates);
+                window.showToast(action === 'added' ? `Marked “${escapeHtml(entries[0].item)}” as added.` : 'Suggestion dismissed.', 'success');
+            } catch (error) {
+                console.error('Suggestion update failed', error);
+                window.showToast(`Could not update: ${error.message || 'Please try again.'}`, 'error');
+            }
         };
 
         window.groupOrdersByDate = orders => {
@@ -1862,13 +1974,13 @@
             if (window.products.length === 0) return list.innerHTML = `<div class="empty" style="grid-column:1/-1"><i class="fas fa-basket-shopping"></i><p lang="my">ပစ္စည်းများ မကြာမီ ရောက်ပါမည်။</p><p>No items yet. Check back soon.</p></div>`;
             const soldOutLast = (a, b) => (a.stockQty <= 0) - (b.stockQty <= 0); // stable: keeps admin order otherwise
             const products = window.products.filter(product => String(product.name || '').toLowerCase().includes(query) && (window.activeCategory === 'all' || product.category === window.activeCategory)).sort(soldOutLast);
-            if (products.length === 0) return list.innerHTML = `<div class="empty" style="grid-column:1/-1"><i class="fas fa-magnifying-glass"></i><p>${query ? `Nothing matches “${escapeHtml(query)}”${window.activeCategory !== 'all' ? ' in this category' : ''}.` : 'Nothing in this category right now.'}</p><button type="button" class="btn btn-soft btn-sm" style="margin-top:.75rem" onclick="window.clearProductSearch(); window.setCategory('all')">Show all items</button></div>`;
+            if (products.length === 0) return list.innerHTML = `<div class="empty" style="grid-column:1/-1"><i class="fas fa-magnifying-glass"></i><p>${query ? `Nothing matches “${escapeHtml(query)}”${window.activeCategory !== 'all' ? ' in this category' : ''}.` : 'Nothing in this category right now.'}</p><button type="button" class="btn btn-soft btn-sm" style="margin-top:.75rem" onclick="window.clearProductSearch(); window.setCategory('all')">Show all items</button>${query ? `<button type="button" class="btn btn-primary btn-sm" style="margin:.75rem 0 0 .4rem" onclick="window.openSuggest(document.getElementById('product-search').value)"><i class="fas fa-lightbulb"></i>Suggest this item</button>` : ''}</div>`;
             // First time real products arrive, let them cascade in once (not on every cart re-render).
             if (!window.productsEntered) { window.productsEntered = true; list.classList.add('is-filtering'); setTimeout(() => list.classList.remove('is-filtering'), 900); }
             list.innerHTML = products.map((p, i) => {
                 const isOut = p.stockQty <= 0;
                 return `<article class="card product ${isOut ? 'is-out' : ''}" style="--i:${Math.min(i, 11)}" data-pid="${escapeHtml(p.dbId)}"><button type="button" class="product-open" onclick="window.openProductDetail('${p.dbId}')" aria-label="View ${escapeHtml(p.name)}"><div class="product-img"><img src="${p.img}" alt="" loading="lazy"></div><div class="product-body"><h3 class="product-name">${escapeHtml(p.name)}</h3><div class="product-meta"><span class="price">₹${formatPrice(p.price)}</span><span class="stock">${isOut ? 'ကုန်သွားပြီ' : `${p.stockQty} left`}</span></div></div></button><div class="product-action ${window.lastCartChange === p.dbId ? 'pop-in' : ''}">${window.cartControl(p, window.cart[p.dbId] || 0, false)}</div></article>`;
-            }).join('');
+            }).join('') + `<button type="button" class="suggest-card" onclick="window.openSuggest()"><span class="suggest-icon"><i class="fas fa-lightbulb"></i></span><span class="suggest-text"><strong lang="my">လိုချင်တာ မတွေ့ဘူးလား?</strong><small>Can’t find something? Suggest an item</small></span><i class="fas fa-chevron-right"></i></button>`;
         };
 
         window.clearProductSearch = () => {
