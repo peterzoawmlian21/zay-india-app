@@ -2,7 +2,7 @@
 <html lang="my" translate="no">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <!-- Disable Google Translate Popup completely -->
     <meta name="google" content="notranslate">
     
@@ -16,7 +16,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Zay India">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Firebase SDK -->
@@ -72,6 +71,34 @@
             --font: 'Instrument Sans', 'Noto Sans Myanmar', system-ui, sans-serif;
             --display: 'Bricolage Grotesque', 'Noto Sans Myanmar', system-ui, sans-serif;
         }
+
+        /* ---------- Reset ----------
+           Replaces the Tailwind CDN script (dev-only, 126 KB, built CSS at runtime). These are the
+           parts of its base reset ("preflight") this page relies on, plus the few utilities it used. */
+        *, ::before, ::after { box-sizing: border-box; border-width: 0; border-style: solid; border-color: #e5e7eb; }
+        html { line-height: 1.5; -webkit-text-size-adjust: 100%; tab-size: 4; }
+        body { line-height: inherit; }
+        h1, h2, h3, h4, h5, h6 { font-size: inherit; font-weight: inherit; }
+        h1, h2, h3, h4, h5, h6, p, blockquote, figure, dl, dd, hr, pre { margin: 0; }
+        ol, ul, menu { list-style: none; margin: 0; padding: 0; }
+        a { color: inherit; text-decoration: inherit; }
+        b, strong { font-weight: bolder; }
+        small { font-size: 80%; }
+        table { text-indent: 0; border-color: inherit; border-collapse: collapse; }
+        button, input, optgroup, select, textarea { font-family: inherit; font-feature-settings: inherit; font-size: 100%; font-weight: inherit; line-height: inherit; letter-spacing: inherit; color: inherit; margin: 0; padding: 0; }
+        button, select { text-transform: none; }
+        button, [type='button'], [type='reset'], [type='submit'] { -webkit-appearance: button; background-color: transparent; background-image: none; }
+        button, [role="button"] { cursor: pointer; }
+        :disabled { cursor: default; }
+        input::placeholder, textarea::placeholder { opacity: 1; color: #9ca3af; }
+        textarea { resize: vertical; }
+        summary { display: list-item; }
+        img, svg, video, canvas, audio, iframe, embed, object { display: block; vertical-align: middle; }
+        img, video { max-width: 100%; height: auto; }
+        [hidden] { display: none; }
+        .z-50 { z-index: 50; } .z-\[60\] { z-index: 60; } .z-\[70\] { z-index: 70; } .z-\[80\] { z-index: 80; } .z-\[90\] { z-index: 90; }
+        .opacity-0 { opacity: 0; }
+        .translate-y-full { transform: translateY(100%); }
 
         /* ---------- Base ---------- */
         html, body { margin: 0; padding: 0; }
@@ -199,6 +226,10 @@
         .segmented button[aria-selected="true"] { background: var(--leaf); color: #fff; }
         .segmented button[aria-selected="true"] .en-inline { color: rgba(255, 255, 255, .7); }
         .auth-form { display: flex; flex-direction: column; gap: 1rem; }
+        .forgot-line { margin-top: -.2rem; text-align: center; font-size: .82rem; color: var(--muted); }
+        .forgot-line .btn-link { font-size: inherit; }
+        /* Zoom is allowed again; stop iOS zooming into small selects when they're tapped. */
+        @supports (-webkit-touch-callout: none) { .status-select { font-size: 16px; } }
         .divider { display: flex; align-items: center; gap: 0.75rem; color: var(--faint); font-size: 0.8rem; }
         .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
 
@@ -611,6 +642,7 @@
                 <input type="password" id="login-pass" autocomplete="current-password" placeholder="••••••••" class="field" required>
             </div>
             <button type="submit" class="btn btn-primary btn-block">ဝင်မည် <span style="font-weight:500;opacity:.85">Log in</span></button>
+            <p class="forgot-line"><span lang="my">စကားဝှက် မေ့နေပါသလား?</span> <button type="button" class="btn-link" onclick="window.forgotPassword()">Forgot password? Message the admin</button></p>
             <div class="divider">or</div>
             <button type="button" onclick="window.signInWithGoogle()" class="btn btn-ghost btn-block"><i class="fab fa-google" style="color:#EA4335"></i>Continue with Google</button>
         </form>
@@ -1471,6 +1503,13 @@
             }
         };
         const ADMIN_WHATSAPP_NUMBER = '916909235738';
+        // Customers can't reset their own password; the admin does it from the Customers tab.
+        // This opens WhatsApp to the admin with the phone number they typed, if any.
+        window.forgotPassword = () => {
+            const phone = document.getElementById('login-phone').value.trim();
+            const text = `Hello, I forgot my Zay India password. Please reset it.${phone ? `\nMy login phone number: ${phone}` : ''}`;
+            window.open(`https://wa.me/${ADMIN_WHATSAPP_NUMBER}?${new URLSearchParams({ text })}`, '_blank', 'noopener');
+        };
 
         window.groupOrdersByDate = orders => {
             const groups = new Map();
@@ -1821,7 +1860,8 @@
             const query = document.getElementById('product-search').value.trim().toLowerCase();
             document.getElementById('clear-product-search').classList.toggle('hide', !query);
             if (window.products.length === 0) return list.innerHTML = `<div class="empty" style="grid-column:1/-1"><i class="fas fa-basket-shopping"></i><p lang="my">ပစ္စည်းများ မကြာမီ ရောက်ပါမည်။</p><p>No items yet. Check back soon.</p></div>`;
-            const products = window.products.filter(product => String(product.name || '').toLowerCase().includes(query) && (window.activeCategory === 'all' || product.category === window.activeCategory));
+            const soldOutLast = (a, b) => (a.stockQty <= 0) - (b.stockQty <= 0); // stable: keeps admin order otherwise
+            const products = window.products.filter(product => String(product.name || '').toLowerCase().includes(query) && (window.activeCategory === 'all' || product.category === window.activeCategory)).sort(soldOutLast);
             if (products.length === 0) return list.innerHTML = `<div class="empty" style="grid-column:1/-1"><i class="fas fa-magnifying-glass"></i><p>${query ? `Nothing matches “${escapeHtml(query)}”${window.activeCategory !== 'all' ? ' in this category' : ''}.` : 'Nothing in this category right now.'}</p><button type="button" class="btn btn-soft btn-sm" style="margin-top:.75rem" onclick="window.clearProductSearch(); window.setCategory('all')">Show all items</button></div>`;
             // First time real products arrive, let them cascade in once (not on every cart re-render).
             if (!window.productsEntered) { window.productsEntered = true; list.classList.add('is-filtering'); setTimeout(() => list.classList.remove('is-filtering'), 900); }
@@ -1869,7 +1909,7 @@
             const isOut = p.stockQty <= 0;
             document.getElementById('detail-main-content').innerHTML = `<div class="product-img" style="aspect-ratio:4/3;margin:0.75rem 1rem 0;border-radius:var(--r-card)"><img src="${p.img}" alt="${escapeHtml(p.name)}" style="width:100%;height:100%;object-fit:contain;padding:1rem;${isOut ? 'filter:grayscale(1);opacity:.5' : ''}"></div><div style="padding:1rem 1rem 0"><h2 style="font-size:1.35rem;font-weight:700;line-height:1.3">${escapeHtml(p.name)}</h2><div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-top:.5rem"><span class="price" style="font-size:1.6rem">₹${formatPrice(p.price)}</span>${isOut ? '<span class="badge badge-danger">ကုန်သွားပြီ · Sold out</span>' : `<span class="badge badge-ok">လက်ကျန် ${p.stockQty} ခု · In stock</span>`}</div></div>`;
             document.getElementById('detail-sticky-cart').innerHTML = window.cartControl(p, window.cart[dbId] || 0, true);
-            const others = window.products.filter(x => x.dbId !== dbId);
+            const others = window.products.filter(x => x.dbId !== dbId).sort((a, b) => (a.stockQty <= 0) - (b.stockQty <= 0));
             document.getElementById('detail-other-products').innerHTML = others.length === 0 ? `<p style="color:var(--muted);font-size:.88rem">No other items yet.</p>` : others.map(op => `<button type="button" onclick="window.openProductDetail('${op.dbId}')" class="card product more-item ${op.stockQty <= 0 ? 'is-out' : ''}"><div class="product-img"><img src="${op.img}" alt="" loading="lazy"></div><div style="padding:.5rem .6rem .65rem"><p class="product-name" style="font-size:.8rem">${escapeHtml(op.name)}</p><p class="price" style="font-size:.9rem;margin-top:.2rem">₹${formatPrice(op.price)}</p></div></button>`).join('');
             const modal = document.getElementById('product-detail-modal'), sheet = document.getElementById('product-detail-sheet');
             if (modal.classList.contains('hide')) { modal.classList.remove('hide'); setTimeout(() => { modal.classList.remove('opacity-0'); sheet.classList.remove('translate-y-full'); }, 10); }
@@ -2820,8 +2860,11 @@
                         }
                         canvas.width = width;
                         canvas.height = height;
+                        // White background so transparent PNGs don't turn black in JPEG.
+                        context.fillStyle = '#fff';
+                        context.fillRect(0, 0, width, height);
                         context.drawImage(image, 0, 0, width, height);
-                        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                        const dataUrl = window.compressCanvas(canvas);
                         document.getElementById('prod-img-base64').value = dataUrl;
                         document.getElementById('img-preview').src = dataUrl;
                         document.getElementById('img-preview-container').classList.remove('hide');
@@ -2843,6 +2886,13 @@
                 window.showToast('Could not read the selected file. Please try again.', 'error');
             };
             reader.readAsDataURL(file);
+        };
+        // Product photos live in the database as text, and every customer downloads all of them,
+        // so keep each small: WebP (~2-3x smaller than JPEG), JPEG where WebP can't be made (old Safari).
+        window.compressCanvas = canvas => {
+            const webp = canvas.toDataURL('image/webp', 0.72);
+            const jpeg = canvas.toDataURL('image/jpeg', 0.7);
+            return webp.startsWith('data:image/webp') && webp.length < jpeg.length ? webp : jpeg;
         };
         window.renderAdminProducts = () => {
             const table = document.getElementById('admin-products-table');
