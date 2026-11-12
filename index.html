@@ -669,6 +669,30 @@
                     <div id="admin-pending-orders"></div>
                 </section>
                 <div class="admin-section-head"><h2>အားလုံး <span class="en-inline">All orders</span></h2></div>
+                <div class="fin-filters" style="margin-bottom:.85rem">
+                    <label for="orders-period" class="sr-only">Show orders from</label>
+                    <select id="orders-period" class="status-select" onchange="window.renderAdminOrders()">
+                        <option value="today">Today</option>
+                        <option value="yesterday">Yesterday</option>
+                        <option value="this-month" selected>This month</option>
+                        <option value="last-month">Last month</option>
+                        <option value="day">Pick a day</option>
+                        <option value="month">Pick a month</option>
+                        <option value="all">All time</option>
+                    </select>
+                    <label for="orders-day" class="sr-only">Day</label><input type="date" id="orders-day" class="status-select hide" onchange="window.renderAdminOrders()">
+                    <label for="orders-month" class="sr-only">Month</label><select id="orders-month" class="status-select hide" onchange="window.renderAdminOrders()"></select>
+                    <label for="orders-status" class="sr-only">Status</label>
+                    <select id="orders-status" class="status-select" onchange="window.renderAdminOrders()">
+                        <option value="">All statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="ontheway">On the way</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                    <span id="orders-filter-summary" style="font-size:.82rem;color:var(--muted)"></span>
+                </div>
                 <div class="card table-wrap">
                     <table class="table">
                         <thead><tr><th>Order</th><th>Customer</th><th>Items</th><th class="num">Total</th><th>Address</th><th>Status</th><th>Invoice</th></tr></thead>
@@ -2067,7 +2091,9 @@
                 `).join('')
                 : '<div class="card empty" style="padding:1.5rem"><i class="fas fa-circle-check" style="color:var(--ok)"></i><p>All caught up. New orders will appear here.</p></div>';
             const statusBadge = { confirmed: '<span class="badge badge-ok">Confirmed</span>', ontheway: '<span class="badge badge-info">On the way</span>', delivered: '<span class="badge badge-ok">Delivered</span>', rejected: '<span class="badge badge-danger">Rejected</span>', pending: '<span class="badge badge-pending">Pending</span>' };
-            document.getElementById('admin-orders-table').innerHTML = window.orders.length ? window.groupOrdersByDate(window.orders).map(group => `
+            const filteredOrders = window.filterAdminOrders(window.orders);
+            const emptyText = window.orders.length ? 'No orders match this filter.' : 'No orders yet.';
+            document.getElementById('admin-orders-table').innerHTML = filteredOrders.length ? window.groupOrdersByDate(filteredOrders).map(group => `
                 <tr class="group-row"><th colspan="7">${group.label}</th></tr>
                 ${group.orders.map(order => {
             const invoiceAvailable = ['confirmed', 'ontheway', 'delivered'].includes(order.status);
@@ -2076,7 +2102,53 @@
                 : (statusBadge[order.status] || statusBadge.pending);
             return `<tr><td style="font-size:.8rem;color:var(--muted);white-space:nowrap">${escapeHtml(order.dbId)}</td><td><p style="font-weight:600">${escapeHtml(order.user)}</p><p style="font-size:.78rem;color:var(--muted)">${escapeHtml(order.phone)}</p></td><td style="min-width:160px">${escapeHtml(order.items)}</td><td class="num" style="font-weight:700">₹${formatPrice(order.total)}</td><td style="min-width:150px;max-width:220px;font-size:.82rem;color:var(--muted)">${escapeHtml(order.address)}</td><td>${orderActions}</td><td>${invoiceAvailable ? `<button type="button" onclick="window.downloadInvoice('${order.dbId}')" class="btn btn-sm btn-ghost"><i class="fas fa-download"></i>Invoice</button>` : '<span style="font-size:.78rem;color:var(--faint)">Not yet</span>'}</td></tr>`;
                 }).join('')}
-            `).join('') : '<tr><td colspan="7"><div class="empty"><i class="fas fa-receipt"></i><p>No orders yet.</p></div></td></tr>';
+            `).join('') : `<tr><td colspan="7"><div class="empty"><i class="fas fa-receipt"></i><p>${emptyText}</p></div></td></tr>`;
+        };
+        // "All orders" filter: by day or month (local time), plus status.
+        // The "Waiting for you" section above is never filtered, so new orders stay visible.
+        window.filterAdminOrders = orders => {
+            const pad = n => String(n).padStart(2, '0');
+            const dayKey = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+            const keyOf = order => {
+                const raw = order.createdAt || order.timestamp || order.date;
+                const d = raw ? new Date(raw) : null;
+                return d && Number.isFinite(d.getTime()) ? dayKey(d) : null;
+            };
+            const periodEl = document.getElementById('orders-period');
+            const dayEl = document.getElementById('orders-day');
+            const monthEl = document.getElementById('orders-month');
+            const statusEl = document.getElementById('orders-status');
+            const period = periodEl.value;
+            const now = new Date();
+
+            // Month picker lists only months that have orders, newest first.
+            const months = [...new Set(orders.map(keyOf).filter(Boolean).map(k => k.slice(0, 7)))].sort().reverse();
+            const thisMonth = dayKey(now).slice(0, 7);
+            if (!months.includes(thisMonth)) months.unshift(thisMonth);
+            const chosenMonth = monthEl.value || thisMonth;
+            monthEl.innerHTML = months.map(m => {
+                const [y, mo] = m.split('-').map(Number);
+                const label = new Date(y, mo - 1, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+                return `<option value="${m}" ${m === chosenMonth ? 'selected' : ''}>${label}</option>`;
+            }).join('');
+            if (!dayEl.value) dayEl.value = dayKey(now);
+            dayEl.classList.toggle('hide', period !== 'day');
+            monthEl.classList.toggle('hide', period !== 'month');
+
+            let match = () => true;
+            if (period === 'today') { const k = dayKey(now); match = key => key === k; }
+            else if (period === 'yesterday') { const k = dayKey(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)); match = key => key === k; }
+            else if (period === 'this-month') match = key => key?.startsWith(thisMonth + '-');
+            else if (period === 'last-month') { const p = dayKey(new Date(now.getFullYear(), now.getMonth() - 1, 1)).slice(0, 7); match = key => key?.startsWith(p + '-'); }
+            else if (period === 'day') { const k = dayEl.value; match = key => key === k; }
+            else if (period === 'month') { const m = monthEl.value; match = key => key?.startsWith(m + '-'); }
+
+            const status = statusEl.value;
+            const result = orders.filter(order => (period === 'all' || match(keyOf(order))) && (!status || (order.status || 'pending') === status));
+            const counted = result.filter(order => ['confirmed', 'ontheway', 'delivered'].includes(order.status));
+            const total = counted.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+            document.getElementById('orders-filter-summary').textContent = `${result.length} order${result.length === 1 ? '' : 's'}` + (counted.length ? ` · ₹${formatPrice(total)} accepted` : '');
+            return result;
         };
         // ---------- Finance (admin) ----------
         // Revenue: orders the admin accepted. Pending and rejected orders are never counted.
