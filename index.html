@@ -227,12 +227,31 @@
         .greeting { position: relative; z-index: 1; margin-top: .85rem; font-size: .88rem; color: rgba(255, 255, 255, .78); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .greeting:empty { display: none; }
         /* Greeting + address fold away while the list scrolls */
-        .header-fold { max-height: 170px; overflow: hidden; transition: max-height 340ms var(--ease-out), opacity 240ms ease, visibility 0s; }
-        .shop-header { transition: padding 340ms var(--ease-out), border-radius 340ms var(--ease-out); }
-        .shop-header.is-compact { padding-bottom: .8rem; border-radius: 0 0 20px 20px; }
-        .shop-header.is-compact .header-fold { max-height: 0; opacity: 0; visibility: hidden; transition: max-height 340ms var(--ease-out), opacity 180ms ease, visibility 0s 340ms; }
-        .shop-header .logo { transition: transform 340ms var(--ease-out); }
-        .shop-header.is-compact .logo { transform: scale(.9); }
+        /* Fold: height, fade and a small lift move together. Scroll down folds, scroll up unfolds. */
+        .header-fold { max-height: 140px; overflow: hidden; opacity: 1; transform: none; transition: max-height 380ms var(--ease-out), opacity 260ms ease 60ms, transform 380ms var(--ease-out), visibility 0s; }
+        .shop-header { transition: padding 380ms var(--ease-out), border-radius 380ms var(--ease-out), box-shadow 380ms ease; }
+        .shop-header.is-compact { padding-bottom: .7rem; border-radius: 0 0 18px 18px; box-shadow: 0 10px 24px -14px rgba(12, 26, 19, .55); }
+        .shop-header.is-compact .header-fold { max-height: 0; opacity: 0; transform: translateY(-8px); visibility: hidden; transition: max-height 380ms var(--ease-out), opacity 160ms ease, transform 380ms var(--ease-out), visibility 0s 380ms; }
+        .shop-header .logo, .shop-header .wordmark-en { transition: transform 380ms var(--ease-out); transform-origin: left center; }
+        .shop-header.is-compact .logo { transform: scale(.88); }
+
+        /* Phones: a slimmer header so more of the shop shows */
+        @media (max-width: 520px) {
+            .shop-header { padding: max(10px, env(safe-area-inset-top)) .9rem .8rem; border-radius: 0 0 22px 22px; }
+            .shop-header .logo { width: 32px; height: 32px; }
+            .shop-header .wordmark { gap: .55rem; }
+            .shop-header .wordmark-en { font-size: 1.08rem; }
+            .shop-header-top > div:last-child { gap: .3rem !important; }
+            .shop-header .icon-btn { width: 36px; height: 36px; font-size: .85rem; }
+            .shop-header .bell-badge { top: -4px; right: -4px; min-width: 17px; height: 17px; font-size: .62rem; }
+            .greeting { margin-top: .5rem; font-size: .8rem; }
+            .address-chip { margin-top: .5rem; gap: .6rem; padding: .42rem .65rem; border-radius: 12px; }
+            .address-chip i.fa-location-dot { width: 26px; height: 26px; font-size: .72rem; }
+            .address-chip .label { font-size: .64rem; }
+            .address-chip .value { font-size: .84rem; }
+            .shop-header.is-compact { padding-bottom: .6rem; }
+            .tab-panel { padding-top: 1rem; }
+        }
         /* Search suggestion swap */
         #product-search::placeholder { transition: opacity 220ms ease; }
         #product-search.ph-out::placeholder { opacity: 0; }
@@ -2080,22 +2099,40 @@
             el.textContent = `မင်္ဂလာပါ · ${part}${name ? `, ${name}` : ''}`;
         };
         // While the list scrolls down, the greeting and address fold away to give products more room.
-        window.updateHeaderFold = () => {
+        // Scrolling down folds the greeting + address away; scrolling up (or reaching the top) brings them back.
+        // Called with fromScroll=false on tab switches, which simply unfold.
+        const FOLD_STEP = 8;          // ignore tiny finger jitter (px)
+        const FOLD_LOCK_MS = 420;     // no re-toggling while the fold animates (the layout shift itself moves scrollTop)
+        let foldLockUntil = 0;
+        window.updateHeaderFold = (fromScroll = false) => {
             const header = document.querySelector('#customer-view .shop-header');
             const panel = document.querySelector('#customer-view .tab-panel:not(.hide)');
             if (!header || !panel) return;
             const y = panel.scrollTop;
-            // Only fold when the list is long enough to stay scrollable after folding (no flicker loop).
             const room = panel.scrollHeight - panel.clientHeight;
-            if (y > 64 && room > 260) header.classList.add('is-compact');
-            else if (y < 16) header.classList.remove('is-compact');
+            if (!fromScroll) { panel._lastY = y; header.classList.toggle('is-compact', y > 64 && room > 140); return; }
+            if (y < 0 || y > room) return; // iOS bounce past the ends
+            const now = performance.now();
+            if (now < foldLockUntil) { panel._lastY = y; return; }
+            const last = panel._lastY ?? y;
+            const dy = y - last;
+            let fold = header.classList.contains('is-compact');
+            if (y < 24) fold = false;
+            else if (dy > FOLD_STEP && y > 64 && room > 140) fold = true;
+            else if (dy < -FOLD_STEP) fold = false;
+            else if (Math.abs(dy) <= FOLD_STEP) return; // keep accumulating small moves
+            if (fold !== header.classList.contains('is-compact')) {
+                header.classList.toggle('is-compact', fold);
+                foldLockUntil = now + FOLD_LOCK_MS;
+            }
+            panel._lastY = y;
         };
         document.querySelectorAll('#customer-view .tab-panel').forEach(panel => {
             let ticking = false;
             panel.addEventListener('scroll', () => {
                 if (ticking) return;
                 ticking = true;
-                requestAnimationFrame(() => { ticking = false; window.updateHeaderFold(); });
+                requestAnimationFrame(() => { ticking = false; window.updateHeaderFold(true); });
             }, { passive: true });
         });
         // The empty search box suggests real items from the shop, one at a time.
