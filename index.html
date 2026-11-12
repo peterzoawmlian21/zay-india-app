@@ -229,11 +229,15 @@
         /* Greeting + address fold away while the list scrolls */
         /* Fold: height, fade and a small lift move together. Scroll down folds, scroll up unfolds. */
         .header-fold { max-height: 140px; overflow: hidden; opacity: 1; transform: none; transition: max-height 380ms var(--ease-out), opacity 260ms ease 60ms, transform 380ms var(--ease-out), visibility 0s; }
-        .shop-header { transition: padding 380ms var(--ease-out), border-radius 380ms var(--ease-out), box-shadow 380ms ease; }
-        .shop-header.is-compact { padding-bottom: .7rem; border-radius: 0 0 18px 18px; box-shadow: 0 10px 24px -14px rgba(12, 26, 19, .55); }
+        .shop-header { transition: border-radius 380ms var(--ease-out), box-shadow 380ms ease; }
+        .shop-header.is-compact { border-radius: 0 0 18px 18px; box-shadow: 0 10px 24px -14px rgba(12, 26, 19, .55); }
         .shop-header.is-compact .header-fold { max-height: 0; opacity: 0; transform: translateY(-8px); visibility: hidden; transition: max-height 380ms var(--ease-out), opacity 160ms ease, transform 380ms var(--ease-out), visibility 0s 380ms; }
         .shop-header .logo, .shop-header .wordmark-en { transition: transform 380ms var(--ease-out); transform-origin: left center; }
         .shop-header.is-compact .logo { transform: scale(.88); }
+        /* The header floats over the list, so folding it never moves the products underneath.
+           Each list is padded by the header's open height (--header-h, measured in JS). */
+        #customer-view .shop-header { position: absolute; top: 0; left: 0; right: 0; z-index: 5; }
+        #customer-view .tab-panel { padding-top: calc(var(--header-h, 152px) + 1.25rem); scroll-padding-top: var(--header-h, 152px); }
 
         /* Phones: a slimmer header so more of the shop shows */
         @media (max-width: 520px) {
@@ -249,8 +253,7 @@
             .address-chip i.fa-location-dot { width: 26px; height: 26px; font-size: .72rem; }
             .address-chip .label { font-size: .64rem; }
             .address-chip .value { font-size: .84rem; }
-            .shop-header.is-compact { padding-bottom: .6rem; }
-            .tab-panel { padding-top: 1rem; }
+            #customer-view .tab-panel { padding-top: calc(var(--header-h, 152px) + 1rem); }
         }
         /* Search suggestion swap */
         #product-search::placeholder { transition: opacity 220ms ease; }
@@ -2097,7 +2100,22 @@
             const part = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
             const name = String(window.currentUser.name || '').trim();
             el.textContent = `မင်္ဂလာပါ · ${part}${name ? `, ${name}` : ''}`;
+            window.measureHeader();
         };
+        // The lists sit under the floating header, padded by its *open* height. That height is
+        // the same whether the header is folded or not (fold content height via scrollHeight),
+        // so folding never changes the padding and the products never jump.
+        window.measureHeader = () => {
+            const view = document.getElementById('customer-view');
+            const header = view?.querySelector('.shop-header');
+            const fold = header?.querySelector('.header-fold');
+            if (!header || !fold || view.classList.contains('hide')) return;
+            const open = Math.round(header.offsetHeight - fold.offsetHeight + fold.scrollHeight);
+            if (open > 0) view.style.setProperty('--header-h', `${open}px`);
+        };
+        if ('ResizeObserver' in window) new ResizeObserver(() => window.measureHeader()).observe(document.querySelector('#customer-view .shop-header'));
+        window.addEventListener('resize', () => window.measureHeader());
+        document.fonts?.ready.then(() => window.measureHeader());
         // While the list scrolls down, the greeting and address fold away to give products more room.
         // Scrolling down folds the greeting + address away; scrolling up (or reaching the top) brings them back.
         // Called with fromScroll=false on tab switches, which simply unfold.
