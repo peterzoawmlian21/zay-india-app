@@ -9,7 +9,7 @@
     <title>Zay India</title>
     <!-- Installable web app (PWA) -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#EA580C">
+    <meta name="theme-color" content="#CF4A0C">
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <meta name="mobile-web-app-capable" content="yes">
@@ -49,6 +49,7 @@
             --leaf-2: #C2410C;
             --leaf-ink: #C2410C;
             --leaf-soft: #FFEFE3;
+            --leaf-deep: #CF4A0C;   /* behind white text: 4.5:1 contrast */
             --brand: #EA580C;
             --brand-ink: #C2410C;
             --brand-soft: #FFEFE3;
@@ -157,7 +158,7 @@
         .error-text:empty { display: none; }
 
         /* ---------- Loading + toasts ---------- */
-        #app-loading { position: fixed; inset: 0; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.25rem; background: var(--leaf); }
+        #app-loading { position: fixed; inset: 0; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.25rem; background: var(--leaf-deep); }
         #app-loading .logo { box-shadow: 0 20px 40px -16px rgba(0, 0, 0, .5); }
         #app-loading .spinner { border-color: rgba(255, 255, 255, .18); border-top-color: #fff; }
         .spinner { width: 26px; height: 26px; border-radius: 50%; border: 2.5px solid var(--line); border-top-color: var(--leaf); animation: spin 0.8s linear infinite; }
@@ -180,7 +181,7 @@
 
         /* Auth: green hero over a white form sheet */
         #auth-view { padding: 0; background: var(--surface); }
-        .auth-hero { margin: 0; padding: max(3rem, calc(env(safe-area-inset-top) + 2rem)) 1.5rem 3.25rem; background: var(--leaf); color: #fff; position: relative; overflow: hidden; }
+        .auth-hero { margin: 0; padding: max(3rem, calc(env(safe-area-inset-top) + 2rem)) 1.5rem 3.25rem; background: var(--leaf-deep); color: #fff; position: relative; overflow: hidden; }
         .auth-hero::after { content: ''; position: absolute; right: -2.5rem; bottom: -3rem; width: 13rem; height: 13rem; background: url('icons/mark-white.svg') center / contain no-repeat; opacity: .06; pointer-events: none; }
         .auth-hero .logo { width: 60px; height: 60px; box-shadow: 0 14px 30px -14px rgba(0, 0, 0, .55); }
         .auth-hero .wordmark { flex-direction: column; align-items: flex-start; gap: 1.1rem; }
@@ -205,7 +206,7 @@
         #customer-view { height: 100vh; height: 100dvh; overflow: hidden; }
         .shop-header {
             flex-shrink: 0; position: relative; z-index: 2; overflow: hidden;
-            background: var(--leaf); color: #fff; border-radius: 0 0 26px 26px;
+            background: var(--leaf-deep); color: #fff; border-radius: 0 0 26px 26px;
             padding: max(16px, env(safe-area-inset-top)) 1.1rem 1.1rem;
         }
         .shop-header::after { content: ''; position: absolute; right: -1.75rem; top: -1.5rem; width: 9rem; height: 9rem; background: url('icons/mark-white.svg') center / contain no-repeat; opacity: .05; pointer-events: none; }
@@ -214,7 +215,7 @@
         .shop-header .wordmark-en { font-size: 1.2rem; color: #fff; }
         .shop-header .icon-btn { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .14); color: #fff; }
         .shop-header .icon-btn:hover { background: rgba(255, 255, 255, .16); }
-        .shop-header .bell-badge { border-color: var(--leaf); background: #fff; color: var(--brand-ink); }
+        .shop-header .bell-badge { border-color: var(--leaf-deep); background: #fff; color: var(--brand-ink); }
         .address-chip {
             position: relative; z-index: 1;
             margin-top: 0.9rem; width: 100%; display: flex; align-items: center; gap: 0.7rem; text-align: left;
@@ -370,7 +371,7 @@
 
         /* ---------- Admin ---------- */
         #admin-view { min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); }
-        .admin-side { background: var(--leaf); color: #fff; flex-shrink: 0; padding-top: env(safe-area-inset-top); }
+        .admin-side { background: var(--leaf-deep); color: #fff; flex-shrink: 0; padding-top: env(safe-area-inset-top); }
         .admin-brand { display: flex; align-items: center; justify-content: space-between; padding: 0.9rem 1rem; }
         .admin-brand .logo { width: 34px; height: 34px; }
         .admin-brand .wordmark-en { font-size: 1.1rem; color: #fff; }
